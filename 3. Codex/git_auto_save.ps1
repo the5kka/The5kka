@@ -64,18 +64,18 @@ function Sync-ToGitHub() {
         if ($resolved -ne "D:\QC\8. The5kka\1. The5kka_GitHub") { throw "예상 동기화 폴더가 아닙니다: $resolved" }
         Get-ChildItem -LiteralPath $SyncRoot -Force | Where-Object { $_.Name -ne ".git" } | Remove-Item -Recurse -Force
 
-        New-Item -ItemType Directory -Path (Join-Path $SyncRoot "8. Quick Access Searcher") -Force | Out-Null
-        New-Item -ItemType Directory -Path (Join-Path $SyncRoot "9. Codex") -Force | Out-Null
-        robocopy "D:\QC\8. The5kka\2. Quick Access Searcher" (Join-Path $SyncRoot "8. Quick Access Searcher") /MIR /XD .git logs build dist __pycache__ /XF desktop.ini *.log *.pyc *.pyo *.tmp *.bak | Out-Null
-        robocopy "D:\QC\8. The5kka\3. Codex" (Join-Path $SyncRoot "9. Codex") /MIR /XD .git logs build dist __pycache__ ".The5kka_GitHub" "1. The5kka_GitHub" "10. The5kka_GitHub" /XF desktop.ini git_auto_save.log *.log *.pyc *.pyo *.tmp *.bak | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $SyncRoot "2. Quick Access Searcher") -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $SyncRoot "3. Codex") -Force | Out-Null
+        robocopy "D:\QC\8. The5kka\2. Quick Access Searcher" (Join-Path $SyncRoot "2. Quick Access Searcher") /MIR /XD .git logs build dist __pycache__ /XF desktop.ini *.log *.pyc *.pyo *.tmp *.bak | Out-Null
+        robocopy "D:\QC\8. The5kka\3. Codex" (Join-Path $SyncRoot "3. Codex") /MIR /XD .git logs build dist __pycache__ ".The5kka_GitHub" "1. The5kka_GitHub" "10. The5kka_GitHub" /XF desktop.ini git_auto_save.log *.log *.pyc *.pyo *.tmp *.bak | Out-Null
 
         $readme = @"
 # The5kka
 
 자동 업로드 기준 폴더입니다.
 
-- `8. Quick Access Searcher`
-- `9. Codex`
+- `2. Quick Access Searcher`
+- `3. Codex`
 
 PC 종료 전 `Ctrl + Alt + Q`를 누르면 D:\QC의 원본 폴더를 이 저장소로 동기화하고 GitHub에 업로드합니다.
 "@
@@ -108,5 +108,6 @@ Sync-ToGitHub
 
 if ($HadError) { exit 1 }
 exit 0
+
 
 
