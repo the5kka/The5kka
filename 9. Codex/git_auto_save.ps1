@@ -4,7 +4,7 @@ $SourceRepos = @(
     "D:\QC\8. Quick Access Searcher",
     "D:\QC\9. Codex"
 )
-$SyncRoot = "D:\QC\.The5kka_GitHub"
+$SyncRoot = "D:\QC\10. The5kka_GitHub"
 $LogPath = "D:\QC\9. Codex\git_auto_save.log"
 $HadError = $false
 
@@ -61,13 +61,13 @@ function Sync-ToGitHub() {
         if ($LASTEXITCODE -ne 0) { throw "main 브랜치 준비 실패" }
 
         $resolved = (Resolve-Path -LiteralPath $SyncRoot).Path
-        if ($resolved -ne "D:\QC\.The5kka_GitHub") { throw "예상 동기화 폴더가 아닙니다: $resolved" }
+        if ($resolved -ne "D:\QC\10. The5kka_GitHub") { throw "예상 동기화 폴더가 아닙니다: $resolved" }
         Get-ChildItem -LiteralPath $SyncRoot -Force | Where-Object { $_.Name -ne ".git" } | Remove-Item -Recurse -Force
 
         New-Item -ItemType Directory -Path (Join-Path $SyncRoot "8. Quick Access Searcher") -Force | Out-Null
         New-Item -ItemType Directory -Path (Join-Path $SyncRoot "9. Codex") -Force | Out-Null
         robocopy "D:\QC\8. Quick Access Searcher" (Join-Path $SyncRoot "8. Quick Access Searcher") /MIR /XD .git logs build dist __pycache__ /XF desktop.ini *.log *.pyc *.pyo *.tmp *.bak | Out-Null
-        robocopy "D:\QC\9. Codex" (Join-Path $SyncRoot "9. Codex") /MIR /XD .git logs build dist __pycache__ ".The5kka_GitHub" /XF desktop.ini git_auto_save.log *.log *.pyc *.pyo *.tmp *.bak | Out-Null
+        robocopy "D:\QC\9. Codex" (Join-Path $SyncRoot "9. Codex") /MIR /XD .git logs build dist __pycache__ ".The5kka_GitHub" "10. The5kka_GitHub" /XF desktop.ini git_auto_save.log *.log *.pyc *.pyo *.tmp *.bak | Out-Null
 
         $readme = @"
 # The5kka
@@ -108,3 +108,4 @@ Sync-ToGitHub
 
 if ($HadError) { exit 1 }
 exit 0
+
