@@ -8,7 +8,7 @@ $result = [System.Windows.Forms.MessageBox]::Show(
 if ($result -ne [System.Windows.Forms.DialogResult]::Yes) {
     exit
 }
-$AutoSave = "D:\QC\9. Codex\git_auto_save.ps1"
+$AutoSave = "D:\QC\8. The5kka\3. Codex\git_auto_save.ps1"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File $AutoSave
 if ($LASTEXITCODE -ne 0) {
     [System.Windows.Forms.MessageBox]::Show(
@@ -21,3 +21,4 @@ if ($LASTEXITCODE -ne 0) {
 }
 Start-Sleep -Seconds 2
 shutdown.exe /s /t 0
+
