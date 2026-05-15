@@ -2,6 +2,7 @@ import json
 import calendar
 import os
 import shutil
+import sqlite3
 import subprocess
 import sys
 import threading
@@ -38,6 +39,8 @@ def get_app_dir() -> Path:
 APP_DIR = get_app_dir()
 CONFIG_FILE = APP_DIR / "config.json"
 CONDITION_MASTER_FILE = APP_DIR / "condition_master.json"
+DATA_DIR = APP_DIR / "data"
+KCC_PKG_DB_FILE = DATA_DIR / "KCC_PKG.db"
 
 APP_BG = "#f3f6fb"
 SURFACE_BG = "#ffffff"
@@ -269,9 +272,10 @@ def copy_dnc_file(source_file: Path, transfer_folder: Path) -> Path:
 
 def delete_after_delay(copied_file: Path, seconds: int, status_callback=None) -> None:
     """지정된 초만큼 기다린 후 복사된 DNC txt 파일을 삭제합니다."""
-    if status_callback:
-        status_callback(f"DNC 삭제 대기중 ({seconds}초)")
-    time.sleep(seconds)
+    for remaining in range(seconds, 0, -1):
+        if status_callback:
+            status_callback(f"DNC 삭제 대기중 ({remaining})")
+        time.sleep(1)
     if copied_file.exists():
         copied_file.unlink()
     if status_callback:
@@ -381,7 +385,7 @@ def validate_zero_or_positive_number(value: str, field_name: str) -> tuple[bool,
     """신규 모델 검증 매수처럼 0 이상 숫자를 반드시 입력해야 하는 필드 검증입니다."""
     text = value.strip()
     if not text:
-        return False, f"{field_name}은(는) 필수입니다. 더미 작업이면 0을 입력하세요."
+        return True, ""
     if not text.isdigit():
         return False, f"{field_name}은(는) 숫자만 입력 가능합니다."
     return True, ""
@@ -525,16 +529,327 @@ def save_workbook_safely(workbook, path: Path) -> None:
                 raise PermissionError("작업일보 Excel 파일이 열려 있어 저장할 수 없습니다.\n파일을 닫고 다시 실행해주세요.")
 
 
+# ==================================================
+# KCC PKG DB 저장 함수
+# ==================================================
+def get_kcc_pkg_db_path() -> Path:
+    """KCC PKG 원본 이력을 저장하는 SQLite DB 파일 경로를 반환합니다."""
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    return KCC_PKG_DB_FILE
+
+
+def get_kcc_pkg_connection() -> sqlite3.Connection:
+    """KCC PKG DB 연결을 만들고 필요한 테이블을 자동 생성합니다."""
+    conn = sqlite3.connect(get_kcc_pkg_db_path())
+    conn.row_factory = sqlite3.Row
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS dnc_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_process TEXT NOT NULL DEFAULT 'KCC PKG',
+            dnc_type TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT '완료',
+            work_date TEXT,
+            shift_group TEXT,
+            shift_name TEXT,
+            worker TEXT,
+            step TEXT,
+            round_no TEXT,
+            manage_no TEXT,
+            lot_no TEXT,
+            qty_text TEXT,
+            qty_number INTEGER,
+            result_value REAL,
+            process_code TEXT,
+            condition_name TEXT,
+            jig TEXT,
+            stack TEXT,
+            model_change_text TEXT,
+            burr_result TEXT,
+            record_time TEXT,
+            first_axis_1 TEXT,
+            first_axis_2 TEXT,
+            first_axis_3 TEXT,
+            first_axis_4 TEXT,
+            first_axis_5 TEXT,
+            first_axis_6 TEXT,
+            jig_axis_1 TEXT,
+            jig_axis_2 TEXT,
+            jig_axis_3 TEXT,
+            jig_axis_4 TEXT,
+            jig_axis_5 TEXT,
+            jig_axis_6 TEXT,
+            exported INTEGER NOT NULL DEFAULT 0,
+            exported_at TEXT,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.commit()
+    return conn
+
+
+def calculate_result_value(qty_number: int) -> float | None:
+    """매수 기준 실적을 계산합니다. 더미는 실적을 비워 둡니다."""
+    if qty_number <= 0:
+        return None
+    return round(qty_number * 0.2, 1)
+
+
+def insert_normal_dnc_db(common: dict, lots: list[dict], stack: str, model_change: bool) -> list[int]:
+    """일반 DNC 이력을 Excel 대신 KCC_PKG.db에 먼저 저장합니다."""
+    now_text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ids: list[int] = []
+    conn = get_kcc_pkg_connection()
+    try:
+        for index, lot in enumerate(lots):
+            qty_number = int(lot["qty"])
+            cursor = conn.execute(
+                """
+                INSERT INTO dnc_logs (
+                    dnc_type, status, work_date, shift_group, shift_name, worker,
+                    step, round_no, manage_no, lot_no, qty_text, qty_number, result_value,
+                    process_code, condition_name, jig, stack, model_change_text, created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    "일반",
+                    "DNC 진행",
+                    common["work_date"],
+                    common["shift_group"],
+                    common["shift"],
+                    common["worker"],
+                    lot["step"],
+                    lot["round"],
+                    lot["manage_no"],
+                    lot["lot_no"],
+                    lot["qty"],
+                    qty_number,
+                    calculate_result_value(qty_number),
+                    lot["process_code"],
+                    lot["condition"],
+                    lot["jig"],
+                    stack,
+                    "기종교체" if model_change and index == 0 else "",
+                    now_text,
+                ),
+            )
+            ids.append(int(cursor.lastrowid))
+        conn.commit()
+    finally:
+        conn.close()
+    return ids
+
+
+def update_normal_frequent_check_db(log_ids: list[int], model_change: bool, frequent_check: list[str]) -> None:
+    """초품 4Point와 하부 Pin 확인 결과를 KCC_PKG.db에 반영합니다."""
+    conn = get_kcc_pkg_connection()
+    try:
+        for index, log_id in enumerate(log_ids):
+            first_values = frequent_check[:6]
+            jig_values = frequent_check[6:] if model_change and index == 0 else [""] * 6
+            conn.execute(
+                """
+                UPDATE dnc_logs
+                   SET first_axis_1=?, first_axis_2=?, first_axis_3=?,
+                       first_axis_4=?, first_axis_5=?, first_axis_6=?,
+                       jig_axis_1=?, jig_axis_2=?, jig_axis_3=?,
+                       jig_axis_4=?, jig_axis_5=?, jig_axis_6=?
+                 WHERE id=?
+                """,
+                (*first_values, *jig_values, log_id),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def update_normal_burr_db(log_ids: list[int], burr_ok: bool) -> None:
+    """Burr 결과와 작업 시간을 KCC_PKG.db에 저장합니다."""
+    result = "이상 없음" if burr_ok else "Burr 발생"
+    now_text = datetime.now().strftime("%H:%M:%S")
+    conn = get_kcc_pkg_connection()
+    try:
+        conn.executemany(
+            "UPDATE dnc_logs SET status='완료', burr_result=?, record_time=? WHERE id=?",
+            [(result, now_text, log_id) for log_id in log_ids],
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def insert_new_model_db(common: dict, lot: dict, leader_name: str) -> int:
+    """신규 모델 검증 DNC 이력을 KCC_PKG.db에 저장합니다."""
+    qty_text = lot.get("qty", "").strip()
+    qty_number = int(qty_text) if qty_text else 0
+    display_qty = "더미" if qty_number == 0 else qty_text
+    conn = get_kcc_pkg_connection()
+    try:
+        cursor = conn.execute(
+            """
+            INSERT INTO dnc_logs (
+                dnc_type, status, work_date, shift_group, shift_name, worker,
+                step, round_no, manage_no, lot_no, qty_text, qty_number, result_value,
+                process_code, condition_name, jig, model_change_text, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "신규 검증",
+                "DNC 진행",
+                common["work_date"],
+                common["shift_group"],
+                common["shift"],
+                leader_name,
+                lot["step"],
+                lot["round"],
+                lot["manage_no"],
+                lot["lot_no"],
+                display_qty,
+                qty_number,
+                calculate_result_value(qty_number),
+                lot["process_code"],
+                lot["condition"],
+                lot["jig"],
+                "신규 검증",
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            ),
+        )
+        conn.commit()
+        return int(cursor.lastrowid)
+    finally:
+        conn.close()
+
+
+def update_new_model_db(log_id: int, condition_name: str, first_article_ok: bool) -> None:
+    """신규 모델 초도품 확인 결과를 KCC_PKG.db에 저장합니다."""
+    final_condition = condition_name if first_article_ok else f"[검증 NG 발생] {condition_name}"
+    conn = get_kcc_pkg_connection()
+    try:
+        conn.execute(
+            "UPDATE dnc_logs SET status='완료', condition_name=?, record_time=? WHERE id=?",
+            (final_condition, datetime.now().strftime("%H:%M:%S"), log_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_unexported_kcc_pkg_count() -> int:
+    """Excel 작업일보에 아직 반영되지 않은 KCC PKG DB 이력 수를 반환합니다."""
+    conn = get_kcc_pkg_connection()
+    try:
+        row = conn.execute("SELECT COUNT(*) AS count FROM dnc_logs WHERE exported=0 AND status='완료'").fetchone()
+        return int(row["count"])
+    finally:
+        conn.close()
+
+
+def fetch_unexported_kcc_pkg_logs() -> list[sqlite3.Row]:
+    """Excel로 내보낼 미반영 KCC PKG 이력을 오래된 순서로 조회합니다."""
+    conn = get_kcc_pkg_connection()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM dnc_logs WHERE exported=0 AND status='완료' ORDER BY id"
+        ).fetchall()
+        return rows
+    finally:
+        conn.close()
+
+
+def mark_kcc_pkg_logs_exported(log_ids: list[int]) -> None:
+    """Excel 반영이 끝난 DB 이력을 반영 완료 처리합니다."""
+    if not log_ids:
+        return
+    conn = get_kcc_pkg_connection()
+    try:
+        conn.executemany(
+            "UPDATE dnc_logs SET exported=1, exported_at=? WHERE id=?",
+            [(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), log_id) for log_id in log_ids],
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def write_db_log_row_to_excel(ws, row: int, log: sqlite3.Row) -> None:
+    """KCC_PKG.db 한 건을 기존 KCC PKG 작업일보 양식에 맞춰 기록합니다."""
+    values = [
+        log["work_date"],
+        log["shift_group"],
+        log["shift_name"],
+        log["worker"],
+        log["step"],
+        log["round_no"],
+        log["manage_no"],
+        log["lot_no"],
+        log["qty_text"],
+        "" if log["result_value"] is None else log["result_value"],
+        log["condition_name"],
+        log["burr_result"] or "",
+        log["stack"] or "",
+        log["jig"],
+        log["model_change_text"] or "",
+        log["record_time"] or "",
+    ]
+    for col, value in enumerate(values, start=1):
+        ws.cell(row=row, column=col).value = value
+    if log["burr_result"] == "Burr 발생":
+        ws.cell(row=row, column=12).font = Font(color="FF0000", bold=False)
+    if str(log["condition_name"] or "").startswith("[검증 NG 발생]"):
+        ws.cell(row=row, column=11).font = Font(name="맑은 고딕", size=10, color="FF0000", bold=False)
+
+    frequent_values = [
+        log["first_axis_1"],
+        log["first_axis_2"],
+        log["first_axis_3"],
+        log["first_axis_4"],
+        log["first_axis_5"],
+        log["first_axis_6"],
+        log["jig_axis_1"],
+        log["jig_axis_2"],
+        log["jig_axis_3"],
+        log["jig_axis_4"],
+        log["jig_axis_5"],
+        log["jig_axis_6"],
+    ]
+    for offset, value in enumerate(frequent_values, start=17):
+        ws.cell(row=row, column=offset).value = value or ""
+
+
+def export_kcc_pkg_db_to_excel(config: dict) -> int:
+    """KCC_PKG.db의 미반영 이력을 Excel KCC PKG 시트로 내보냅니다."""
+    logs = fetch_unexported_kcc_pkg_logs()
+    if not logs:
+        return 0
+
+    workbook, ws, path = open_log_workbook(config)
+    exported_ids: list[int] = []
+    try:
+        start_row = get_next_empty_row(ws)
+        for index, log in enumerate(logs):
+            write_db_log_row_to_excel(ws, start_row + index, log)
+            exported_ids.append(int(log["id"]))
+        save_workbook_safely(workbook, path)
+    finally:
+        workbook.close()
+    mark_kcc_pkg_logs_exported(exported_ids)
+    return len(exported_ids)
+
+
 def make_condition_key(step: str, round_no: str, manage_no: str, process_code: str) -> str:
     """조건 마스터에서 중복을 제거하기 위한 기준 키를 만듭니다.
 
-    작업일보에는 공정코드가 저장되지 않는 행도 있어서, 마스터 중복 판단은
-    STEP/차수/관리번호 기준으로 합니다. 공정코드는 기록용으로 보존합니다.
+    작업조건/지그는 STEP, 차수, 공정코드가 맞을 때만 불러와야 하므로
+    공정코드까지 중복 판단 기준에 포함합니다.
     """
     return "|".join(
         [
             step.strip(),
             round_no.strip(),
+            process_code.strip(),
             manage_no.strip(),
         ]
     )
@@ -544,6 +859,8 @@ def merge_condition_records(records: list[dict]) -> list[dict]:
     """같은 STEP/차수/관리번호 조건은 한 줄로 합치고, 뒤에 들어온 최신 값을 우선합니다."""
     merged: dict[str, dict] = {}
     for record in records:
+        if not str(record.get("process_code", "")).strip():
+            continue
         key = make_condition_key(
             record.get("step", ""),
             record.get("round", ""),
@@ -565,7 +882,7 @@ def merge_condition_records(records: list[dict]) -> list[dict]:
         if process_code:
             current["process_code"] = process_code
 
-    return sorted(merged.values(), key=lambda item: (item.get("step", ""), item.get("round", ""), item.get("manage_no", "")))
+    return sorted(merged.values(), key=lambda item: (item.get("step", ""), item.get("round", ""), item.get("process_code", ""), item.get("manage_no", "")))
 
 
 def load_condition_master() -> list[dict]:
@@ -592,7 +909,7 @@ def upsert_condition_master(lot: dict, condition: str, jig: str, source: str) ->
     round_no = lot.get("round", "").strip()
     manage_no = lot.get("manage_no", "").strip()
     process_code = lot.get("process_code", "").strip()
-    if not (step and round_no and manage_no and condition and jig):
+    if not (step and round_no and process_code and manage_no and condition and jig):
         return
 
     key = make_condition_key(step, round_no, manage_no, process_code)
@@ -645,12 +962,13 @@ def rebuild_condition_master_from_log(config: dict) -> int:
             step = str(ws.cell(row=row, column=5).value or "").strip()
             round_no = str(ws.cell(row=row, column=6).value or "").strip()
             manage_no = str(ws.cell(row=row, column=7).value or "").strip()
-            # 작업일보에는 공정코드 저장 열이 없어서, 같은 키 구조 유지를 위해 빈 값으로 둡니다.
+            # 기존 작업일보에는 공정코드 저장 열이 없어 정확한 조건 키를 만들 수 없습니다.
+            # 공정코드가 없는 조건은 불러오기 대상에서 제외해야 하므로 갱신하지 않습니다.
             process_code = ""
             condition = str(ws.cell(row=row, column=11).value or "").strip()
             jig = str(ws.cell(row=row, column=14).value or "").strip()
             lot_no = str(ws.cell(row=row, column=8).value or "").strip()
-            if not (step and round_no and manage_no and condition and jig):
+            if not (step and round_no and manage_no and process_code and condition and jig):
                 continue
             records.append(
                 {
@@ -679,31 +997,17 @@ def lookup_condition_jig_from_master(lot: dict) -> tuple[str, str, str]:
     round_no = lot.get("round", "").strip()
     manage_no = lot.get("manage_no", "").strip()
     process_code = lot.get("process_code", "").strip()
-    lot_no = lot.get("lot_no", "").strip()
+    if not (step and round_no and process_code):
+        return "", "", ""
 
     for record in reversed(records):
         if (
-            step
-            and round_no
-            and manage_no
-            and record.get("step", "") == step
+            record.get("step", "") == step
             and record.get("round", "") == round_no
-            and record.get("manage_no", "") == manage_no
-            and (not process_code or not record.get("process_code") or record.get("process_code") == process_code)
+            and record.get("process_code", "") == process_code
+            and (not manage_no or record.get("manage_no", "") == manage_no)
         ):
             return record.get("condition", ""), record.get("jig", ""), f"조건 마스터({record.get('source', '저장값')})"
-
-    # STEP/차수가 입력되어 있으면 관리번호만으로 fallback 하지 않습니다.
-    # 같은 관리번호 안에서 1차/2차 조건이 달라질 수 있기 때문입니다.
-    if not (step and round_no):
-        for record in reversed(records):
-            if manage_no and record.get("manage_no") == manage_no:
-                return record.get("condition", ""), record.get("jig", ""), f"조건 마스터({record.get('source', '관리번호')})"
-
-    if not (step and round_no):
-        for record in reversed(records):
-            if lot_no and record.get("lot_no") == lot_no:
-                return record.get("condition", ""), record.get("jig", ""), f"조건 마스터({record.get('source', 'LOT No')})"
 
     return "", "", ""
 
@@ -714,51 +1018,23 @@ def lookup_condition_jig_from_history(config: dict, lot: dict) -> tuple[str, str
     작업조건/지그는 작업자가 직접 입력하는 값이 아니라 기존 진행 이력을 참고해야 하므로,
     KCC PKG 시트 8행 이후를 아래 우선순위로 뒤에서부터 검색합니다.
 
-    1순위: STEP + 차수 + 관리번호 모두 일치
-    2순위: 관리번호 일치
-    3순위: LOT No 일치
+    1순위: 조건 마스터에서 STEP + 차수 + 공정코드 일치
+    2순위: 작업일보에서 STEP + 차수 + 관리번호 일치
+
+    작업일보에는 공정코드가 저장되지 않으므로, 공정코드가 입력된 경우에는
+    조건 마스터를 우선 사용하고 작업일보 이력은 보조로만 사용합니다.
     """
-    workbook, ws, _path = open_log_workbook(config)
-    try:
-        step = lot.get("step", "").strip()
-        round_no = lot.get("round", "").strip()
-        manage_no = lot.get("manage_no", "").strip()
-        lot_no = lot.get("lot_no", "").strip()
-
-        candidates = []
-        for row in range(ws.max_row, 7, -1):
-            row_step = str(ws.cell(row=row, column=5).value or "").strip()
-            row_round = str(ws.cell(row=row, column=6).value or "").strip()
-            row_manage_no = str(ws.cell(row=row, column=7).value or "").strip()
-            row_lot_no = str(ws.cell(row=row, column=8).value or "").strip()
-            row_condition = str(ws.cell(row=row, column=11).value or "").strip()
-            row_jig = str(ws.cell(row=row, column=14).value or "").strip()
-
-            if not row_condition or not row_jig:
-                continue
-            candidates.append((row, row_step, row_round, row_manage_no, row_lot_no, row_condition, row_jig))
-
-        for row, row_step, row_round, row_manage_no, _row_lot_no, condition, jig in candidates:
-            if step and round_no and manage_no and row_step == step and row_round == round_no and row_manage_no == manage_no:
-                return condition, jig, f"{row}행 이력(STEP+차수+관리번호)"
-
-        condition, jig, source = lookup_condition_jig_from_master(lot)
-        if condition and jig:
-            return condition, jig, source
-
-        if not (step and round_no):
-            for row, _row_step, _row_round, row_manage_no, _row_lot_no, condition, jig in candidates:
-                if manage_no and row_manage_no == manage_no:
-                    return condition, jig, f"{row}행 이력(관리번호)"
-
-        if not (step and round_no):
-            for row, _row_step, _row_round, _row_manage_no, row_lot_no, condition, jig in candidates:
-                if lot_no and row_lot_no == lot_no:
-                    return condition, jig, f"{row}행 이력(LOT No)"
-
+    # The work log does not store process_code, so using it as a fallback can
+    # bring the wrong condition when STEP/round are similar. Use only the local
+    # master, whose key includes STEP + round + process_code.
+    if not (
+        lot.get("step", "").strip()
+        and lot.get("round", "").strip()
+        and lot.get("process_code", "").strip()
+    ):
         return "", "", ""
-    finally:
-        workbook.close()
+
+    return lookup_condition_jig_from_master(lot)
 
 
 def write_common_lot_row(ws, row: int, common: dict, lot: dict, stack: str, model_change: str, frequent_check: list[str] | None = None) -> None:
@@ -857,7 +1133,7 @@ def save_new_model_log(config: dict, common: dict, lot: dict, leader_name: str) 
     try:
         row = get_next_empty_row(ws)
         qty_text = lot.get("qty", "").strip()
-        qty_number = int(qty_text)
+        qty_number = int(qty_text) if qty_text else 0
         qty_value = "더미" if qty_number == 0 else qty_number
         result_value = "" if qty_number == 0 else round(qty_number * 0.2, 1)
         values = [
@@ -1207,6 +1483,7 @@ class JiinDncManager:
         self.lot_status_labels: dict[str, tk.Label] = {}
         self.log_text: scrolledtext.ScrolledText | None = None
         self.frequent_check_values: list[str] = [""] * 12
+        self.lot_condition_keys: dict[int, str] = {1: "", 2: ""}
 
         self.setup_style()
         self.create_layout()
@@ -1347,9 +1624,13 @@ class JiinDncManager:
         self.add_normal_button(button_panel, "신규 모델 검증 DNC", self.open_new_model_popup).grid(row=0, column=0, padx=4, pady=4)
         self.add_normal_button(button_panel, "작업일보 열기", self.open_log_excel_from_ui).grid(row=0, column=1, padx=4, pady=4)
         self.add_normal_button(button_panel, "조건 마스터 관리", self.open_condition_master_popup).grid(row=1, column=0, columnspan=2, sticky="ew", padx=4, pady=4)
+        self.add_normal_button(button_panel, "작업일보 반영", self.export_kcc_pkg_to_excel_from_ui, "Primary.TButton").grid(row=2, column=0, columnspan=2, sticky="ew", padx=4, pady=(18, 4))
 
         for entry in list(self.lot1_entries.values()) + list(self.lot2_entries.values()):
             entry.var.trace_add("write", lambda *_args: self.update_status_checks())
+        for lot_number, entries in ((1, self.lot1_entries), (2, self.lot2_entries)):
+            for key in ("step", "round", "manage_no", "process_code"):
+                entries[key].var.trace_add("write", lambda *_args, n=lot_number: self.handle_lot_key_change(n))
 
     def create_panel(self, parent, title: str) -> tk.Frame:
         panel = tk.Frame(parent, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
@@ -1387,17 +1668,30 @@ class JiinDncManager:
 
         status = tk.Frame(panel, bg=SURFACE_BG)
         status.grid(row=6, column=0, columnspan=2, sticky="ew", padx=10, pady=(0, 12))
+        status.columnconfigure(0, weight=1)
         status.columnconfigure(1, weight=1)
-        status.columnconfigure(3, weight=1)
-        tk.Label(status, text="MES Core", bg=SURFACE_BG, fg=TEXT_COLOR, font=("맑은 고딕", 10)).grid(row=0, column=0, sticky="e", padx=(0, 6))
-        mes_label = tk.Label(status, text="대기중", bg=SURFACE_BG, fg=MUTED_TEXT, font=("맑은 고딕", 10, "bold"), width=14)
-        mes_label.grid(row=0, column=1, sticky="w")
-        tk.Label(status, text="조건 적용", bg=SURFACE_BG, fg=TEXT_COLOR, font=("맑은 고딕", 10)).grid(row=0, column=2, sticky="e", padx=(14, 6))
-        condition_label = tk.Label(status, text="대기중", bg=SURFACE_BG, fg=MUTED_TEXT, font=("맑은 고딕", 10, "bold"), width=14)
-        condition_label.grid(row=0, column=3, sticky="w")
+        mes_label = self.create_judgement_card(status, "MES Core")
+        mes_label.grid(row=0, column=0, sticky="ew", padx=(0, 6))
+        condition_label = self.create_judgement_card(status, "조건 적용")
+        condition_label.grid(row=0, column=1, sticky="ew", padx=(6, 0))
         self.lot_status_labels[f"lot{lot_number}_mes"] = mes_label
         self.lot_status_labels[f"lot{lot_number}_condition"] = condition_label
         return panel
+
+    def create_judgement_card(self, parent, title: str) -> tk.Label:
+        """LOT별 핵심 판정 상태를 크게 보여주는 카드형 라벨입니다."""
+        return tk.Label(
+            parent,
+            text=f"{title}\n대기중",
+            bg="#f8fafc",
+            fg=MUTED_TEXT,
+            font=("맑은 고딕", 12, "bold"),
+            height=3,
+            relief=tk.SOLID,
+            bd=1,
+            justify=tk.CENTER,
+            anchor="center",
+        )
 
     def add_normal_button(self, parent, text: str, command, style: str = "TButton") -> ttk.Button:
         button = ttk.Button(parent, text=text, command=command, style=style, width=18)
@@ -1534,8 +1828,21 @@ class JiinDncManager:
     def set_lot_status(self, key: str, text: str, ok: bool | None = None) -> None:
         if key not in self.lot_status_labels:
             return
-        color = MUTED_TEXT if ok is None else (OK_COLOR if ok else NG_COLOR)
-        self.lot_status_labels[key].configure(text=text, fg=color)
+        label = self.lot_status_labels[key]
+        title = "MES Core" if key.endswith("_mes") else "조건 적용"
+        if ok is True:
+            bg = "#dcfce7"
+            fg = OK_COLOR
+            border = OK_COLOR
+        elif ok is False:
+            bg = "#fee2e2"
+            fg = NG_COLOR
+            border = NG_COLOR
+        else:
+            bg = "#f8fafc"
+            fg = MUTED_TEXT
+            border = BORDER_COLOR
+        label.configure(text=f"{title}\n{text}", fg=fg, bg=bg, highlightthickness=2, highlightbackground=border)
 
     def set_running(self, running: bool) -> None:
         self.is_running = running
@@ -1557,13 +1864,46 @@ class JiinDncManager:
             return None
         return matches[0]
 
+    def make_lot_lookup_key(self, lot: dict) -> str:
+        """조건/지그를 불러온 기준 키입니다. 이 값이 바뀌면 기존 조건을 비웁니다."""
+        return "|".join(
+            [
+                lot.get("step", "").strip(),
+                lot.get("round", "").strip(),
+                lot.get("process_code", "").strip(),
+                lot.get("manage_no", "").strip(),
+            ]
+        )
+
+    def handle_lot_key_change(self, lot_number: int) -> None:
+        entries = self.lot1_entries if lot_number == 1 else self.lot2_entries
+        loaded_key = self.lot_condition_keys.get(lot_number, "")
+        if not loaded_key:
+            return
+        current_key = self.make_lot_lookup_key(self.get_lot_data(entries))
+        if current_key == loaded_key:
+            return
+        entries["condition"].clear()
+        entries["jig"].clear()
+        self.lot_condition_keys[lot_number] = ""
+        self.set_status("dnc", f"LOT {lot_number} 기준값 변경 - 작업조건/지그 초기화", None)
+
     def load_condition_jig_for_lot(self, lot_number: int) -> bool:
         """작업일보 이력에서 선택 LOT의 작업조건/지그를 불러와 화면에 채웁니다."""
         self.save_settings_from_ui_silent()
         entries = self.lot1_entries if lot_number == 1 else self.lot2_entries
         lot = self.get_lot_data(entries)
-        if not (lot.get("manage_no") or lot.get("lot_no")):
-            messagebox.showwarning("이력 조회", f"LOT {lot_number} 관리번호 또는 LOT No를 입력한 뒤 불러오세요.")
+        missing = [
+            label
+            for key, label in (("step", "STEP"), ("round", "차수"), ("process_code", "공정코드"))
+            if not lot.get(key, "").strip()
+        ]
+        if missing:
+            messagebox.showwarning(
+                "이력 조회",
+                f"LOT {lot_number} {' / '.join(missing)} 입력 후 불러오세요.\n\n"
+                "작업조건/지그는 STEP, 차수, 공정코드가 모두 맞을 때만 불러옵니다.",
+            )
             return False
         try:
             condition, jig, source = lookup_condition_jig_from_history(self.config, lot)
@@ -1573,12 +1913,18 @@ class JiinDncManager:
         if not condition or not jig:
             messagebox.showwarning(
                 "이력 없음",
-                f"작업일보 이력에서 작업조건/지그를 찾을 수 없습니다.\nLOT {lot_number} 관리번호: {lot.get('manage_no')}\nLOT No: {lot.get('lot_no')}",
+                "STEP, 차수, 공정코드가 일치하는 작업조건/지그를 찾을 수 없습니다.\n\n"
+                f"LOT {lot_number}\n"
+                f"STEP: {lot.get('step') or '빈칸'}\n"
+                f"차수: {lot.get('round') or '빈칸'}\n"
+                f"공정코드: {lot.get('process_code') or '빈칸'}\n"
+                f"관리번호: {lot.get('manage_no') or '빈칸'}",
             )
             return False
         entries["condition"].set(condition)
         entries["jig"].set(jig)
         refreshed_lot = self.get_lot_data(entries)
+        self.lot_condition_keys[lot_number] = self.make_lot_lookup_key(refreshed_lot)
         upsert_condition_master(refreshed_lot, condition, jig, source)
         self.update_status_checks()
         self.set_status("dnc", f"LOT {lot_number} 조건/지그 불러옴: {source}", True)
@@ -1590,20 +1936,19 @@ class JiinDncManager:
             return
         if not self.save_settings_from_ui_silent():
             return
-        if not ensure_excel_file_selected(self.root, self.config, self.excel_var if hasattr(self, "excel_var") else None):
-            self.set_status("dnc", "작업일보 선택 취소", False)
-            return
         self.set_status("dnc", "입력값 확인중", None)
         common = self.get_common_data()
         lot1 = self.get_lot_data(self.lot1_entries)
         lot2_data = self.get_lot_data(self.lot2_entries)
         lot2 = lot2_data if self.lot_has_any_value(lot2_data) else None
 
-        if not lot1.get("condition") or not lot1.get("jig"):
-            if not self.load_condition_jig_for_lot(1):
-                return
-            lot1 = self.get_lot_data(self.lot1_entries)
-        if lot2 and (not lot2.get("condition") or not lot2.get("jig")):
+        # Normal DNC conditions are lookup values, not operator-entered values.
+        # Refresh them right before running so a stale condition cannot remain
+        # after STEP / round / process code was changed on screen.
+        if not self.load_condition_jig_for_lot(1):
+            return
+        lot1 = self.get_lot_data(self.lot1_entries)
+        if lot2:
             if not self.load_condition_jig_for_lot(2):
                 return
             lot2 = self.get_lot_data(self.lot2_entries)
@@ -1633,20 +1978,20 @@ class JiinDncManager:
 
     def normal_worker(self, common: dict, lots: list[dict], stack: str, model_change: bool, condition_file: Path) -> None:
         try:
-            self.set_dnc_status("작업일보 저장중")
-            _path, rows = save_normal_dnc_log(self.config, common, lots, stack, model_change)
-            self.set_dnc_status("작업일보 저장 완료")
+            self.set_dnc_status("DB 저장중")
+            log_ids = insert_normal_dnc_db(common, lots, stack, model_change)
+            self.set_dnc_status("DB 저장 완료")
             delete_existing_dnc_txt(Path(self.config["transfer_dnc_folder"]))
             copied_file = copy_dnc_file(condition_file, Path(self.config["transfer_dnc_folder"]))
             self.set_dnc_status("DNC 파일 복사 완료")
             delete_after_delay(copied_file, int(self.config["dnc_delete_seconds"]), self.set_dnc_status)
             self.set_dnc_status(f"초품 확인 대기중 ({FIRST_ARTICLE_WAIT_SECONDS}초)")
             time.sleep(FIRST_ARTICLE_WAIT_SECONDS)
-            self.root.after(0, lambda: self.finish_normal_dnc(rows, lots, stack, model_change))
+            self.root.after(0, lambda: self.finish_normal_dnc(log_ids, lots, stack, model_change))
         except Exception as exc:
             self.root.after(0, lambda error=exc: self.handle_run_error(error))
 
-    def finish_normal_dnc(self, rows: list[int], lots: list[dict], stack: str, model_change: bool) -> None:
+    def finish_normal_dnc(self, log_ids: list[int], lots: list[dict], stack: str, model_change: bool) -> None:
         try:
             while True:
                 self.frequent_check_values = [""] * 12
@@ -1684,10 +2029,11 @@ class JiinDncManager:
                     break
                 messagebox.showwarning("초품 수량 확인", message)
                 self.set_status("dnc", "초품 수량 NG", False)
-            update_normal_frequent_check_result(self.config, rows, model_change, self.frequent_check_values)
+            update_normal_frequent_check_db(log_ids, model_change, self.frequent_check_values)
             burr_ok = messagebox.askyesno("Burr 확인", "4면 Burr 이상 없습니까?")
-            update_normal_burr_result(self.config, rows, burr_ok)
-            self.set_status("dnc", "DNC 완료", True)
+            update_normal_burr_db(log_ids, burr_ok)
+            pending_count = get_unexported_kcc_pkg_count()
+            self.set_status("dnc", f"DNC 완료 - DB 저장 완료 / Excel 미반영 {pending_count}건", True)
             self.clear_normal_inputs(after_done=True)
         except Exception as exc:
             self.handle_run_error(exc)
@@ -1700,8 +2046,13 @@ class JiinDncManager:
         for entry in self.lot2_entries.values():
             entry.clear()
         self.frequent_check_values = [""] * 12
+        self.lot_condition_keys = {1: "", 2: ""}
         self.update_status_checks()
-        self.set_status("dnc", "대기중", None)
+        if after_done:
+            pending_count = get_unexported_kcc_pkg_count()
+            self.set_status("dnc", f"DNC 완료 - DB 저장 완료 / Excel 미반영 {pending_count}건", True)
+        else:
+            self.set_status("dnc", "대기중", None)
 
     def open_new_model_popup(self) -> None:
         open_new_model_popup(self)
@@ -1710,6 +2061,26 @@ class JiinDncManager:
         self.save_settings_from_ui_silent()
         if ensure_excel_file_selected(self.root, self.config, self.excel_var if hasattr(self, "excel_var") else None):
             open_log_excel(self.config)
+
+    def export_kcc_pkg_to_excel_from_ui(self) -> None:
+        """KCC_PKG.db에 저장된 미반영 이력을 Excel 작업일보로 내보냅니다."""
+        self.save_settings_from_ui_silent()
+        if not ensure_excel_file_selected(self.root, self.config, self.excel_var if hasattr(self, "excel_var") else None):
+            self.set_status("dnc", "작업일보 반영 취소", False)
+            return
+        try:
+            count = export_kcc_pkg_db_to_excel(self.config)
+        except Exception as exc:
+            messagebox.showerror("작업일보 반영 실패", str(exc))
+            self.set_status("dnc", "작업일보 반영 실패", False)
+            return
+        if count == 0:
+            messagebox.showinfo("작업일보 반영", "Excel에 반영할 DB 이력이 없습니다.")
+            self.set_status("dnc", "Excel 미반영 0건", True)
+            return
+        messagebox.showinfo("작업일보 반영 완료", f"KCC PKG 작업일보에 {count}건을 반영했습니다.")
+        pending_count = get_unexported_kcc_pkg_count()
+        self.set_status("dnc", f"작업일보 반영 완료 / Excel 미반영 {pending_count}건", True)
 
     def open_condition_master_popup(self) -> None:
         ConditionMasterPopup(self)
@@ -2023,12 +2394,14 @@ class NewModelPopup:
         self.entries: dict[str, LabeledEntry] = {}
         self.buttons: list[ttk.Button] = []
         self.selected_lot = tk.StringVar(value="lot1")
-        self.lot_drafts = {
-            "lot1": self.app.get_lot_data(self.app.lot1_entries),
-            "lot2": self.app.get_lot_data(self.app.lot2_entries),
+        empty_lot = {
+            key: ""
+            for key in ["step", "round", "manage_no", "lot_no", "qty", "process_code", "condition", "jig"]
         }
-        self.lot_drafts["lot1"]["qty"] = ""
-        self.lot_drafts["lot2"]["qty"] = ""
+        self.lot_drafts = {
+            "lot1": dict(empty_lot),
+            "lot2": dict(empty_lot),
+        }
         self.is_running = False
         self.create_ui()
         self.load_selected_lot()
@@ -2178,9 +2551,6 @@ def run_new_model_dnc(popup: NewModelPopup) -> None:
         return
     if not popup.app.save_settings_from_ui_silent():
         return
-    if not ensure_excel_file_selected(popup.window, popup.app.config, popup.app.excel_var if hasattr(popup.app, "excel_var") else None):
-        popup.dnc_label.configure(text="DNC 진행 상태: 작업일보 선택 취소", fg=NG_COLOR)
-        return
     common, lot = popup.get_data()
     ok, errors = validate_new_model_dnc(common, lot)
     if not ok:
@@ -2208,24 +2578,25 @@ def run_normal_dnc(app: JiinDncManager) -> None:
 def new_model_worker(popup: NewModelPopup, common: dict, lot: dict, leader_name: str, condition_file: Path) -> None:
     """신규 모델 DNC 백그라운드 작업입니다."""
     try:
-        popup.set_dnc_status("작업일보 저장중")
-        _path, row = save_new_model_log(popup.app.config, common, lot, leader_name)
-        popup.set_dnc_status("작업일보 저장 완료")
+        popup.set_dnc_status("DB 저장중")
+        log_id = insert_new_model_db(common, lot, leader_name)
+        popup.set_dnc_status("DB 저장 완료")
         delete_existing_dnc_txt(Path(popup.app.config["transfer_dnc_folder"]))
         copied_file = copy_dnc_file(condition_file, Path(popup.app.config["transfer_dnc_folder"]))
         popup.set_dnc_status("DNC 파일 복사 완료")
         delete_after_delay(copied_file, int(popup.app.config["dnc_delete_seconds"]), popup.set_dnc_status)
-        popup.window.after(0, lambda: finish_new_model_dnc(popup, row, lot["condition"]))
+        popup.window.after(0, lambda: finish_new_model_dnc(popup, log_id, lot["condition"]))
     except Exception as exc:
         popup.window.after(0, lambda error=exc: handle_popup_error(popup, error))
 
 
-def finish_new_model_dnc(popup: NewModelPopup, row: int, condition_name: str) -> None:
+def finish_new_model_dnc(popup: NewModelPopup, log_id: int, condition_name: str) -> None:
     """신규 모델 DNC 완료 후 초도품 확인 결과를 저장합니다."""
     try:
         first_article_ok = messagebox.askyesno("초도품 확인", "초도품 이상 없습니까?", parent=popup.window)
-        update_new_model_result(popup.app.config, row, condition_name, first_article_ok)
-        popup.dnc_label.configure(text="DNC 진행 상태: DNC 완료", fg=OK_COLOR)
+        update_new_model_db(log_id, condition_name, first_article_ok)
+        pending_count = get_unexported_kcc_pkg_count()
+        popup.dnc_label.configure(text=f"DNC 진행 상태: DNC 완료 / Excel 미반영 {pending_count}건", fg=OK_COLOR)
         popup.clear_after_done()
     except Exception as exc:
         handle_popup_error(popup, exc)
