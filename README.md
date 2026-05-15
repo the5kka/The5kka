@@ -4,5 +4,3 @@ Quick Access Searcher의 설정 탭에서 Git 저장 버튼을 누르면 아래 
 
 - `1. Quick Access Searcher`
 - `2. Codex`
-
-PC 종료 기능은 사용하지 않습니다.
