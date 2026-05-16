@@ -1,0 +1,5 @@
+python-pptx
+python-docx
+PyMuPDF
+pywin32
+pyinstaller
