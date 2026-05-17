@@ -13,7 +13,8 @@
   "dnc_delete_seconds": 10,
   "first_article_wait_seconds": 5,
   "auto_export_after_dnc": true,
-  "master_password": "1234",
+  "master_password": "1",
+  "condition_master_password": "1",
   "clear_common_after_normal": false,
   "machine": "트리밍 2호기",
   "theme": "MES 블루"

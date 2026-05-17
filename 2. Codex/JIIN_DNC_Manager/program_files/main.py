@@ -28,7 +28,8 @@ DNC_DELETE_SECONDS = 10
 FIRST_ARTICLE_WAIT_SECONDS = 5
 WORK_LOG_SCHEMA_VERSION = 2
 CONDITION_MASTER_SCHEMA_VERSION = 1
-MASTER_SETTINGS_PASSWORD = "1234"
+MASTER_SETTINGS_PASSWORD = "1"
+CONDITION_MASTER_PASSWORD = "1"
 
 APP_TITLE = "JIIN DNC Manager"
 LOG_SHEET_NAME = "KCC PKG"
@@ -298,6 +299,7 @@ def get_default_config() -> dict:
         "first_article_wait_seconds": FIRST_ARTICLE_WAIT_SECONDS,
         "auto_export_after_dnc": True,
         "master_password": MASTER_SETTINGS_PASSWORD,
+        "condition_master_password": CONDITION_MASTER_PASSWORD,
         "clear_common_after_normal": False,
         "machine": "트리밍 1호기",
         "theme": "MES 블루",
@@ -3060,6 +3062,12 @@ class JiinDncManager:
         self.set_status("excel", f"작업일보 반영 완료 / Excel 미반영 {pending_total}건", True)
 
     def open_condition_master_popup(self) -> None:
+        password = simpledialog.askstring("조건 마스터 관리", "비밀번호를 입력하세요.", show="*", parent=self.root)
+        if password is None:
+            return
+        if password != str(self.config.get("condition_master_password", CONDITION_MASTER_PASSWORD)):
+            messagebox.showwarning("비밀번호 확인", "비밀번호가 맞지 않습니다.")
+            return
         ConditionMasterPopup(self)
 
     def open_frequent_check_popup(self, mode: str, allowed_axes: list[int] | None = None) -> bool:
@@ -3402,7 +3410,8 @@ class MasterSettingsPopup:
         self.app = app
         self.window = tk.Toplevel(app.root)
         self.window.title("마스터 설정")
-        self.window.geometry("720x360")
+        self.window.geometry("760x430")
+        self.window.minsize(760, 430)
         self.window.configure(bg=APP_BG)
         self.delete_seconds_var = tk.StringVar(value=str(app.config.get("dnc_delete_seconds", DNC_DELETE_SECONDS)))
         self.first_article_wait_var = tk.StringVar(value=str(app.config.get("first_article_wait_seconds", FIRST_ARTICLE_WAIT_SECONDS)))
@@ -3435,9 +3444,13 @@ class MasterSettingsPopup:
         buttons.columnconfigure((0, 1), weight=1)
         ttk.Button(buttons, text="작업 이력 보기", command=self.app.open_work_history_popup).grid(row=0, column=0, sticky="ew", padx=4, pady=4)
         ttk.Button(buttons, text="마스터 복구", command=self.rebuild_condition_master).grid(row=0, column=1, sticky="ew", padx=4, pady=4)
-        ttk.Button(buttons, text="비밀번호 변경", command=self.change_password).grid(row=1, column=0, columnspan=2, sticky="ew", padx=4, pady=4)
+        ttk.Button(buttons, text="마스터 설정 비번 변경", command=lambda: self.change_password("master_password", "마스터 설정", MASTER_SETTINGS_PASSWORD)).grid(row=1, column=0, sticky="ew", padx=4, pady=4)
+        ttk.Button(buttons, text="조건 마스터 비번 변경", command=lambda: self.change_password("condition_master_password", "조건 마스터 관리", CONDITION_MASTER_PASSWORD)).grid(row=1, column=1, sticky="ew", padx=4, pady=4)
 
-        ttk.Button(panel, text="닫기", command=self.close).grid(row=4, column=2, sticky="ew", padx=14, pady=(18, 8))
+        bottom = ttk.Frame(panel)
+        bottom.grid(row=4, column=0, columnspan=3, sticky="ew", padx=10, pady=(22, 10))
+        bottom.columnconfigure(0, weight=1)
+        ttk.Button(bottom, text="닫기", command=self.close, width=18).grid(row=0, column=1, sticky="e")
 
     def save_master_settings(self, show_message: bool = False) -> bool:
         ok, message = validate_positive_number(self.delete_seconds_var.get(), "삭제 대기 시간", required=True)
@@ -3473,30 +3486,30 @@ class MasterSettingsPopup:
             return
         messagebox.showinfo("조건 복구 완료", f"{count}개 조건을 저장했습니다.", parent=self.window)
 
-    def change_password(self) -> None:
-        current_password = str(self.app.config.get("master_password", MASTER_SETTINGS_PASSWORD))
-        old_password = simpledialog.askstring("비밀번호 변경", "현재 비밀번호를 입력하세요.", show="*", parent=self.window)
+    def change_password(self, config_key: str, title: str, default_password: str) -> None:
+        current_password = str(self.app.config.get(config_key, default_password))
+        old_password = simpledialog.askstring(f"{title} 비밀번호 변경", "현재 비밀번호를 입력하세요.", show="*", parent=self.window)
         if old_password is None:
             return
         if old_password != current_password:
             messagebox.showwarning("비밀번호 확인", "현재 비밀번호가 맞지 않습니다.", parent=self.window)
             return
-        new_password = simpledialog.askstring("비밀번호 변경", "새 비밀번호를 입력하세요.", show="*", parent=self.window)
+        new_password = simpledialog.askstring(f"{title} 비밀번호 변경", "새 비밀번호를 입력하세요.", show="*", parent=self.window)
         if new_password is None:
             return
         new_password = new_password.strip()
         if not new_password:
             messagebox.showwarning("비밀번호 확인", "새 비밀번호를 입력하세요.", parent=self.window)
             return
-        confirm_password = simpledialog.askstring("비밀번호 변경", "새 비밀번호를 한 번 더 입력하세요.", show="*", parent=self.window)
+        confirm_password = simpledialog.askstring(f"{title} 비밀번호 변경", "새 비밀번호를 한 번 더 입력하세요.", show="*", parent=self.window)
         if confirm_password is None:
             return
         if new_password != confirm_password.strip():
             messagebox.showwarning("비밀번호 확인", "새 비밀번호가 서로 다릅니다.", parent=self.window)
             return
-        self.app.config["master_password"] = new_password
+        self.app.config[config_key] = new_password
         save_config(self.app.config)
-        messagebox.showinfo("변경 완료", "마스터 설정 비밀번호를 변경했습니다.", parent=self.window)
+        messagebox.showinfo("변경 완료", f"{title} 비밀번호를 변경했습니다.", parent=self.window)
 
 
 class ConditionMasterPopup:
