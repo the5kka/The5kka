@@ -1,0 +1,9 @@
+{
+  "config_version": 1,
+  "excel_file": "",
+  "source_dnc_folder": "C:\\Users\\오국진\\Desktop\\KCC_PKG",
+  "transfer_dnc_folder": "C:\\Users\\오국진\\Desktop\\DNC",
+  "dnc_delete_seconds": 10,
+  "clear_common_after_normal": false,
+  "theme": "MES 블루"
+}
