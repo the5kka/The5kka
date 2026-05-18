@@ -774,14 +774,66 @@ def save_workbook_safely(workbook, path: Path) -> None:
             workbook.save(path)
             return
         except PermissionError:
-            retry = messagebox.askretrycancel(
-                "작업일보 저장 대기",
-                "작업일보 Excel 파일이 열려 있어 저장할 수 없습니다.\n\n"
-                "Excel에서 작업일보를 닫은 뒤 [다시 시도]를 눌러주세요.\n"
-                "취소를 누르면 DNC 작업이 중단됩니다.",
-            )
+            retry = ask_excel_save_retry()
             if not retry:
-                raise PermissionError("작업일보 Excel 파일이 열려 있어 저장할 수 없습니다.\n파일을 닫고 다시 실행해주세요.")
+                raise PermissionError("작업일보 Excel 파일이 열려 있어 현재 저장을 중단했습니다.\n나중에 [작업일보 반영]을 눌러 다시 저장해주세요.")
+
+
+def ask_excel_save_retry() -> bool:
+    """작업일보가 열려 있을 때 현장 작업자가 이해하기 쉬운 문구로 재시도 여부를 묻습니다."""
+    dialog = tk.Toplevel()
+    dialog.title("작업일보 저장 대기")
+    dialog.resizable(False, False)
+    dialog.configure(bg=SURFACE_BG)
+    result = {"retry": False}
+
+    body = tk.Frame(dialog, bg=SURFACE_BG, padx=22, pady=18)
+    body.pack(fill=tk.BOTH, expand=True)
+    tk.Label(
+        body,
+        text="작업일보 Excel 파일이 열려 있어 저장할 수 없습니다.",
+        bg=SURFACE_BG,
+        fg=TEXT_COLOR,
+        font=("맑은 고딕", 10, "bold"),
+        anchor="w",
+        justify=tk.LEFT,
+    ).pack(fill=tk.X, pady=(0, 10))
+    tk.Label(
+        body,
+        text=(
+            "Excel에서 작업일보를 닫은 뒤 [재 시도]를 눌러주세요.\n"
+            "[다음에 저장]을 누르면 현재 저장을 중단합니다."
+        ),
+        bg=SURFACE_BG,
+        fg=TEXT_COLOR,
+        font=("맑은 고딕", 10),
+        anchor="w",
+        justify=tk.LEFT,
+    ).pack(fill=tk.X)
+
+    buttons = tk.Frame(dialog, bg=APP_BG, padx=14, pady=12)
+    buttons.pack(fill=tk.X)
+
+    def choose_retry() -> None:
+        result["retry"] = True
+        dialog.destroy()
+
+    def choose_later() -> None:
+        result["retry"] = False
+        dialog.destroy()
+
+    ttk.Button(buttons, text="재 시도", command=choose_retry, style="Primary.TButton", width=14).pack(side=tk.RIGHT, padx=(8, 0))
+    ttk.Button(buttons, text="다음에 저장", command=choose_later, width=14).pack(side=tk.RIGHT)
+    dialog.protocol("WM_DELETE_WINDOW", choose_later)
+    dialog.update_idletasks()
+    width = dialog.winfo_reqwidth()
+    height = dialog.winfo_reqheight()
+    screen_width = dialog.winfo_screenwidth()
+    screen_height = dialog.winfo_screenheight()
+    dialog.geometry(f"{width}x{height}+{(screen_width - width) // 2}+{(screen_height - height) // 2}")
+    dialog.grab_set()
+    dialog.wait_window()
+    return result["retry"]
 
 
 # ==================================================
@@ -2110,7 +2162,8 @@ class SimpleTabNotebook(ttk.Frame):
             text=text,
             bg=TAB_BG,
             fg=MUTED_TEXT,
-            padx=28,
+            width=12,
+            padx=0,
             pady=12,
             font=("맑은 고딕", 10),
             cursor="hand2",
@@ -3048,12 +3101,7 @@ class JiinDncManager:
             return
         total_count = sum(result.values())
         pending_total = sum(get_unexported_process_count(name) for name in PROCESS_NAMES)
-        incomplete_total = sum(get_incomplete_process_count(name) for name in PROCESS_NAMES)
         if total_count == 0:
-            if incomplete_total:
-                self.set_status("excel", f"Excel 반영 없음 / 미완료 {incomplete_total}건", False)
-                self.append_log(f"작업일보 반영 제외: 미완료 이력 {incomplete_total}건")
-                return
             messagebox.showinfo("작업일보 반영", "Excel에 반영할 DB 이력이 없습니다.")
             self.set_status("excel", "Excel 미반영 0건", True)
             return
@@ -3518,6 +3566,7 @@ class ConditionMasterPopup:
     def __init__(self, app: JiinDncManager):
         self.app = app
         self.records = load_condition_master()
+        self.search_var = tk.StringVar()
         self.window = tk.Toplevel(app.root)
         self.window.title("KCC PKG 조건 마스터 관리")
         self.window.geometry("980x620")
@@ -3532,6 +3581,15 @@ class ConditionMasterPopup:
         ttk.Button(top, text="선택 수정 저장", command=self.save_selected_edit).pack(side=tk.LEFT, padx=(0, 8))
         ttk.Button(top, text="선택 삭제", command=self.delete_selected_record).pack(side=tk.LEFT, padx=(0, 8))
         ttk.Button(top, text="닫기", command=self.window.destroy).pack(side=tk.RIGHT)
+
+        search = ttk.Frame(self.window, padding=(12, 0, 12, 8))
+        search.pack(fill=tk.X)
+        ttk.Label(search, text="조회").pack(side=tk.LEFT, padx=(0, 6))
+        search_entry = ttk.Entry(search, textvariable=self.search_var, style="Wide.TEntry", width=42)
+        search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
+        ttk.Button(search, text="조회", command=self.refresh_tree).pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Button(search, text="전체 보기", command=self.clear_search).pack(side=tk.LEFT)
+        self.search_var.trace_add("write", lambda *_args: self.refresh_tree())
 
         body = ttk.Frame(self.window, padding=(12, 0, 12, 8))
         body.pack(fill=tk.BOTH, expand=True)
@@ -3592,7 +3650,10 @@ class ConditionMasterPopup:
 
     def refresh_tree(self) -> None:
         self.tree.delete(*self.tree.get_children())
+        keyword = self.search_var.get().strip().lower()
         for index, record in enumerate(self.records):
+            if keyword and not self.record_matches_keyword(record, keyword):
+                continue
             self.tree.insert(
                 "",
                 "end",
@@ -3607,6 +3668,22 @@ class ConditionMasterPopup:
                     record.get("source", ""),
                 ),
             )
+
+    def clear_search(self) -> None:
+        self.search_var.set("")
+        self.refresh_tree()
+
+    def record_matches_keyword(self, record: dict, keyword: str) -> bool:
+        searchable = [
+            record.get("step", ""),
+            record.get("round", ""),
+            record.get("manage_no", ""),
+            record.get("process_code", ""),
+            record.get("condition", ""),
+            record.get("jig", ""),
+            record.get("source", ""),
+        ]
+        return any(keyword in str(value).lower() for value in searchable)
 
     def on_select(self, _event=None) -> None:
         selected = self.tree.selection()
@@ -3681,11 +3758,16 @@ class NewModelPopup:
         self.app = app
         self.window = tk.Toplevel(app.root)
         self.window.title("KCC PKG 신규 모델 검증 DNC")
-        self.window.geometry("800x560")
+        self.window.geometry("1280x680")
+        self.window.minsize(1180, 650)
         self.window.configure(bg=APP_BG)
         self.entries: dict[str, LabeledEntry] = {}
+        self.both_entries: dict[str, dict[str, LabeledEntry]] = {}
         self.buttons: list[ttk.Button] = []
+        self.mode_buttons: dict[str, tk.Button] = {}
+        self.is_loading_fields = False
         self.selected_lot = tk.StringVar(value="lot1")
+        self.run_mode = tk.StringVar(value="lot1")
         empty_lot = {
             key: ""
             for key in ["step", "round", "manage_no", "lot_no", "qty", "process_code", "condition", "jig"]
@@ -3704,10 +3786,13 @@ class NewModelPopup:
             self.window.destroy()
             return
         self.selected_lot.set(self.target_lots[0])
+        self.run_mode.set(self.target_lots[0])
         self.is_running = False
         self.create_ui()
         self.load_lot_drafts_from_main()
         self.load_selected_lot()
+        self.load_both_lot_panels()
+        self.refresh_input_mode()
         self.update_checks()
 
     def get_new_model_target_lots(self) -> list[str]:
@@ -3734,46 +3819,36 @@ class NewModelPopup:
 
         lot_select = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
         lot_select.pack(fill=tk.X, padx=14, pady=(0, 8))
-        tk.Label(lot_select, text="대상 LOT", bg=SURFACE_BG, fg=TEXT_COLOR, font=("맑은 고딕", 10, "bold")).pack(side=tk.LEFT, padx=(14, 8), pady=8)
         if len(self.target_lots) == 1:
             lot_name = "LOT 1" if self.target_lots[0] == "lot1" else "LOT 2"
             tk.Label(
                 lot_select,
-                text=f"{lot_name} 신규 조건 검증 대상",
+                text=f"{lot_name} 입력",
                 bg=SURFACE_BG,
                 fg=PRIMARY,
                 font=("맑은 고딕", 10, "bold"),
-            ).pack(side=tk.LEFT, padx=8, pady=8)
+            ).pack(side=tk.LEFT, padx=14, pady=8)
         else:
-            for lot_key in self.target_lots:
-                lot_name = "LOT 1" if lot_key == "lot1" else "LOT 2"
-                ttk.Radiobutton(
-                    lot_select,
-                    text=f"{lot_name} 신규 조건 검증",
-                    value=lot_key,
-                    variable=self.selected_lot,
-                    command=self.change_selected_lot,
-                ).pack(side=tk.LEFT, padx=8, pady=8)
+            choices = [("lot1", "LOT 1 입력"), ("lot2", "LOT 2 입력"), ("both", "LOT 1 + LOT 2")]
+            for value, label in choices:
+                self.create_mode_button(lot_select, label, value).pack(side=tk.LEFT, padx=4, pady=8)
 
-        panel = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
-        panel.pack(fill=tk.BOTH, expand=True, padx=14, pady=8)
-        fields = [
-            ("step", "STEP"),
-            ("round", "차수"),
-            ("manage_no", "관리번호"),
-            ("lot_no", "LOT No"),
-            ("qty", "매수"),
-            ("process_code", "공정코드"),
-            ("condition", "작업조건"),
-            ("jig", "지그"),
-        ]
-        for index, (key, label) in enumerate(fields):
-            entry = RoundField(panel, label) if key == "round" else LabeledEntry(panel, label, width=26)
-            entry.grid(row=index // 2, column=index % 2, sticky="ew", padx=10, pady=8)
-            panel.columnconfigure(index % 2, weight=1)
-            self.entries[key] = entry
-            if hasattr(entry, "var"):
-                entry.var.trace_add("write", lambda *_args: self.update_checks())
+        self.input_area = tk.Frame(self.window, bg=APP_BG)
+        self.input_area.pack(fill=tk.BOTH, expand=True, padx=14, pady=8)
+
+        self.single_panel = tk.Frame(self.input_area, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        self.entries = self.create_lot_input_fields(self.single_panel, columns_per_row=2)
+
+        self.both_panel = tk.Frame(self.input_area, bg=APP_BG)
+        self.both_panel.columnconfigure(0, weight=1)
+        self.both_panel.columnconfigure(1, weight=1)
+        for column, (lot_key, title_text) in enumerate((("lot1", "LOT 1 신규 입력"), ("lot2", "LOT 2 신규 입력"))):
+            lot_panel = tk.Frame(self.both_panel, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+            lot_panel.grid(row=0, column=column, sticky="nsew", padx=(0, 8) if column == 0 else (8, 0))
+            tk.Label(lot_panel, text=title_text, bg=PRIMARY_LIGHT, fg=PRIMARY, font=("맑은 고딕", 11, "bold"), height=2).pack(fill=tk.X)
+            fields_frame = tk.Frame(lot_panel, bg=SURFACE_BG)
+            fields_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+            self.both_entries[lot_key] = self.create_lot_input_fields(fields_frame, columns_per_row=1)
 
         status = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
         status.pack(fill=tk.X, padx=14, pady=8)
@@ -3797,19 +3872,85 @@ class NewModelPopup:
         self.buttons.append(button)
         return button
 
-    def save_current_lot_draft(self) -> None:
-        if not self.entries:
-            return
-        self.lot_drafts[self.selected_lot.get()] = {
-            key: self.entries[key].get()
+    def create_mode_button(self, parent, text: str, value: str) -> tk.Button:
+        button = tk.Button(
+            parent,
+            text=text,
+            command=lambda selected=value: self.set_run_mode(selected),
+            relief=tk.FLAT,
+            bd=0,
+            padx=16,
+            pady=6,
+            cursor="hand2",
+            font=("맑은 고딕", 10, "bold"),
+        )
+        self.mode_buttons[value] = button
+        self.update_mode_buttons()
+        return button
+
+    def update_mode_buttons(self) -> None:
+        for value, button in self.mode_buttons.items():
+            selected = value == self.run_mode.get()
+            button.configure(
+                bg=PRIMARY_LIGHT if selected else SURFACE_BG,
+                fg=PRIMARY if selected else TEXT_COLOR,
+                highlightthickness=1,
+                highlightbackground=PRIMARY if selected else BORDER_COLOR,
+            )
+
+    def create_lot_input_fields(self, parent, columns_per_row: int = 2) -> dict[str, LabeledEntry]:
+        fields = [
+            ("step", "STEP"),
+            ("round", "차수"),
+            ("manage_no", "관리번호"),
+            ("lot_no", "LOT No"),
+            ("qty", "매수"),
+            ("process_code", "공정코드"),
+            ("condition", "작업조건"),
+            ("jig", "지그"),
+        ]
+        entries: dict[str, LabeledEntry] = {}
+        for index, (key, label) in enumerate(fields):
+            entry = RoundField(parent, label) if key == "round" else LabeledEntry(parent, label, width=24)
+            row = index // columns_per_row
+            column = index % columns_per_row
+            entry.grid(row=row, column=column, sticky="ew", padx=10, pady=8)
+            parent.columnconfigure(column, weight=1)
+            entries[key] = entry
+            if hasattr(entry, "var"):
+                entry.var.trace_add("write", lambda *_args: self.update_checks())
+        return entries
+
+    def read_entry_group(self, entries: dict[str, LabeledEntry]) -> dict:
+        return {
+            key: entries[key].get()
             for key in ["step", "round", "manage_no", "lot_no", "qty", "process_code", "condition", "jig"]
         }
 
+    def fill_entry_group(self, entries: dict[str, LabeledEntry], draft: dict) -> None:
+        self.is_loading_fields = True
+        try:
+            for key, entry in entries.items():
+                entry.set(draft.get(key, ""))
+        finally:
+            self.is_loading_fields = False
+
+    def save_current_lot_draft(self) -> None:
+        if not self.entries or self.is_loading_fields:
+            return
+        if self.run_mode.get() == "both":
+            for lot_key, entries in self.both_entries.items():
+                self.lot_drafts[lot_key] = self.read_entry_group(entries)
+            return
+        self.lot_drafts[self.selected_lot.get()] = self.read_entry_group(self.entries)
+
     def load_selected_lot(self) -> None:
         draft = self.lot_drafts.get(self.selected_lot.get(), {})
-        for key, entry in self.entries.items():
-            entry.set(draft.get(key, ""))
-        self.update_checks()
+        self.fill_entry_group(self.entries, draft)
+
+    def load_both_lot_panels(self) -> None:
+        for lot_key, entries in self.both_entries.items():
+            self.fill_entry_group(entries, self.lot_drafts.get(lot_key, {}))
 
     def load_lot_drafts_from_main(self) -> None:
         """메인 일반 DNC 화면에 입력된 LOT 값을 신규 검증 팝업 초기값으로 가져옵니다.
@@ -3831,14 +3972,24 @@ class NewModelPopup:
             if self.app.lot_has_any_value(self.app.get_lot_data(self.app.lot2_entries)):
                 self.selected_lot.set("lot2")
 
-    def change_selected_lot(self) -> None:
-        previous = "lot2" if self.selected_lot.get() == "lot1" else "lot1"
-        if self.entries:
-            self.lot_drafts[previous] = {
-                key: self.entries[key].get()
-                for key in ["step", "round", "manage_no", "lot_no", "qty", "process_code", "condition", "jig"]
-            }
+    def set_run_mode(self, mode: str) -> None:
+        self.save_current_lot_draft()
+        self.run_mode.set(mode)
+        next_lot = "lot1" if mode == "both" else mode
+        self.selected_lot.set(next_lot)
         self.load_selected_lot()
+        self.load_both_lot_panels()
+        self.refresh_input_mode()
+
+    def refresh_input_mode(self) -> None:
+        self.update_mode_buttons()
+        if self.run_mode.get() == "both":
+            self.single_panel.pack_forget()
+            self.both_panel.pack(fill=tk.BOTH, expand=True)
+        else:
+            self.both_panel.pack_forget()
+            self.single_panel.pack(fill=tk.BOTH, expand=True)
+        self.update_checks()
 
     def get_data(self) -> tuple[dict, dict]:
         self.save_current_lot_draft()
@@ -3846,29 +3997,43 @@ class NewModelPopup:
         lot = dict(self.lot_drafts[self.selected_lot.get()])
         return common, lot
 
-    def update_checks(self) -> None:
-        _common, lot = self.get_data()
-        lot_no = lot.get("lot_no", "").strip()
-        process_code = lot.get("process_code", "").strip()
-        condition = lot.get("condition", "").strip()
-        jig = lot.get("jig", "").strip()
+    def get_run_lots(self) -> tuple[dict, list[tuple[str, dict]]]:
+        """신규 검증 실행 시 저장해야 할 LOT 목록을 반환합니다.
 
-        if not lot_no and not process_code:
+        둘 다 신규일 때만 작업자가 LOT 1만/LOT 2만/LOT 1+LOT 2 중 선택합니다.
+        """
+        self.save_current_lot_draft()
+        common = self.app.get_common_data()
+        mode = self.run_mode.get()
+        run_keys = ["lot1", "lot2"] if mode == "both" else [mode]
+        lots = [(key, dict(self.lot_drafts[key])) for key in run_keys]
+        return common, lots
+
+    def update_checks(self) -> None:
+        if self.is_loading_fields:
+            return
+        _common, lot_items = self.get_run_lots()
+        lots = [lot for _lot_key, lot in lot_items]
+
+        if all(not lot.get("lot_no", "").strip() and not lot.get("process_code", "").strip() for lot in lots):
             self.mes_label.configure(text="MES Core 일치화: 대기중", fg=MUTED_TEXT)
         else:
-            mes_ok, mes_message = get_mes_core_message(lot_no, process_code)
-            if mes_ok:
+            mes_results = [
+                get_mes_core_message(lot.get("lot_no", ""), lot.get("process_code", ""))[0]
+                for lot in lots
+            ]
+            if all(mes_results):
                 self.mes_label.configure(text="MES Core 일치화: OK", fg=OK_COLOR)
             else:
                 self.mes_label.configure(text="MES Core 일치화: NG", fg=NG_COLOR)
 
-        if not condition and not jig:
+        if all(not lot.get("condition", "").strip() and not lot.get("jig", "").strip() for lot in lots):
             self.condition_label.configure(text="조건 적용 확인: 대기중", fg=MUTED_TEXT)
         else:
-            condition_ok, condition_message = get_single_condition_message(lot)
+            condition_results = [get_single_condition_message(lot)[0] for lot in lots]
             self.condition_label.configure(
-                text=f"조건 적용 확인: {'OK' if condition_ok else 'NG'}",
-                fg=OK_COLOR if condition_ok else NG_COLOR,
+                text=f"조건 적용 확인: {'OK' if all(condition_results) else 'NG'}",
+                fg=OK_COLOR if all(condition_results) else NG_COLOR,
             )
 
     def set_running(self, running: bool) -> None:
@@ -3883,19 +4048,25 @@ class NewModelPopup:
         run_new_model_dnc(self)
 
     def clear_inputs(self) -> None:
-        for entry in self.entries.values():
-            entry.clear()
-        self.lot_drafts[self.selected_lot.get()] = {
-            key: ""
-            for key in ["step", "round", "manage_no", "lot_no", "qty", "process_code", "condition", "jig"]
-        }
+        run_keys = ["lot1", "lot2"] if self.run_mode.get() == "both" else [self.selected_lot.get()]
+        for lot_key in run_keys:
+            self.lot_drafts[lot_key] = {
+                key: ""
+                for key in ["step", "round", "manage_no", "lot_no", "qty", "process_code", "condition", "jig"]
+            }
+        self.load_selected_lot()
+        self.load_both_lot_panels()
         self.update_checks()
         self.dnc_label.configure(text="DNC 진행 상태: 대기중", fg=MUTED_TEXT)
 
     def clear_after_done(self) -> None:
-        for key in ["round", "qty", "condition", "jig"]:
-            self.entries[key].clear()
-        self.save_current_lot_draft()
+        _common, lot_items = self.get_run_lots()
+        for lot_key, draft in lot_items:
+            for key in ["round", "qty", "condition", "jig"]:
+                draft[key] = ""
+            self.lot_drafts[lot_key] = draft
+        self.load_selected_lot()
+        self.load_both_lot_panels()
         self.update_checks()
 
 
@@ -3911,24 +4082,36 @@ def run_new_model_dnc(popup: NewModelPopup) -> None:
         return
     if not popup.app.save_settings_from_ui_silent():
         return
-    common, lot = popup.get_data()
-    ok, errors = validate_new_model_dnc(common, lot)
-    if not ok:
-        messagebox.showwarning("입력값 확인", "\n".join(errors), parent=popup.window)
+    common, lot_items = popup.get_run_lots()
+    lots = [lot for _lot_key, lot in lot_items]
+    all_errors = []
+    for lot_key, lot in lot_items:
+        lot_label = "LOT 1" if lot_key == "lot1" else "LOT 2"
+        ok, errors = validate_new_model_dnc(common, lot)
+        if not ok:
+            all_errors.extend([f"{lot_label} - {error}" for error in errors])
+    condition_names = {lot.get("condition", "").strip() for lot in lots if lot.get("condition", "").strip()}
+    jig_names = {lot.get("jig", "").strip() for lot in lots if lot.get("jig", "").strip()}
+    if len(lots) > 1 and len(condition_names) > 1:
+        all_errors.append("LOT 1 / LOT 2 작업조건이 서로 다릅니다. 신규 DNC는 같은 작업조건일 때만 같이 적용할 수 있습니다.")
+    if len(lots) > 1 and len(jig_names) > 1:
+        all_errors.append("LOT 1 / LOT 2 지그가 서로 다릅니다. 신규 DNC는 같은 지그일 때만 같이 적용할 수 있습니다.")
+    if all_errors:
+        messagebox.showwarning("입력값 확인", "\n".join(all_errors), parent=popup.window)
         popup.dnc_label.configure(text="DNC 진행 상태: 입력값 NG", fg=NG_COLOR)
         return
     leader_name = simpledialog.askstring("조장명 입력", "신규 모델 검증 조장님 성함을 기재하세요", parent=popup.window)
     if not leader_name or not leader_name.strip():
         popup.dnc_label.configure(text="DNC 진행 상태: 취소", fg=MUTED_TEXT)
         return
-    condition_file = popup.app.validate_condition_file(lot["condition"])
+    condition_file = popup.app.validate_condition_file(lots[0]["condition"])
     if not condition_file:
         popup.dnc_label.configure(text="DNC 진행 상태: 조건 파일 NG", fg=NG_COLOR)
         return
-    log_app(f"신규 모델 DNC 시작: STEP={lot['step']}, LOT={lot['lot_no']}, 조건={lot['condition']}")
+    log_app(f"신규 모델 DNC 시작: {len(lots)} LOT, 조건={lots[0]['condition']}")
     popup.set_running(True)
     popup.app.set_running(True)
-    threading.Thread(target=new_model_worker, args=(popup, common, lot, leader_name.strip(), condition_file), daemon=True).start()
+    threading.Thread(target=new_model_worker, args=(popup, common, lots, leader_name.strip(), condition_file), daemon=True).start()
 
 
 def run_normal_dnc(app: JiinDncManager) -> None:
@@ -3936,33 +4119,34 @@ def run_normal_dnc(app: JiinDncManager) -> None:
     app.run_normal_dnc()
 
 
-def new_model_worker(popup: NewModelPopup, common: dict, lot: dict, leader_name: str, condition_file: Path) -> None:
+def new_model_worker(popup: NewModelPopup, common: dict, lots: list[dict], leader_name: str, condition_file: Path) -> None:
     """신규 모델 DNC 백그라운드 작업입니다."""
     try:
         popup.set_dnc_status("DB 저장중")
-        log_id = insert_new_model_db(common, lot, leader_name)
+        log_ids = [insert_new_model_db(common, lot, leader_name) for lot in lots]
         popup.set_dnc_status("DB 저장 완료")
         delete_existing_dnc_txt(Path(popup.app.config["transfer_dnc_folder"]))
         copied_file = copy_dnc_file(condition_file, Path(popup.app.config["transfer_dnc_folder"]))
         popup.set_dnc_status("DNC 파일 복사 완료")
         delete_after_delay(copied_file, int(popup.app.config["dnc_delete_seconds"]), popup.set_dnc_status)
-        popup.window.after(0, lambda: finish_new_model_dnc(popup, log_id, lot))
+        popup.window.after(0, lambda: finish_new_model_dnc(popup, log_ids, lots))
     except Exception as exc:
         popup.window.after(0, lambda error=exc: handle_popup_error(popup, error))
 
 
-def finish_new_model_dnc(popup: NewModelPopup, log_id: int, lot: dict) -> None:
+def finish_new_model_dnc(popup: NewModelPopup, log_ids: list[int], lots: list[dict]) -> None:
     """신규 모델 DNC 완료 후 초도품 확인 결과를 저장합니다."""
     try:
         first_article_ok = messagebox.askyesno("초도품 확인", "초도품 이상 없습니까?", parent=popup.window)
-        condition_name = lot["condition"]
-        update_new_model_db(log_id, condition_name, first_article_ok)
-        if first_article_ok:
-            upsert_condition_master(lot, condition_name, lot["jig"], "신규 검증 완료")
+        for log_id, lot in zip(log_ids, lots):
+            condition_name = lot["condition"]
+            update_new_model_db(log_id, condition_name, first_article_ok)
+            if first_article_ok:
+                upsert_condition_master(lot, condition_name, lot["jig"], "신규 검증 완료")
         pending_count = get_unexported_kcc_pkg_count()
         popup.dnc_label.configure(text="DNC 진행 상태: DNC 완료", fg=OK_COLOR)
         popup.excel_label.configure(text=f"작업일보 반영: Excel 미반영 {pending_count}건", fg=OK_COLOR)
-        log_app(f"신규 모델 DNC 완료: id={log_id}, Excel 미반영={pending_count}건")
+        log_app(f"신규 모델 DNC 완료: ids={log_ids}, Excel 미반영={pending_count}건")
         if popup.app.auto_export_kcc_pkg_to_excel(parent=popup.window):
             popup.excel_label.configure(text="작업일보 반영: 자동 반영 완료", fg=OK_COLOR)
         else:
