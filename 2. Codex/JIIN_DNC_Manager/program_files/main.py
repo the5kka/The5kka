@@ -10,6 +10,7 @@ import threading
 import time
 import tkinter as tk
 import traceback
+import unicodedata
 import zipfile
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -74,6 +75,8 @@ DATA_DIR = APP_DIR / "data"
 LOG_DIR = DATA_DIR / "logs"
 BACKUP_DIR = DATA_DIR / "backup"
 CONFIG_FILE = DATA_DIR / "config.json"
+LOGO_FILE = DATA_DIR / "company_logo.png"
+BUNDLED_LOGO_FILE = Path(getattr(sys, "_MEIPASS", APP_DIR)) / "company_logo.png"
 LEGACY_CONFIG_FILE = APP_DIR / "config.json"
 KCC_PKG_DATA_DIR = DATA_DIR / "KCC_PKG"
 KCC_PKG_DB_FILE = KCC_PKG_DATA_DIR / "work_log.db"
@@ -298,6 +301,8 @@ def get_default_config() -> dict:
         "dnc_delete_seconds": DNC_DELETE_SECONDS,
         "first_article_wait_seconds": FIRST_ARTICLE_WAIT_SECONDS,
         "auto_export_after_dnc": True,
+        "auto_shift_group_enabled": True,
+        "a_group_day_start_date": "2026-05-17",
         "master_password": MASTER_SETTINGS_PASSWORD,
         "condition_master_password": CONDITION_MASTER_PASSWORD,
         "clear_common_after_normal": False,
@@ -334,6 +339,26 @@ def get_work_period(now: datetime | None = None) -> dict[str, str]:
         "shift": shift,
         "period_key": f"{work_date}_{shift}",
     }
+
+
+def get_auto_shift_group(work_date_text: str, shift: str, a_group_day_start_date: str) -> str:
+    """A조 주간 시작일을 기준으로 4근 2휴 조 패턴에서 현재 근무 조를 계산합니다."""
+    try:
+        work_date = datetime.strptime(work_date_text, "%Y-%m-%d").date()
+        base_date = datetime.strptime(a_group_day_start_date, "%Y-%m-%d").date()
+    except ValueError:
+        return ""
+    day_offset = (work_date - base_date).days
+    # 각 조는 12일 주기로 주간4/휴2/야간4/휴2 패턴입니다.
+    # B조, C조는 A조 기준에서 각각 4일, 8일 밀린 패턴으로 계산합니다.
+    group_offsets = {"A": 0, "B": 4, "C": 8}
+    for group, offset in group_offsets.items():
+        cycle_day = (day_offset + offset) % 12
+        if shift == "주간" and 0 <= cycle_day <= 3:
+            return group
+        if shift == "야간" and 6 <= cycle_day <= 9:
+            return group
+    return ""
 
 
 def load_config() -> dict:
@@ -473,13 +498,18 @@ def delete_existing_dnc_txt(transfer_folder: Path) -> None:
 def search_condition_file(condition_name: str, source_folder: Path) -> list[Path]:
     """원본 DNC 폴더와 하위 폴더에서 조건명과 일치하는 txt 파일을 찾습니다."""
     source_folder.mkdir(parents=True, exist_ok=True)
-    normalized = condition_name.strip()
-    if normalized.lower().endswith(".txt"):
-        normalized = normalized[:-4]
+
+    def normalize_name(value: str) -> str:
+        text = unicodedata.normalize("NFC", str(value or "")).strip()
+        if text.lower().endswith(".txt"):
+            text = text[:-4]
+        return text.casefold()
+
+    normalized = normalize_name(condition_name)
 
     matches = []
     for file_path in source_folder.rglob("*.txt"):
-        if file_path.stem == normalized or file_path.name == condition_name.strip():
+        if normalize_name(file_path.stem) == normalized:
             matches.append(file_path)
     return matches
 
@@ -544,7 +574,7 @@ def get_mes_core_message(lot_no: str, process_code: str) -> tuple[bool, str]:
 
 def check_condition_ok(lot1: dict, lot2: dict | None = None) -> bool:
     """작업조건 KCC_ 시작 여부와 지그/2LOT 조건 일치 여부를 확인합니다."""
-    if not lot1.get("condition", "").strip().startswith("KCC_"):
+    if not lot1.get("condition", "").strip().upper().startswith("KCC_"):
         return False
     if not lot1.get("jig", "").strip():
         return False
@@ -562,7 +592,7 @@ def get_single_condition_message(lot: dict) -> tuple[bool, str]:
     jig = lot.get("jig", "").strip()
     if not condition:
         return False, "작업조건이 비어 있습니다. [작업조건 / 지그 불러오기]를 눌러주세요."
-    if not condition.startswith("KCC_"):
+    if not condition.upper().startswith("KCC_"):
         return False, f"작업조건이 KCC_로 시작하지 않습니다. 현재 작업조건: {condition}"
     if not jig:
         return False, "지그가 비어 있습니다. [작업조건 / 지그 불러오기]를 눌러주세요."
@@ -647,7 +677,7 @@ def validate_lot_required(lot: dict, lot_name: str, require_qty: bool) -> list[s
         if not ok:
             errors.append(message)
 
-    if lot.get("condition", "").strip() and not lot.get("condition", "").strip().startswith("KCC_"):
+    if lot.get("condition", "").strip() and not lot.get("condition", "").strip().upper().startswith("KCC_"):
         errors.append(f"{lot_name} 작업조건은 반드시 KCC_ 로 시작해야 합니다.")
     return errors
 
@@ -722,7 +752,14 @@ def write_process_code_backup(ws, row: int, process_code: str) -> None:
     # AD열만 프로그램 복구용 공정코드 백업 칸으로 사용합니다.
     if not ws.cell(row=6, column=30).value:
         ws.cell(row=6, column=30).value = "공정코드"
-    ws.cell(row=row, column=30).value = process_code
+    ws.cell(row=row, column=30).value = excel_upper_value(process_code)
+
+
+def excel_upper_value(value):
+    """작업일보에서 작업 P/G를 제외한 문자 값은 보기 좋게 대문자로 저장합니다."""
+    if isinstance(value, str):
+        return value.upper()
+    return value
 
 
 def ensure_log_sheet_machine_column(ws) -> None:
@@ -822,8 +859,8 @@ def ask_excel_save_retry() -> bool:
         result["retry"] = False
         dialog.destroy()
 
-    ttk.Button(buttons, text="재 시도", command=choose_retry, style="Primary.TButton", width=14).pack(side=tk.RIGHT, padx=(8, 0))
-    ttk.Button(buttons, text="다음에 저장", command=choose_later, width=14).pack(side=tk.RIGHT)
+    ttk.Button(buttons, text="재 시도", command=choose_retry, style="Primary.TButton", width=16).pack(side=tk.RIGHT, padx=(8, 0))
+    ttk.Button(buttons, text="다음에 저장", command=choose_later, width=16).pack(side=tk.RIGHT)
     dialog.protocol("WM_DELETE_WINDOW", choose_later)
     dialog.update_idletasks()
     width = dialog.winfo_reqwidth()
@@ -832,8 +869,55 @@ def ask_excel_save_retry() -> bool:
     screen_height = dialog.winfo_screenheight()
     dialog.geometry(f"{width}x{height}+{(screen_width - width) // 2}+{(screen_height - height) // 2}")
     dialog.grab_set()
+    dialog.lift()
+    dialog.focus_force()
+    dialog.attributes("-topmost", True)
     dialog.wait_window()
     return result["retry"]
+
+
+def ask_numeric_input(parent, title: str, prompt: str) -> str | None:
+    """숫자만 입력 가능한 간단한 팝업입니다."""
+    dialog = tk.Toplevel(parent)
+    dialog.title(title)
+    dialog.resizable(False, False)
+    dialog.configure(bg=SURFACE_BG)
+    result = {"value": None}
+    value_var = tk.StringVar()
+
+    body = tk.Frame(dialog, bg=SURFACE_BG, padx=18, pady=16)
+    body.pack(fill=tk.BOTH, expand=True)
+    tk.Label(body, text=prompt, bg=SURFACE_BG, fg=TEXT_COLOR, font=("맑은 고딕", 10, "bold"), anchor="w").pack(fill=tk.X, pady=(0, 8))
+
+    vcmd = (dialog.register(lambda text: text.isdigit() or text == ""), "%P")
+    entry = ttk.Entry(body, textvariable=value_var, style="Wide.TEntry", width=18, validate="key", validatecommand=vcmd)
+    entry.pack(fill=tk.X)
+
+    buttons = tk.Frame(dialog, bg=APP_BG, padx=14, pady=12)
+    buttons.pack(fill=tk.X)
+
+    def confirm() -> None:
+        value = value_var.get().strip()
+        if not value:
+            messagebox.showwarning(title, "숫자를 입력하세요.", parent=dialog)
+            return
+        result["value"] = value
+        dialog.destroy()
+
+    ttk.Button(buttons, text="확인", command=confirm, style="Primary.TButton", width=12).pack(side=tk.RIGHT, padx=(8, 0))
+    ttk.Button(buttons, text="취소", command=dialog.destroy, width=12).pack(side=tk.RIGHT)
+    dialog.transient(parent)
+    dialog.grab_set()
+    dialog.update_idletasks()
+    width = dialog.winfo_reqwidth()
+    height = dialog.winfo_reqheight()
+    x = parent.winfo_rootx() + max((parent.winfo_width() - width) // 2, 0)
+    y = parent.winfo_rooty() + max((parent.winfo_height() - height) // 2, 0)
+    dialog.geometry(f"{width}x{height}+{x}+{y}")
+    dialog.lift()
+    entry.focus_set()
+    dialog.wait_window()
+    return result["value"]
 
 
 # ==================================================
@@ -1326,7 +1410,8 @@ def write_db_log_row_to_excel(ws, row: int, log: sqlite3.Row) -> None:
         log["record_time"] or "",
     ]
     for col, value in enumerate(values, start=1):
-        ws.cell(row=row, column=col).value = value
+        # L열 작업 P/G는 조건 파일명과 같은 원문을 유지하고, 나머지 문자 값만 대문자로 정리합니다.
+        ws.cell(row=row, column=col).value = value if col == 12 else excel_upper_value(value)
     write_process_code_backup(ws, row, log["process_code"] or "")
     if log["burr_result"] == "Burr 발생":
         ws.cell(row=row, column=13).font = Font(color="FF0000", bold=False)
@@ -1789,7 +1874,8 @@ def write_common_lot_row(ws, row: int, common: dict, lot: dict, stack: str, mode
         "",
     ]
     for col, value in enumerate(values, start=1):
-        ws.cell(row=row, column=col).value = value
+        # L열 작업 P/G는 원문 그대로, 나머지는 작업일보 가독성을 위해 대문자로 저장합니다.
+        ws.cell(row=row, column=col).value = value if col == 12 else excel_upper_value(value)
     write_process_code_backup(ws, row, lot.get("process_code", ""))
     if frequent_check:
         for offset, value in enumerate(frequent_check, start=18):
@@ -1886,7 +1972,8 @@ def save_new_model_log(config: dict, common: dict, lot: dict, leader_name: str) 
             "",
         ]
         for col, value in enumerate(values, start=1):
-            ws.cell(row=row, column=col).value = value
+            # L열 작업 P/G는 원문 그대로, 나머지는 작업일보 가독성을 위해 대문자로 저장합니다.
+            ws.cell(row=row, column=col).value = value if col == 12 else excel_upper_value(value)
         write_process_code_backup(ws, row, lot.get("process_code", ""))
         save_workbook_safely(workbook, path)
     finally:
@@ -1916,10 +2003,23 @@ def update_new_model_result(config: dict, row: int, condition_name: str, first_a
 class LabeledEntry(ttk.Frame):
     """라벨과 입력칸을 한 줄로 만드는 작은 공용 위젯입니다."""
 
-    def __init__(self, parent, label: str, width: int = 18, style: str = "Wide.TEntry", readonly: bool = False, on_change=None):
+    def __init__(
+        self,
+        parent,
+        label: str,
+        width: int = 18,
+        style: str = "Wide.TEntry",
+        readonly: bool = False,
+        on_change=None,
+        uppercase: bool = False,
+        numeric_only: bool = False,
+    ):
         super().__init__(parent)
         self.var = tk.StringVar()
         self.on_change = on_change
+        self.uppercase = uppercase
+        self.numeric_only = numeric_only
+        self._normalizing = False
         ttk.Label(self, text=label, width=9, anchor="e").pack(side=tk.LEFT, padx=(0, 6))
         self.entry = ttk.Entry(
             self,
@@ -1929,15 +2029,36 @@ class LabeledEntry(ttk.Frame):
             state="readonly" if readonly else "normal",
         )
         self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        if not readonly and (uppercase or numeric_only):
+            self.var.trace_add("write", self.normalize_value)
         if on_change and not readonly:
             self.entry.bind("<KeyRelease>", lambda _event: on_change())
             self.entry.bind("<FocusOut>", lambda _event: on_change())
+
+    def normalize_value(self, *_args) -> None:
+        if self._normalizing:
+            return
+        value = self.var.get()
+        normalized = value
+        if self.numeric_only:
+            normalized = "".join(ch for ch in normalized if ch.isdigit())
+        if self.uppercase:
+            normalized = normalized.upper()
+        if normalized != value:
+            self._normalizing = True
+            self.var.set(normalized)
+            self._normalizing = False
 
     def get(self) -> str:
         return self.var.get().strip()
 
     def set(self, value: str) -> None:
-        self.var.set(value)
+        text = str(value or "")
+        if self.numeric_only:
+            text = "".join(ch for ch in text if ch.isdigit())
+        if self.uppercase:
+            text = text.upper()
+        self.var.set(text)
 
     def clear(self) -> None:
         self.var.set("")
@@ -2270,9 +2391,11 @@ class JiinDncManager:
         self.lot1_entries: dict[str, LabeledEntry] = {}
         self.lot2_entries: dict[str, LabeledEntry] = {}
         self.normal_buttons: list[ttk.Button] = []
+        self.new_model_button: ttk.Button | None = None
         self.status_labels: dict[str, tk.Label] = {}
         self.lot_status_labels: dict[str, tk.Label] = {}
         self.log_text: scrolledtext.ScrolledText | None = None
+        self.logo_image: tk.PhotoImage | None = None
         self.frequent_check_values: list[str] = [""] * 12
         self.work_axis_values: list[str] = [""] * 6
         self.lot_condition_keys: dict[int, str] = {1: "", 2: ""}
@@ -2319,7 +2442,15 @@ class JiinDncManager:
         header = ttk.Frame(self.root, style="Header.TFrame", padding=(20, 12, 20, 12))
         header.pack(fill=tk.X, padx=12, pady=(12, 0))
         ttk.Label(header, text=APP_TITLE, style="Header.TLabel").pack(side=tk.LEFT)
-        ttk.Label(header, text="KCC PKG DNC 작업 자동화", style="Header.TLabel", font=("맑은 고딕", 10)).pack(side=tk.RIGHT, pady=(8, 0))
+        logo_path = BUNDLED_LOGO_FILE if BUNDLED_LOGO_FILE.exists() else LOGO_FILE
+        if logo_path.exists():
+            try:
+                logo = tk.PhotoImage(file=str(logo_path))
+                scale = max(1, logo.height() // 54)
+                self.logo_image = logo.subsample(scale, scale)
+                tk.Label(header, image=self.logo_image, bg=SURFACE_BG, bd=0).pack(side=tk.RIGHT)
+            except tk.TclError:
+                self.logo_image = None
 
         self.notebook = SimpleTabNotebook(self.root)
         self.notebook.pack(fill=tk.BOTH, expand=True, padx=12, pady=(10, 8))
@@ -2442,7 +2573,8 @@ class JiinDncManager:
         button_panel.grid(row=0, column=1, rowspan=2, sticky="ne")
         for column in range(2):
             button_panel.columnconfigure(column, weight=1, uniform="side_buttons")
-        self.add_side_button(button_panel, "신규 모델 검증 DNC", self.open_new_model_popup, "SidePrimary.TButton").grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
+        self.new_model_button = self.add_side_button(button_panel, "신규 모델 검증 DNC", self.open_new_model_popup, "SidePrimary.TButton")
+        self.new_model_button.grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
         self.add_side_button(button_panel, "조건 마스터 관리", self.open_condition_master_popup, "SidePrimary.TButton").grid(row=0, column=1, sticky="nsew", padx=4, pady=4)
         self.add_side_button(button_panel, "작업일보 반영", self.export_kcc_pkg_to_excel_from_ui).grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
         self.add_side_button(button_panel, "작업일보 열기", self.open_log_excel_from_ui).grid(row=1, column=1, sticky="nsew", padx=4, pady=4)
@@ -2477,8 +2609,10 @@ class JiinDncManager:
                 entry = RoundField(panel, label)
             elif key in {"condition", "jig"}:
                 entry = LabeledEntry(panel, label, width=24, style="Lookup.TEntry", readonly=True)
+            elif key in {"step", "qty"}:
+                entry = LabeledEntry(panel, label, width=24, numeric_only=True)
             else:
-                entry = LabeledEntry(panel, label, width=24)
+                entry = LabeledEntry(panel, label, width=24, uppercase=True)
             entry.grid(row=row, column=col, sticky="ew", padx=10, pady=8)
             panel.columnconfigure(col, weight=1)
             target[key] = entry
@@ -2545,6 +2679,8 @@ class JiinDncManager:
         self.delete_seconds_var = tk.StringVar(value=str(self.config.get("dnc_delete_seconds", DNC_DELETE_SECONDS)))
         self.first_article_wait_var = tk.StringVar(value=str(self.config.get("first_article_wait_seconds", FIRST_ARTICLE_WAIT_SECONDS)))
         self.clear_common_var = tk.BooleanVar(value=bool(self.config.get("clear_common_after_normal", False)))
+        self.auto_shift_group_var = tk.BooleanVar(value=bool(self.config.get("auto_shift_group_enabled", True)))
+        self.a_group_day_start_var = tk.StringVar(value=str(self.config.get("a_group_day_start_date", "2026-05-17")))
 
         common_rows = [
             ("작업일보 경로", self.excel_var, lambda: select_excel_file(self.root, self.config, self.excel_var)),
@@ -2570,7 +2706,56 @@ class JiinDncManager:
             entry.bind("<FocusOut>", lambda _event: self.save_settings_from_ui_silent(show_error=False))
             ttk.Button(panel, text="폴더 선택", command=lambda name=process_name: self.select_source_folder(name), width=20).grid(row=row, column=2, padx=8, pady=5)
 
-        ttk.Button(panel, text="마스터 설정", command=self.open_master_settings_popup, style="Primary.TButton", width=20).grid(row=10, column=2, padx=8, pady=(18, 14))
+        shift_row = 9
+        ttk.Label(panel, text="근무표 자동 조", background=PRIMARY_LIGHT, foreground=PRIMARY, anchor="center", font=("맑은 고딕", 10, "bold")).grid(
+            row=shift_row, column=0, columnspan=3, sticky="ew", padx=10, pady=(16, 6)
+        )
+        auto_wrap = tk.Frame(panel, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        auto_wrap.grid(row=shift_row + 1, column=0, columnspan=3, sticky="ew", padx=10, pady=5)
+        auto_wrap.columnconfigure(2, weight=1)
+        tk.Label(auto_wrap, text="조 자동 선택", bg=SURFACE_BG, fg=TEXT_COLOR, width=16, anchor="e").grid(row=0, column=0, sticky="e", padx=(10, 6), pady=8)
+        toggle_wrap = tk.Frame(auto_wrap, bg=APP_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        toggle_wrap.grid(row=0, column=1, sticky="w", padx=(0, 18), pady=8)
+        self.auto_shift_buttons = {}
+        for value, text in ((True, "사용"), (False, "미사용")):
+            button = tk.Button(
+                toggle_wrap,
+                text=text,
+                command=lambda selected=value: self.set_auto_shift_group_enabled(selected),
+                relief=tk.FLAT,
+                bd=0,
+                width=10,
+                padx=10,
+                pady=5,
+                cursor="hand2",
+                font=("맑은 고딕", 10, "bold"),
+            )
+            button.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            self.auto_shift_buttons[value] = button
+        self.update_auto_shift_buttons()
+        tk.Label(auto_wrap, text="A조 주간 시작 기준일", bg=PRIMARY_LIGHT, fg=TEXT_COLOR, width=18, anchor="center").grid(row=0, column=2, sticky="e", padx=(0, 8), pady=8)
+        a_entry = ttk.Entry(auto_wrap, textvariable=self.a_group_day_start_var, style="Wide.TEntry", width=14)
+        a_entry.grid(row=0, column=3, sticky="w", padx=(0, 8), pady=8)
+        tk.Label(auto_wrap, text="예: 2026-05-17", bg=SURFACE_BG, fg=MUTED_TEXT).grid(row=0, column=4, sticky="w", padx=(0, 10), pady=8)
+        apply_button = tk.Button(
+            auto_wrap,
+            text="적용",
+            command=self.apply_auto_shift_settings,
+            relief=tk.FLAT,
+            bd=0,
+            width=10,
+            padx=10,
+            pady=5,
+            cursor="hand2",
+            bg=PRIMARY_LIGHT,
+            fg=PRIMARY,
+            activebackground=PRIMARY_LIGHT,
+            activeforeground=PRIMARY,
+            font=("맑은 고딕", 10, "bold"),
+        )
+        apply_button.grid(row=0, column=5, sticky="e", padx=(4, 10), pady=8)
+
+        ttk.Button(panel, text="마스터 설정", command=self.open_master_settings_popup, style="Primary.TButton", width=20).grid(row=shift_row + 2, column=2, padx=8, pady=(18, 14))
 
     def select_folder_to_var(self, var: tk.StringVar, save_after: bool = False) -> None:
         folder = filedialog.askdirectory(initialdir=var.get() or str(get_desktop_path()))
@@ -2585,6 +2770,27 @@ class JiinDncManager:
         if folder:
             var.set(folder)
             self.save_settings_from_ui_silent(show_error=False)
+
+    def set_auto_shift_group_enabled(self, enabled: bool) -> None:
+        self.auto_shift_group_var.set(enabled)
+        self.update_auto_shift_buttons()
+
+    def apply_auto_shift_settings(self) -> None:
+        if self.save_settings_from_ui_silent(show_error=True):
+            self.apply_work_time_defaults(initial=False, schedule_next=False)
+            messagebox.showinfo("근무표 자동 조", "근무표 자동 조 설정을 적용했습니다.", parent=self.root)
+
+    def update_auto_shift_buttons(self) -> None:
+        if not hasattr(self, "auto_shift_buttons"):
+            return
+        for value, button in self.auto_shift_buttons.items():
+            selected = bool(self.auto_shift_group_var.get()) == value
+            button.configure(
+                bg=PRIMARY_LIGHT if selected else SURFACE_BG,
+                fg=PRIMARY if selected else TEXT_COLOR,
+                activebackground=PRIMARY_LIGHT,
+                activeforeground=PRIMARY,
+            )
 
     def save_settings_from_ui(self) -> None:
         self.save_settings_from_ui_silent(show_error=True)
@@ -2620,8 +2826,33 @@ class JiinDncManager:
         # LOT 2는 선택 입력이므로 차수 버튼만 눌린 상태는 사용으로 보지 않습니다.
         return any(value.strip() for key, value in lot.items() if key != "round")
 
+    def has_new_model_target(self) -> bool:
+        """조건/지그가 없는 신규 LOT가 있거나 입력 LOT가 없을 때만 신규 검증을 허용합니다."""
+        used_lot_count = 0
+        for entries in (self.lot1_entries, self.lot2_entries):
+            lot = self.get_lot_data(entries)
+            if not self.lot_has_any_value(lot):
+                continue
+            used_lot_count += 1
+            condition_ok, _message = get_single_condition_message(lot)
+            if not condition_ok:
+                return True
+        return used_lot_count == 0
+
+    def update_new_model_button_state(self) -> None:
+        if self.new_model_button is None:
+            return
+        state = "normal" if self.has_new_model_target() and not self.is_running else "disabled"
+        self.new_model_button.configure(state=state)
+
     def mark_common_manual_change(self) -> None:
         self.last_common_manual_change_at = datetime.now()
+        if not self.common_entries:
+            return
+        if self.common_entries["shift_group"].get() and self.common_entries["worker"].get():
+            dnc_label = self.status_labels.get("dnc")
+            if dnc_label and "근무" in str(dnc_label.cget("text")):
+                self.set_status("dnc", "대기중", None)
 
     def get_work_prep_start(self, period: dict[str, str]) -> datetime:
         work_date = datetime.strptime(period["work_date"], "%Y-%m-%d")
@@ -2647,15 +2878,25 @@ class JiinDncManager:
         self.current_work_period_key = period["period_key"]
         self.common_entries["work_date"].set(period["work_date"])
         self.common_entries["shift"].set(period["shift"])
+        auto_group = ""
+        if self.config.get("auto_shift_group_enabled", True):
+            auto_group = get_auto_shift_group(
+                period["work_date"],
+                period["shift"],
+                str(self.config.get("a_group_day_start_date", "2026-05-17")),
+            )
+            if auto_group:
+                self.common_entries["shift_group"].set(auto_group)
         if period_changed and not prepared_next_shift:
-            self.common_entries["shift_group"].clear()
+            if not auto_group:
+                self.common_entries["shift_group"].clear()
             self.common_entries["worker"].clear()
             self.set_status("dnc", "근무 전환 확인 필요", False)
             if not initial:
                 messagebox.showwarning(
                     "근무 전환 확인",
                     "작업일자/근무가 자동 변경되었습니다.\n\n"
-                    "조와 작업자를 다시 입력해야 DNC를 진행할 수 있습니다.",
+                    "작업자를 다시 입력해야 DNC를 진행할 수 있습니다.",
                     parent=self.root,
                 )
         elif period_changed and prepared_next_shift:
@@ -2671,14 +2912,20 @@ class JiinDncManager:
         if not self.common_entries["worker"].get():
             missing.append("작업자")
         if missing:
+            shift_notice = "08:30 / 20:30 근무 전환 후에는 작업자를 다시 확인해주세요."
+            if not self.config.get("auto_shift_group_enabled", True):
+                shift_notice = "08:30 / 20:30 근무 전환 후에는 조와 작업자를 다시 확인해주세요."
             messagebox.showwarning(
                 "근무 정보 확인",
                 " / ".join(missing) + "을(를) 입력해야 DNC를 진행할 수 있습니다.\n\n"
-                "08:30 / 20:30 근무 전환 후에는 조와 작업자를 다시 확인해주세요.",
+                f"{shift_notice}",
                 parent=self.root,
             )
             self.set_status("dnc", "근무 정보 확인 필요", False)
             return False
+        dnc_label = self.status_labels.get("dnc")
+        if dnc_label and "근무" in str(dnc_label.cget("text")):
+            self.set_status("dnc", "대기중", None)
         return True
 
     def set_status(self, key: str, text: str, ok: bool | None = None) -> None:
@@ -2717,6 +2964,7 @@ class JiinDncManager:
             self.set_lot_status("lot2_mes", "대기중", None)
             self.set_lot_status("lot2_condition", "대기중", None)
             self.set_status("lot_match", "LOT 2 미사용", None)
+        self.update_new_model_button_state()
 
     def update_lot_detail_status(self, prefix: str, lot: dict, waiting_when_empty: bool) -> None:
         lot_no = lot.get("lot_no", "").strip()
@@ -2763,6 +3011,8 @@ class JiinDncManager:
         state = "disabled" if running else "normal"
         for button in self.normal_buttons:
             button.configure(state=state)
+        if not running:
+            self.update_new_model_button_state()
 
     def validate_condition_file(self, condition_name: str) -> Path | None:
         self.set_dnc_status("조건 파일 검색중")
@@ -2890,7 +3140,7 @@ class JiinDncManager:
             if not self.open_frequent_check_popup("jig"):
                 self.set_status("dnc", "하부 Pin 확인 미완료", False)
                 return
-        stack = simpledialog.askstring("Stack 수 입력", "Stack 수를 입력 하세요.", parent=self.root)
+        stack = ask_numeric_input(self.root, "Stack 수 입력", "Stack 수를 입력 하세요.")
         ok, message = validate_positive_number(stack or "", "Stack 수", required=True)
         if not ok:
             messagebox.showwarning("Stack 수 확인", message)
@@ -2928,9 +3178,12 @@ class JiinDncManager:
             self.set_dnc_status("DB 저장중")
             log_ids = insert_normal_dnc_db(common, lots, stack, model_change)
             self.set_dnc_status("DB 저장 완료")
+            log_app(f"일반 DNC 파일 처리 시작: ids={log_ids}")
             delete_existing_dnc_txt(Path(self.config["transfer_dnc_folder"]))
+            log_app("DNC 전송 폴더 기존 txt 삭제 완료")
             copied_file = copy_dnc_file(condition_file, Path(self.config["transfer_dnc_folder"]))
             self.set_dnc_status("DNC 파일 복사 완료")
+            log_app(f"DNC 파일 복사 완료: {copied_file}")
             delete_thread = threading.Thread(
                 target=delete_after_delay,
                 args=(copied_file, int(self.config["dnc_delete_seconds"]), self.set_dnc_status),
@@ -2938,9 +3191,11 @@ class JiinDncManager:
             )
             delete_thread.start()
             wait_seconds = int(self.config.get("first_article_wait_seconds", FIRST_ARTICLE_WAIT_SECONDS))
+            log_app(f"초품 확인 대기 시작: {wait_seconds}초")
             for remain in range(wait_seconds, 0, -1):
                 self.set_dnc_status(f"초품 확인 대기중 ({remain}초)")
                 time.sleep(1)
+            log_app("초품 확인 팝업 호출")
             self.root.after(0, lambda: self.finish_normal_dnc(log_ids, lots, stack, model_change, delete_thread))
         except Exception as exc:
             self.root.after(0, lambda error=exc: self.handle_run_error(error))
@@ -3029,6 +3284,13 @@ class JiinDncManager:
             self.set_status("dnc", "대기중", None)
 
     def open_new_model_popup(self) -> None:
+        if not self.has_new_model_target():
+            messagebox.showinfo(
+                "신규 모델 검증 DNC",
+                "현재 입력된 LOT는 조건/지그가 이미 조회되어 신규 검증 대상이 아닙니다.\n\n일반 DNC 실행을 사용해주세요.",
+                parent=self.root,
+            )
+            return
         if not self.ensure_work_period_ready():
             return
         open_new_model_popup(self)
@@ -3119,6 +3381,12 @@ class JiinDncManager:
         ConditionMasterPopup(self)
 
     def open_frequent_check_popup(self, mode: str, allowed_axes: list[int] | None = None) -> bool:
+        if mode == "first":
+            self.set_status("dnc", "초품 확인창 응답 대기중", None)
+        elif mode == "jig":
+            self.set_status("dnc", "하부 Pin 확인창 응답 대기중", None)
+        elif mode == "capacity":
+            self.set_status("dnc", "작업 축 수 확인창 응답 대기중", None)
         popup = FrequentCheckPopup(self, mode=mode, allowed_axes=allowed_axes)
         self.root.wait_window(popup.window)
         return popup.saved
@@ -3153,6 +3421,17 @@ class JiinDncManager:
             self.config["dnc_delete_seconds"] = int(self.delete_seconds_var.get().strip())
             self.config["first_article_wait_seconds"] = int(self.first_article_wait_var.get().strip())
             self.config["clear_common_after_normal"] = self.clear_common_var.get()
+            if hasattr(self, "auto_shift_group_var"):
+                self.config["auto_shift_group_enabled"] = bool(self.auto_shift_group_var.get())
+            if hasattr(self, "a_group_day_start_var"):
+                base_date = self.a_group_day_start_var.get().strip()
+                try:
+                    datetime.strptime(base_date, "%Y-%m-%d")
+                    self.config["a_group_day_start_date"] = base_date
+                except ValueError:
+                    if show_error:
+                        messagebox.showwarning("설정 확인", "A조 주간 시작 기준일은 YYYY-MM-DD 형식으로 입력해주세요.")
+                    return False
             if "machine" in self.common_entries:
                 self.config["machine"] = self.common_entries["machine"].get()
             save_config(self.config)
@@ -3205,7 +3484,19 @@ class FrequentCheckPopup:
         self.window.lift()
         self.window.focus_force()
         self.window.attributes("-topmost", True)
-        self.window.after(300, lambda: self.window.attributes("-topmost", False))
+        self.center_on_parent()
+
+    def center_on_parent(self) -> None:
+        self.window.update_idletasks()
+        parent_x = self.app.root.winfo_rootx()
+        parent_y = self.app.root.winfo_rooty()
+        parent_w = self.app.root.winfo_width()
+        parent_h = self.app.root.winfo_height()
+        width = self.window.winfo_width()
+        height = self.window.winfo_height()
+        x = parent_x + max((parent_w - width) // 2, 0)
+        y = parent_y + max((parent_h - height) // 2, 0)
+        self.window.geometry(f"{width}x{height}+{x}+{y}")
 
     def get_title(self) -> str:
         if self.mode == "capacity":
@@ -3758,8 +4049,8 @@ class NewModelPopup:
         self.app = app
         self.window = tk.Toplevel(app.root)
         self.window.title("KCC PKG 신규 모델 검증 DNC")
-        self.window.geometry("1280x680")
-        self.window.minsize(1180, 650)
+        self.window.geometry("1280x760")
+        self.window.minsize(1180, 730)
         self.window.configure(bg=APP_BG)
         self.entries: dict[str, LabeledEntry] = {}
         self.both_entries: dict[str, dict[str, LabeledEntry]] = {}
@@ -3796,7 +4087,7 @@ class NewModelPopup:
         self.update_checks()
 
     def get_new_model_target_lots(self) -> list[str]:
-        """메인 화면에서 조건 적용이 안 된 LOT만 신규 검증 대상으로 반환합니다."""
+        """메인 화면에서 조건/지그가 없는 LOT만 신규 검증 대상으로 반환합니다."""
         targets: list[str] = []
         used_lot_count = 0
         for lot_key, entries in (("lot1", self.app.lot1_entries), ("lot2", self.app.lot2_entries)):
@@ -3911,7 +4202,14 @@ class NewModelPopup:
         ]
         entries: dict[str, LabeledEntry] = {}
         for index, (key, label) in enumerate(fields):
-            entry = RoundField(parent, label) if key == "round" else LabeledEntry(parent, label, width=24)
+            if key == "round":
+                entry = RoundField(parent, label)
+            elif key in {"step", "qty"}:
+                entry = LabeledEntry(parent, label, width=24, numeric_only=True)
+            elif key == "condition":
+                entry = LabeledEntry(parent, label, width=24)
+            else:
+                entry = LabeledEntry(parent, label, width=24, uppercase=True)
             row = index // columns_per_row
             column = index % columns_per_row
             entry.grid(row=row, column=column, sticky="ew", padx=10, pady=8)
