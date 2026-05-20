@@ -4,6 +4,7 @@ import ctypes
 import os
 import shutil
 import sqlite3
+import socket
 import subprocess
 import sys
 import threading
@@ -31,6 +32,9 @@ WORK_LOG_SCHEMA_VERSION = 2
 CONDITION_MASTER_SCHEMA_VERSION = 1
 MASTER_SETTINGS_PASSWORD = "1"
 CONDITION_MASTER_PASSWORD = "1"
+LICENSE_PASSWORD = "1"
+DEFAULT_MASTER_PC_NAME = "KUKJIN"
+DEFAULT_ALLOWED_IP_PREFIXES = ["121.155.196"]
 
 APP_TITLE = "JIIN DNC Manager"
 LOG_SHEET_NAME = "KCC PKG"
@@ -77,6 +81,8 @@ BACKUP_DIR = DATA_DIR / "backup"
 CONFIG_FILE = DATA_DIR / "config.json"
 LOGO_FILE = DATA_DIR / "company_logo.png"
 BUNDLED_LOGO_FILE = Path(getattr(sys, "_MEIPASS", APP_DIR)) / "company_logo.png"
+KCC_LOGO_FILE = DATA_DIR / "korea_circuit_logo.png"
+BUNDLED_KCC_LOGO_FILE = Path(getattr(sys, "_MEIPASS", APP_DIR)) / "korea_circuit_logo.png"
 LEGACY_CONFIG_FILE = APP_DIR / "config.json"
 KCC_PKG_DATA_DIR = DATA_DIR / "KCC_PKG"
 KCC_PKG_DB_FILE = KCC_PKG_DATA_DIR / "work_log.db"
@@ -305,6 +311,9 @@ def get_default_config() -> dict:
         "a_group_day_start_date": "2026-05-17",
         "master_password": MASTER_SETTINGS_PASSWORD,
         "condition_master_password": CONDITION_MASTER_PASSWORD,
+        "license_password": LICENSE_PASSWORD,
+        "license_master_pc_name": DEFAULT_MASTER_PC_NAME,
+        "license_allowed_ip_prefixes": DEFAULT_ALLOWED_IP_PREFIXES[:],
         "clear_common_after_normal": False,
         "machine": "트리밍 1호기",
         "theme": "MES 블루",
@@ -318,6 +327,19 @@ def normalize_machine_name(machine: str) -> str:
         if number in text:
             return f"{number}호기"
     return text
+
+
+def get_machine_axis_count(machine: str) -> int:
+    """설비 호기별 실제 사용 가능한 축 수를 반환합니다."""
+    normalized = normalize_machine_name(machine)
+    if normalized == "3호기":
+        return 4
+    return 6
+
+
+def get_machine_allowed_axes(machine: str) -> list[int]:
+    """설비 호기 기준으로 팝업에서 클릭 가능한 축 index 목록을 반환합니다."""
+    return list(range(get_machine_axis_count(machine)))
 
 
 def get_work_period(now: datetime | None = None) -> dict[str, str]:
@@ -410,6 +432,70 @@ def save_config(config: dict) -> None:
     CONFIG_FILE.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def get_current_pc_name() -> str:
+    """Windows 장치 이름을 가져옵니다. 라이선스 마스터 PC 판단에 사용합니다."""
+    return socket.gethostname().strip().upper()
+
+
+def get_current_ip_addresses() -> list[str]:
+    """현재 PC의 IPv4 주소 목록을 빠르게 가져옵니다. 외부 인터넷 접속은 하지 않습니다."""
+    addresses: list[str] = []
+    try:
+        host_name = socket.gethostname()
+        for address in socket.gethostbyname_ex(host_name)[2]:
+            if address and "." in address and not address.startswith("127."):
+                addresses.append(address)
+    except Exception as exc:
+        log_error("라이선스 IP 조회 실패", exc)
+    return list(dict.fromkeys(addresses))
+
+
+def normalize_ip_prefixes(value) -> list[str]:
+    """config에 저장된 IP 대역을 리스트로 정리합니다."""
+    if isinstance(value, list):
+        raw_items = value
+    else:
+        raw_items = str(value or "").replace(";", "\n").replace(",", "\n").splitlines()
+    prefixes: list[str] = []
+    for item in raw_items:
+        prefix = str(item or "").strip()
+        if prefix:
+            prefixes.append(prefix)
+    return list(dict.fromkeys(prefixes))
+
+
+def is_license_allowed(config: dict) -> bool:
+    """프로그램 시작 시 PC 이름/IP 기준으로 실행 권한을 확인합니다."""
+    pc_name = get_current_pc_name()
+    master_pc_name = str(config.get("license_master_pc_name", DEFAULT_MASTER_PC_NAME)).strip().upper()
+    if master_pc_name and pc_name == master_pc_name:
+        log_app(f"라이선스 허용: 마스터 PC {pc_name}")
+        return True
+
+    allowed_prefixes = normalize_ip_prefixes(config.get("license_allowed_ip_prefixes", DEFAULT_ALLOWED_IP_PREFIXES))
+    if not allowed_prefixes:
+        log_app(f"라이선스 허용: IP 제한 없음, PC={pc_name}")
+        return True
+
+    current_ips = get_current_ip_addresses()
+    for address in current_ips:
+        if any(address.startswith(prefix) for prefix in allowed_prefixes):
+            log_app(f"라이선스 허용: PC={pc_name}, IP={address}")
+            return True
+
+    log_app(f"라이선스 불일치: PC={pc_name}, IP={current_ips}, 허용대역={allowed_prefixes}")
+    return False
+
+
+def show_license_block_message() -> None:
+    """Tk 창이 뜨기 전에도 표시할 수 있는 라이선스 차단 메시지입니다."""
+    message = "라이선스가 불일치 합니다.\n관리자에게 문의 바랍니다."
+    if sys.platform.startswith("win"):
+        ctypes.windll.user32.MessageBoxW(None, message, "라이선스 확인", 0x10)
+    else:
+        print(message)
+
+
 def select_excel_file(parent, config: dict, excel_var: tk.StringVar) -> None:
     """설정 탭에서 작업일보 Excel 파일을 선택합니다."""
     file_path = filedialog.askopenfilename(
@@ -446,8 +532,7 @@ def ensure_excel_file_selected(parent, config: dict, excel_var: tk.StringVar | N
 
     messagebox.showwarning(
         "작업일보 선택 필요",
-        "작업일보 Excel 파일이 선택되어 있지 않거나 파일을 찾을 수 없습니다.\n\n"
-        "DNC 이력을 저장할 작업일보 Excel 파일을 선택해주세요.",
+        "작업일보 파일 선택 필요",
         parent=parent,
     )
     file_path = filedialog.askopenfilename(
@@ -550,26 +635,22 @@ def check_mes_core(lot_no: str, process_code: str) -> bool:
 
 
 def get_mes_core_message(lot_no: str, process_code: str) -> tuple[bool, str]:
-    """MES Core 판정 결과와 작업자가 확인할 상세 사유를 함께 반환합니다."""
+    """MES Core 판정 결과를 작업자용 짧은 문구로 반환합니다."""
     lot_no = lot_no.strip()
     process_code = process_code.strip().upper()
     if len(lot_no) < 12:
-        return False, f"LOT No가 너무 짧습니다. 현재 LOT No: {lot_no or '빈칸'}"
+        return False, "LOT No 확인 필요"
     if len(process_code) < 2:
-        return False, f"공정코드가 너무 짧습니다. 현재 공정코드: {process_code or '빈칸'}"
+        return False, "공정코드 확인 필요"
 
     lot_core = lot_no[8:12]
     process_tail = process_code[-2:]
     if lot_core == "0000" and process_tail == "T1":
-        return True, "OK - LOT 중간 4자리 0000 / 공정코드 끝자리 T1"
+        return True, "OK"
     if lot_core == "0205" and process_tail == "11":
-        return True, "OK - LOT 중간 4자리 0205 / 공정코드 끝자리 11"
-    return (
-        False,
-        "MES Core 기준이 맞지 않습니다. "
-        f"LOT 중간 4자리: {lot_core}, 공정코드 끝 2자리: {process_tail}. "
-        "허용 기준은 0000+T1 또는 0205+11 입니다.",
-    )
+        return True, "OK"
+    log_app(f"MES Core NG: LOT={lot_no}, LOT중간4자리={lot_core}, 공정코드={process_code}, 끝2자리={process_tail}")
+    return False, "MES Core NG"
 
 
 def check_condition_ok(lot1: dict, lot2: dict | None = None) -> bool:
@@ -587,16 +668,16 @@ def check_condition_ok(lot1: dict, lot2: dict | None = None) -> bool:
 
 
 def get_single_condition_message(lot: dict) -> tuple[bool, str]:
-    """LOT 한 개의 작업조건/지그 기본 조건을 상세하게 확인합니다."""
+    """LOT 한 개의 작업조건/지그 기본 조건을 작업자용 짧은 문구로 확인합니다."""
     condition = lot.get("condition", "").strip()
     jig = lot.get("jig", "").strip()
     if not condition:
-        return False, "작업조건이 비어 있습니다. [작업조건 / 지그 불러오기]를 눌러주세요."
+        return False, "작업조건 없음"
     if not condition.upper().startswith("KCC_"):
-        return False, f"작업조건이 KCC_로 시작하지 않습니다. 현재 작업조건: {condition}"
+        return False, "작업조건 확인 필요"
     if not jig:
-        return False, "지그가 비어 있습니다. [작업조건 / 지그 불러오기]를 눌러주세요."
-    return True, "OK - 작업조건 KCC_ 시작 / 지그 입력 완료"
+        return False, "지그 없음"
+    return True, "OK"
 
 
 def get_lot_match_message(lot1: dict, lot2: dict) -> tuple[bool, str]:
@@ -631,11 +712,11 @@ def validate_positive_number(value: str, field_name: str, required: bool = True)
     """매수/Stack처럼 0보다 큰 숫자만 허용하는 필드 검증입니다."""
     text = value.strip()
     if not text:
-        return (not required, "" if not required else f"{field_name}은(는) 필수입니다.")
+        return (not required, "" if not required else f"{field_name} 입력 필요")
     if not text.isdigit():
-        return False, f"{field_name}은(는) 숫자만 입력 가능합니다."
+        return False, f"{field_name} 숫자만 입력"
     if int(text) <= 0:
-        return False, f"{field_name}은(는) 0보다 커야 합니다."
+        return False, f"{field_name} 0 초과 필요"
     return True, ""
 
 
@@ -645,7 +726,7 @@ def validate_zero_or_positive_number(value: str, field_name: str) -> tuple[bool,
     if not text:
         return True, ""
     if not text.isdigit():
-        return False, f"{field_name}은(는) 숫자만 입력 가능합니다."
+        return False, f"{field_name} 숫자만 입력"
     return True, ""
 
 
@@ -666,7 +747,7 @@ def validate_lot_required(lot: dict, lot_name: str, require_qty: bool) -> list[s
 
     for key, label in required_fields:
         if not lot.get(key, "").strip():
-            errors.append(f"{lot_name} {label}을(를) 입력하세요.")
+            errors.append(f"{lot_name} {label} 입력 필요")
 
     if require_qty:
         ok, message = validate_positive_number(lot.get("qty", ""), f"{lot_name} 매수", required=True)
@@ -678,7 +759,7 @@ def validate_lot_required(lot: dict, lot_name: str, require_qty: bool) -> list[s
             errors.append(message)
 
     if lot.get("condition", "").strip() and not lot.get("condition", "").strip().upper().startswith("KCC_"):
-        errors.append(f"{lot_name} 작업조건은 반드시 KCC_ 로 시작해야 합니다.")
+        errors.append(f"{lot_name} 작업조건 확인 필요")
     return errors
 
 
@@ -695,21 +776,21 @@ def validate_normal_dnc(common: dict, lot1: dict, lot2: dict | None) -> tuple[bo
 
     lot1_mes_ok, lot1_mes_message = get_mes_core_message(lot1.get("lot_no", ""), lot1.get("process_code", ""))
     if not lot1_mes_ok:
-        errors.append(f"LOT 1 MES Core 불일치: {lot1_mes_message}")
+        errors.append(f"LOT 1 {lot1_mes_message}")
     lot1_condition_ok, lot1_condition_message = get_single_condition_message(lot1)
     if not lot1_condition_ok:
-        errors.append(f"LOT 1 조건 적용 불가: {lot1_condition_message}")
+        errors.append(f"LOT 1 {lot1_condition_message}")
 
     if lot2:
         lot2_mes_ok, lot2_mes_message = get_mes_core_message(lot2.get("lot_no", ""), lot2.get("process_code", ""))
         if not lot2_mes_ok:
-            errors.append(f"LOT 2 MES Core 불일치: {lot2_mes_message}")
+            errors.append(f"LOT 2 {lot2_mes_message}")
         lot2_condition_ok, lot2_condition_message = get_single_condition_message(lot2)
         if not lot2_condition_ok:
-            errors.append(f"LOT 2 조건 적용 불가: {lot2_condition_message}")
+            errors.append(f"LOT 2 {lot2_condition_message}")
         lot_match_ok, lot_match_message = get_lot_match_message(lot1, lot2)
         if not lot_match_ok:
-            errors.append(f"2LOT 조건 불일치: {lot_match_message}")
+            errors.append(f"2LOT {lot_match_message}")
     return len(errors) == 0, errors
 
 
@@ -726,11 +807,27 @@ def validate_new_model_dnc(common: dict, lot: dict) -> tuple[bool, list[str]]:
         errors.append(message)
     mes_ok, mes_message = get_mes_core_message(lot.get("lot_no", ""), lot.get("process_code", ""))
     if not mes_ok:
-        errors.append(f"MES Core 불일치: {mes_message}")
+        errors.append(mes_message)
     condition_ok, condition_message = get_single_condition_message(lot)
     if not condition_ok:
-        errors.append(f"조건 적용 불가: {condition_message}")
+        errors.append(condition_message)
     return len(errors) == 0, errors
+
+
+def format_operator_errors(errors: list[str]) -> str:
+    """작업자 팝업에는 중복 없는 핵심 오류만 짧게 보여줍니다."""
+    clean_errors = []
+    for error in errors:
+        text = str(error).strip()
+        if text and text not in clean_errors:
+            clean_errors.append(text)
+    if not clean_errors:
+        return "입력값을 확인해주세요."
+    if len(clean_errors) <= 8:
+        return "\n".join(clean_errors)
+    visible = clean_errors[:8]
+    visible.append(f"외 {len(clean_errors) - 8}건 추가 확인 필요")
+    return "\n".join(visible)
 
 
 # ==================================================
@@ -782,23 +879,23 @@ def open_log_workbook(config: dict):
     """작업일보 파일과 KCC PKG 시트를 열고 기본 오류를 메시지로 변환합니다."""
     excel_file = config.get("excel_file", "")
     if not excel_file:
-        raise FileNotFoundError("작업일보 Excel 파일을 선택해주세요.")
+        raise FileNotFoundError("작업일보 파일 선택 필요")
     path = Path(excel_file)
     if not path.exists():
-        raise FileNotFoundError("작업일보 Excel 파일을 선택해주세요.")
+        raise FileNotFoundError("작업일보 파일 없음")
 
     try:
         if not zipfile.is_zipfile(path):
-            raise ValueError("작업일보 Excel 파일 형식이 손상되었거나 올바른 Excel 파일이 아닙니다.")
+            raise ValueError("작업일보 파일 오류")
         workbook = load_workbook(path, keep_vba=path.suffix.lower() == ".xlsm")
     except PermissionError:
-        raise PermissionError("작업일보 Excel 파일이 열려 있어 저장할 수 없습니다.\n파일을 닫고 다시 실행해주세요.")
+        raise PermissionError("작업일보 파일 열림")
     except zipfile.BadZipFile:
-        raise ValueError("작업일보 Excel 파일 형식이 손상되었거나 올바른 Excel 파일이 아닙니다.")
+        raise ValueError("작업일보 파일 오류")
 
     if LOG_SHEET_NAME not in workbook.sheetnames:
         workbook.close()
-        raise KeyError("작업일보 파일에 KCC PKG 시트가 없습니다.")
+        raise KeyError("KCC PKG 시트 없음")
     ws = workbook[LOG_SHEET_NAME]
     ensure_log_sheet_machine_column(ws)
     return workbook, ws, path
@@ -813,7 +910,7 @@ def save_workbook_safely(workbook, path: Path) -> None:
         except PermissionError:
             retry = ask_excel_save_retry()
             if not retry:
-                raise PermissionError("작업일보 Excel 파일이 열려 있어 현재 저장을 중단했습니다.\n나중에 [작업일보 반영]을 눌러 다시 저장해주세요.")
+                raise PermissionError("작업일보 저장 보류")
 
 
 def ask_excel_save_retry() -> bool:
@@ -828,7 +925,7 @@ def ask_excel_save_retry() -> bool:
     body.pack(fill=tk.BOTH, expand=True)
     tk.Label(
         body,
-        text="작업일보 Excel 파일이 열려 있어 저장할 수 없습니다.",
+        text="작업일보 파일 열림",
         bg=SURFACE_BG,
         fg=TEXT_COLOR,
         font=("맑은 고딕", 10, "bold"),
@@ -838,8 +935,8 @@ def ask_excel_save_retry() -> bool:
     tk.Label(
         body,
         text=(
-            "Excel에서 작업일보를 닫은 뒤 [재 시도]를 눌러주세요.\n"
-            "[다음에 저장]을 누르면 현재 저장을 중단합니다."
+            "파일을 닫고 [재 시도]\n"
+            "나중에 하려면 [다음에 저장]"
         ),
         bg=SURFACE_BG,
         fg=TEXT_COLOR,
@@ -1532,6 +1629,11 @@ def should_replace_condition_record(current: dict, incoming: dict) -> bool:
     incoming_priority = get_condition_source_priority(incoming.get("source", ""))
     if incoming_priority < current_priority:
         return False
+    if incoming_priority == current_priority:
+        current_updated = str(current.get("updated_at", ""))
+        incoming_updated = str(incoming.get("updated_at", ""))
+        if current_updated and incoming_updated and incoming_updated < current_updated:
+            return False
     return True
 
 
@@ -1719,6 +1821,9 @@ def rebuild_condition_master_from_log(config: dict) -> int:
 
     작업일보에서 사라진 모델도 조건 마스터에서는 보존합니다.
     """
+    # 작업일보에 아직 반영되지 않은 신규 검증/완료 DB 이력도 먼저 마스터에 반영합니다.
+    # 현장에서 Excel이 늦게 반영되어도 신규 검증 조건을 바로 조회할 수 있게 하기 위함입니다.
+    sync_condition_master_from_completed_logs()
     workbook, ws, _path = open_log_workbook(config)
     records = load_condition_master()
     try:
@@ -2331,11 +2436,11 @@ def validate_frequent_check_values(values: list[str], check_mode: str = "first")
     jig_count = sum(1 for value in values[6:] if value == "OK")
     if check_mode == "jig":
         if jig_count == 0:
-            return False, "하부 Pin 3개 확인은 1개 축 이상 선택해야 합니다."
-        return True, f"하부 Pin {jig_count}개 축 확인 완료"
+            return False, "하부 Pin 축 선택 필요"
+        return True, f"하부 Pin {jig_count}축 확인"
     if check_mode == "first" and first_count == 0:
-        return False, "초품 4Point 확인은 1개 축 이상 선택해야 합니다."
-    return True, f"초품 {first_count}개 축 확인 완료"
+        return False, "초품 축 선택 필요"
+    return True, f"초품 {first_count}축 확인"
 
 
 def count_frequent_check_axes(values: list[str]) -> int:
@@ -2361,11 +2466,10 @@ def validate_frequent_check_capacity(lots: list[dict], stack: str, values: list[
         shortage = total_qty - max_qty
         return (
             False,
-            "초품 확인 축 수가 LOT 총 매수보다 부족합니다.\n\n"
             f"LOT 총 매수: {total_qty}매\n"
-            f"선택 가능 수량: {axis_count}축 x {stack_count}Stack = 최대 {max_qty}매\n\n"
+            f"확인 가능: {max_qty}매\n"
             f"부족 수량: {shortage}매\n\n"
-            "초품 확인 축 수를 늘리거나 LOT 매수 / Stack 수를 확인해주세요.",
+            "초품 축 수 / Stack 수 확인 필요",
         )
     spare_qty = max_qty - total_qty
     return True, f"초품 확인 OK: LOT {total_qty}매 / {axis_count}축 x {stack_count}Stack = 최대 {max_qty}매 / 여유 {spare_qty}매"
@@ -2393,9 +2497,11 @@ class JiinDncManager:
         self.normal_buttons: list[ttk.Button] = []
         self.new_model_button: ttk.Button | None = None
         self.status_labels: dict[str, tk.Label] = {}
+        self.lot_match_frame: tk.Frame | None = None
         self.lot_status_labels: dict[str, tk.Label] = {}
         self.log_text: scrolledtext.ScrolledText | None = None
         self.logo_image: tk.PhotoImage | None = None
+        self.kcc_logo_image: tk.PhotoImage | None = None
         self.frequent_check_values: list[str] = [""] * 12
         self.work_axis_values: list[str] = [""] * 6
         self.lot_condition_keys: dict[int, str] = {1: "", 2: ""}
@@ -2478,7 +2584,16 @@ class JiinDncManager:
 
         title_wrap = tk.Frame(self.kcc_pkg_page, bg=PRIMARY_LIGHT)
         title_wrap.grid(row=0, column=0, sticky="ew", padx=14, pady=(14, 8))
-        title_wrap.columnconfigure(0, weight=1)
+        title_wrap.columnconfigure(1, weight=1)
+        kcc_logo_path = BUNDLED_KCC_LOGO_FILE if BUNDLED_KCC_LOGO_FILE.exists() else KCC_LOGO_FILE
+        if kcc_logo_path.exists():
+            try:
+                kcc_logo = tk.PhotoImage(file=str(kcc_logo_path))
+                scale = max(1, kcc_logo.height() // 32)
+                self.kcc_logo_image = kcc_logo.subsample(scale, scale)
+                tk.Label(title_wrap, image=self.kcc_logo_image, bg=PRIMARY_LIGHT, bd=0).grid(row=0, column=0, sticky="w", padx=(14, 8))
+            except tk.TclError:
+                self.kcc_logo_image = None
         title = tk.Label(
             title_wrap,
             text="KCC PKG 일반 DNC",
@@ -2487,9 +2602,9 @@ class JiinDncManager:
             font=("맑은 고딕", 14, "bold"),
             height=2,
         )
-        title.grid(row=0, column=0, sticky="ew")
+        title.grid(row=0, column=1, sticky="ew")
         title_buttons = tk.Frame(title_wrap, bg=PRIMARY_LIGHT)
-        title_buttons.grid(row=0, column=1, sticky="e", padx=(8, 10))
+        title_buttons.grid(row=0, column=2, sticky="e", padx=(8, 10))
         self.add_normal_button(title_buttons, "일반 DNC 실행", self.run_normal_dnc, "Primary.TButton").grid(row=0, column=0, padx=4, pady=4)
         self.add_normal_button(title_buttons, "입력 초기화", self.clear_normal_inputs).grid(row=0, column=1, padx=4, pady=4)
 
@@ -2539,9 +2654,9 @@ class JiinDncManager:
         status_panel.columnconfigure(1, weight=1)
         status_panel.columnconfigure(2, weight=0)
         tk.Label(status_panel, text="2LOT 조건 일치 확인", bg=PRIMARY_LIGHT, fg=PRIMARY, font=("맑은 고딕", 11, "bold"), width=22, height=2).grid(row=0, column=0, sticky="nsw")
-        match_label = tk.Label(status_panel, text="LOT 2 미사용", bg=SURFACE_BG, fg=MUTED_TEXT, font=("맑은 고딕", 12, "bold"), anchor="w")
-        match_label.grid(row=0, column=1, sticky="ew", padx=14)
-        self.status_labels["lot_match"] = match_label
+        self.lot_match_frame = tk.Frame(status_panel, bg=SURFACE_BG)
+        self.lot_match_frame.grid(row=0, column=1, sticky="ew", padx=14)
+        self.set_lot_match_segments([("LOT 2 미사용", MUTED_TEXT)])
         tk.Label(status_panel, text="DNC 진행 상태", bg=PRIMARY_LIGHT, fg=PRIMARY, font=("맑은 고딕", 11, "bold"), width=22, height=2).grid(row=1, column=0, sticky="nsw")
         dnc_label = tk.Label(status_panel, text="대기중", bg=SURFACE_BG, fg=MUTED_TEXT, font=("맑은 고딕", 12, "bold"), anchor="w")
         dnc_label.grid(row=1, column=1, columnspan=2, sticky="ew", padx=14)
@@ -2934,6 +3049,60 @@ class JiinDncManager:
         if key == "dnc":
             self.append_log(text)
 
+    def set_lot_match_segments(self, segments: list[tuple[str, str]]) -> None:
+        if self.lot_match_frame is None:
+            return
+        for child in self.lot_match_frame.winfo_children():
+            child.destroy()
+        for index, (text, color) in enumerate(segments):
+            tk.Label(
+                self.lot_match_frame,
+                text=text,
+                bg=SURFACE_BG,
+                fg=color,
+                font=("맑은 고딕", 12, "bold"),
+                anchor="w",
+            ).pack(side=tk.LEFT)
+            if index < len(segments) - 1:
+                tk.Label(
+                    self.lot_match_frame,
+                    text=" / ",
+                    bg=SURFACE_BG,
+                    fg=MUTED_TEXT,
+                    font=("맑은 고딕", 12, "bold"),
+                ).pack(side=tk.LEFT)
+
+    def get_lot_short_status(self, label: str, lot: dict) -> tuple[str, str, bool]:
+        missing = []
+        if not lot.get("condition", "").strip():
+            missing.append("조건")
+        if not lot.get("jig", "").strip():
+            missing.append("지그")
+        if missing:
+            return f"{label} {'·'.join(missing)} 없음", NG_COLOR, False
+        return f"{label} 정상", TEXT_COLOR, True
+
+    def update_lot_match_summary(self, lot1: dict, lot2: dict | None) -> None:
+        if not lot2:
+            self.set_lot_match_segments([("LOT 2 미사용", MUTED_TEXT)])
+            return
+        segments: list[tuple[str, str]] = []
+        lot1_text, lot1_color, lot1_ok = self.get_lot_short_status("LOT 1", lot1)
+        lot2_text, lot2_color, lot2_ok = self.get_lot_short_status("LOT 2", lot2)
+        segments.append((lot1_text, lot1_color))
+        segments.append((lot2_text, lot2_color))
+
+        if lot1.get("lot_no", "").strip() and lot1.get("lot_no", "").strip() == lot2.get("lot_no", "").strip():
+            segments.append(("LOT No 중복", NG_COLOR))
+        if lot1_ok and lot2_ok:
+            if lot1.get("condition", "").strip() != lot2.get("condition", "").strip():
+                segments.append(("작업조건 다름", NG_COLOR))
+            if lot1.get("jig", "").strip() != lot2.get("jig", "").strip():
+                segments.append(("지그 다름", NG_COLOR))
+            if len(segments) == 2:
+                segments.append(("조건 일치", OK_COLOR))
+        self.set_lot_match_segments(segments)
+
     def set_dnc_status(self, text: str) -> None:
         self.root.after(0, lambda: self.set_status("dnc", text, None))
 
@@ -2955,15 +3124,11 @@ class JiinDncManager:
         self.update_lot_detail_status("lot1", lot1, waiting_when_empty=True)
         if lot2_used:
             self.update_lot_detail_status("lot2", lot2, waiting_when_empty=True)
-            lot_match, lot_match_message = get_lot_match_message(lot1, lot2)
-            if lot_match:
-                self.set_status("lot_match", lot_match_message, True)
-            else:
-                self.set_status("lot_match", f"NG - {lot_match_message}", False)
+            self.update_lot_match_summary(lot1, lot2)
         else:
             self.set_lot_status("lot2_mes", "대기중", None)
             self.set_lot_status("lot2_condition", "대기중", None)
-            self.set_status("lot_match", "LOT 2 미사용", None)
+            self.update_lot_match_summary(lot1, None)
         self.update_new_model_button_state()
 
     def update_lot_detail_status(self, prefix: str, lot: dict, waiting_when_empty: bool) -> None:
@@ -3018,12 +3183,13 @@ class JiinDncManager:
         self.set_dnc_status("조건 파일 검색중")
         matches = search_condition_file(condition_name, Path(self.config["source_dnc_folder"]))
         if len(matches) == 0:
-            messagebox.showerror("조건 파일 없음", f"복사할 조건 파일이 없습니다.\n조건명: {condition_name}\n관리자 확인 필요.")
+            messagebox.showerror("조건 파일 없음", f"조건 파일 없음\n\n{condition_name}")
             return None
         if len(matches) >= 2:
+            log_app(f"동일 조건 파일 차단: 조건={condition_name}, 검색수량={len(matches)}, 파일={matches}")
             messagebox.showerror(
                 "동일 프로그램 차단",
-                f"동일 프로그램 확인으로 차단!\n관리자 확인 필요!\n조건명: {condition_name}\n검색 수량: {len(matches)}개",
+                f"동일 조건 파일 {len(matches)}개\n\n관리자 확인 필요",
             )
             return None
         return matches[0]
@@ -3064,9 +3230,8 @@ class JiinDncManager:
         ]
         if missing:
             messagebox.showwarning(
-                "이력 조회",
-                f"LOT {lot_number} {' / '.join(missing)} 입력 후 불러오세요.\n\n"
-                "작업조건/지그는 STEP, 차수, 공정코드가 모두 맞을 때만 불러옵니다.",
+                "입력 확인",
+                f"LOT {lot_number} {' / '.join(missing)} 입력 필요",
             )
             return False
         try:
@@ -3083,13 +3248,7 @@ class JiinDncManager:
             )
             messagebox.showwarning(
                 "이력 없음",
-                "STEP, 차수, 공정코드가 일치하는 작업조건/지그를 찾을 수 없습니다.\n\n"
-                f"LOT {lot_number}\n"
-                f"STEP: {lot.get('step') or '빈칸'}\n"
-                f"차수: {lot.get('round') or '빈칸'}\n"
-                f"공정코드: {lot.get('process_code') or '빈칸'}\n"
-                f"관리번호: {lot.get('manage_no') or '빈칸'}\n\n"
-                f"{detail}",
+                f"LOT {lot_number} 조건/지그 없음\n\n입력값 확인 필요",
             )
             return False
         entries["condition"].set(condition)
@@ -3129,15 +3288,17 @@ class JiinDncManager:
             lot2 = self.get_lot_data(self.lot2_entries)
         ok, errors = validate_normal_dnc(common, lot1, lot2)
         if not ok:
-            messagebox.showwarning("입력값 확인", "\n".join(errors))
+            log_app("일반 DNC 입력값 NG: " + " / ".join(errors))
+            messagebox.showwarning("입력값 확인", format_operator_errors(errors))
             self.set_status("dnc", "입력값 NG", False)
             return
         model_change = messagebox.askyesno("기종교체 확인", "기종교체 입니까?", parent=self.root)
         self.frequent_check_values = [""] * 12
         self.work_axis_values = [""] * 6
+        machine_axes = get_machine_allowed_axes(common.get("machine", ""))
         if model_change:
             self.set_status("dnc", "하부 Pin 확인 대기중", None)
-            if not self.open_frequent_check_popup("jig"):
+            if not self.open_frequent_check_popup("jig", allowed_axes=machine_axes):
                 self.set_status("dnc", "하부 Pin 확인 미완료", False)
                 return
         stack = ask_numeric_input(self.root, "Stack 수 입력", "Stack 수를 입력 하세요.")
@@ -3152,7 +3313,7 @@ class JiinDncManager:
         else:
             self.set_status("dnc", "작업 축 수 확인 대기중", None)
             self.frequent_check_values = [""] * 12
-            if not self.open_frequent_check_popup("capacity"):
+            if not self.open_frequent_check_popup("capacity", allowed_axes=machine_axes):
                 self.set_status("dnc", "작업 축 수 확인 미완료", False)
                 return
             capacity_values = self.frequent_check_values[:]
@@ -3241,11 +3402,14 @@ class JiinDncManager:
                         if value == "OK"
                     ]
                     if first_axes != allowed_axes:
+                        log_app(
+                            "초품 축 확인 NG: "
+                            f"하부Pin축={','.join(str(axis + 1) for axis in allowed_axes)}, "
+                            f"초품축={','.join(str(axis + 1) for axis in first_axes) or '없음'}"
+                        )
                         messagebox.showwarning(
                             "초품 4Point 확인",
-                            "하부 Pin 확인 축과 초품 확인 축이 같아야 합니다.\n\n"
-                            f"하부 Pin 확인 축: {', '.join(str(axis + 1) + '축' for axis in allowed_axes)}\n"
-                            f"초품 확인 축: {', '.join(str(axis + 1) + '축' for axis in first_axes) or '없음'}",
+                            "하부 Pin 축과 초품 축이 다릅니다.\n\n축 선택 확인 필요",
                         )
                         self.set_status("dnc", "초품 축 확인 NG", False)
                         continue
@@ -3321,10 +3485,8 @@ class JiinDncManager:
             self.set_status("excel", f"자동 반영 실패 / Excel 미반영 {pending_after}건", False)
             self.append_log(f"작업일보 자동 반영 실패: {exc}")
             messagebox.showwarning(
-                "작업일보 자동 반영 실패",
-                "DNC 이력은 DB에 저장되어 있습니다.\n\n"
-                "작업일보 Excel 파일이 열려 있거나 경로가 맞지 않아 자동 반영하지 못했습니다.\n"
-                "Excel 파일을 닫은 뒤 [작업일보 반영]을 눌러주세요.",
+                "작업일보 반영 실패",
+                "DB 저장 완료\n\n나중에 [작업일보 반영]",
                 parent=parent or self.root,
             )
             return False
@@ -3342,19 +3504,19 @@ class JiinDncManager:
         try:
             result = export_all_processes_to_excel(self.config)
         except FileNotFoundError as exc:
-            messagebox.showerror("작업일보 파일 없음", str(exc))
+            messagebox.showerror("작업일보 반영 실패", str(exc))
             self.set_status("excel", "작업일보 파일 없음", False)
             return
         except PermissionError as exc:
-            messagebox.showerror("작업일보 저장 실패", str(exc))
+            messagebox.showerror("작업일보 반영 실패", str(exc))
             self.set_status("excel", "작업일보 저장 실패", False)
             return
         except KeyError as exc:
-            messagebox.showerror("작업일보 시트 없음", str(exc))
+            messagebox.showerror("작업일보 반영 실패", str(exc))
             self.set_status("excel", "작업일보 시트 없음", False)
             return
         except ValueError as exc:
-            messagebox.showerror("작업일보 파일 오류", str(exc))
+            messagebox.showerror("작업일보 반영 실패", str(exc))
             self.set_status("excel", "작업일보 파일 오류", False)
             return
         except Exception as exc:
@@ -3364,11 +3526,11 @@ class JiinDncManager:
         total_count = sum(result.values())
         pending_total = sum(get_unexported_process_count(name) for name in PROCESS_NAMES)
         if total_count == 0:
-            messagebox.showinfo("작업일보 반영", "Excel에 반영할 DB 이력이 없습니다.")
+            messagebox.showinfo("작업일보 반영", "반영할 이력 없음")
             self.set_status("excel", "Excel 미반영 0건", True)
             return
         detail = "\n".join(f"{name}: {count}건" for name, count in result.items() if count)
-        messagebox.showinfo("작업일보 반영 완료", f"작업일보에 총 {total_count}건을 반영했습니다.\n\n{detail}")
+        messagebox.showinfo("작업일보 반영 완료", f"{total_count}건 반영 완료")
         self.set_status("excel", f"작업일보 반영 완료 / Excel 미반영 {pending_total}건", True)
 
     def open_condition_master_popup(self) -> None:
@@ -3473,9 +3635,11 @@ class FrequentCheckPopup:
         if self.mode == "jig":
             self.values[:6] = [""] * 6
         self.buttons: list[tk.Button] = []
+        self.visible_axes = self.get_visible_axes()
         self.window = tk.Toplevel(app.root)
         self.window.title(self.get_title())
-        self.window.geometry("560x300")
+        width = 560 if len(self.visible_axes) >= 6 else 420
+        self.window.geometry(f"{width}x300")
         self.window.configure(bg=APP_BG)
         self.window.resizable(False, False)
         self.create_ui()
@@ -3501,10 +3665,15 @@ class FrequentCheckPopup:
     def get_title(self) -> str:
         if self.mode == "capacity":
             return "작업 축 수 확인"
-        return "초품 4Point 확인" if self.mode == "first" else "하부 Pin 3개 확인"
+        return "초품 4Point 확인" if self.mode == "first" else "하부 Pin 4개 확인"
 
     def get_value_index(self, axis_index: int) -> int:
         return axis_index if self.mode in ("first", "capacity") else axis_index + 6
+
+    def get_visible_axes(self) -> list[int]:
+        if self.allowed_axes is None:
+            return list(range(6))
+        return [axis_index for axis_index in range(6) if axis_index in self.allowed_axes]
 
     def create_ui(self) -> None:
         title = tk.Label(
@@ -3520,29 +3689,28 @@ class FrequentCheckPopup:
         body = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
         body.pack(fill=tk.BOTH, expand=True, padx=14, pady=8)
 
-        tk.Label(body, text=self.get_title(), bg="#d99a9a", fg="#111827", font=("맑은 고딕", 10, "bold"), height=2).grid(row=0, column=0, columnspan=6, sticky="ew")
+        tk.Label(body, text=self.get_title(), bg="#d99a9a", fg="#111827", font=("맑은 고딕", 10, "bold"), height=2).grid(row=0, column=0, columnspan=len(self.visible_axes), sticky="ew")
 
-        for axis_index, label in enumerate(self.LABELS[:6]):
+        for column_index, axis_index in enumerate(self.visible_axes):
+            label = self.LABELS[axis_index]
             value_index = self.get_value_index(axis_index)
-            disabled_axis = self.allowed_axes is not None and axis_index not in self.allowed_axes
             button = tk.Button(
                 body,
-                text=f"{label}\n{'미사용' if disabled_axis else ('OK' if self.values[value_index] == 'OK' else '클릭')}",
+                text=f"{label}\n{'√' if self.values[value_index] == 'OK' and self.mode in ('jig', 'capacity') else ('OK' if self.values[value_index] == 'OK' else '클릭')}",
                 command=lambda i=axis_index: self.toggle(i),
-                bg="#f3f4f6" if disabled_axis else (self.get_ok_color() if self.values[value_index] == "OK" else SURFACE_BG),
-                fg=MUTED_TEXT if disabled_axis else ("#ffffff" if self.values[value_index] == "OK" else TEXT_COLOR),
+                bg=self.get_ok_color() if self.values[value_index] == "OK" else SURFACE_BG,
+                fg="#ffffff" if self.values[value_index] == "OK" else TEXT_COLOR,
                 relief=tk.SOLID,
                 bd=1,
                 width=8,
                 height=3,
-                cursor="arrow" if disabled_axis else "hand2",
+                cursor="hand2",
                 font=("맑은 고딕", 9, "bold"),
                 highlightthickness=1,
                 highlightbackground="#cbd5e1",
-                state=tk.DISABLED if disabled_axis else tk.NORMAL,
             )
-            button.grid(row=1, column=axis_index, sticky="nsew", padx=2, pady=8)
-            body.columnconfigure(axis_index, weight=1)
+            button.grid(row=1, column=column_index, sticky="nsew", padx=2, pady=8)
+            body.columnconfigure(column_index, weight=1)
             self.buttons.append(button)
 
         bottom = ttk.Frame(self.window, padding=(14, 4, 14, 14))
@@ -3559,25 +3727,26 @@ class FrequentCheckPopup:
         self.refresh_button(axis_index)
 
     def refresh_button(self, axis_index: int) -> None:
-        if self.allowed_axes is not None and axis_index not in self.allowed_axes:
-            self.buttons[axis_index].configure(text=f"{self.LABELS[axis_index]}\n미사용", bg="#f3f4f6", fg=MUTED_TEXT)
+        if axis_index not in self.visible_axes:
             return
+        button_index = self.visible_axes.index(axis_index)
         value_index = self.get_value_index(axis_index)
         ok = self.values[value_index] == "OK"
-        self.buttons[axis_index].configure(
-            text=f"{self.LABELS[axis_index]}\n{'OK' if ok else '클릭'}",
+        ok_text = "√" if self.mode in ("jig", "capacity") else "OK"
+        self.buttons[button_index].configure(
+            text=f"{self.LABELS[axis_index]}\n{ok_text if ok else '클릭'}",
             bg=self.get_ok_color() if ok else SURFACE_BG,
             fg="#ffffff" if ok else TEXT_COLOR,
         )
 
     def get_ok_color(self) -> str:
-        return self.FIRST_OK_COLOR if self.mode in ("first", "capacity") else self.JIG_OK_COLOR
+        return self.FIRST_OK_COLOR if self.mode == "first" else self.JIG_OK_COLOR
 
     def clear(self) -> None:
         target_range = range(0, 6) if self.mode in ("first", "capacity") else range(6, 12)
         for index in target_range:
             self.values[index] = ""
-        for axis_index in range(6):
+        for axis_index in self.visible_axes:
             self.refresh_button(axis_index)
 
     def save(self) -> None:
@@ -3785,6 +3954,19 @@ class MasterSettingsPopup:
         ttk.Button(buttons, text="마스터 복구", command=self.rebuild_condition_master).grid(row=0, column=1, sticky="ew", padx=4, pady=4)
         ttk.Button(buttons, text="마스터 설정 비번 변경", command=lambda: self.change_password("master_password", "마스터 설정", MASTER_SETTINGS_PASSWORD)).grid(row=1, column=0, sticky="ew", padx=4, pady=4)
         ttk.Button(buttons, text="조건 마스터 비번 변경", command=lambda: self.change_password("condition_master_password", "조건 마스터 관리", CONDITION_MASTER_PASSWORD)).grid(row=1, column=1, sticky="ew", padx=4, pady=4)
+        tk.Button(
+            buttons,
+            text="라이선스 관리",
+            command=self.open_license_settings,
+            bg=NG_COLOR,
+            fg="#ffffff",
+            activebackground="#991b1b",
+            activeforeground="#ffffff",
+            relief=tk.SOLID,
+            bd=1,
+            font=("맑은 고딕", 10, "bold"),
+            cursor="hand2",
+        ).grid(row=2, column=0, columnspan=2, sticky="ew", padx=4, pady=(10, 4), ipady=6)
 
         bottom = ttk.Frame(panel)
         bottom.grid(row=4, column=0, columnspan=3, sticky="ew", padx=10, pady=(22, 10))
@@ -3825,6 +4007,15 @@ class MasterSettingsPopup:
             return
         messagebox.showinfo("조건 복구 완료", f"{count}개 조건을 저장했습니다.", parent=self.window)
 
+    def open_license_settings(self) -> None:
+        password = simpledialog.askstring("라이선스 관리", "라이선스 비밀번호를 입력하세요.", show="*", parent=self.window)
+        if password is None:
+            return
+        if password != str(self.app.config.get("license_password", LICENSE_PASSWORD)):
+            messagebox.showwarning("라이선스 관리", "비밀번호가 맞지 않습니다.", parent=self.window)
+            return
+        LicenseSettingsPopup(self.app, self.window)
+
     def change_password(self, config_key: str, title: str, default_password: str) -> None:
         current_password = str(self.app.config.get(config_key, default_password))
         old_password = simpledialog.askstring(f"{title} 비밀번호 변경", "현재 비밀번호를 입력하세요.", show="*", parent=self.window)
@@ -3849,6 +4040,100 @@ class MasterSettingsPopup:
         self.app.config[config_key] = new_password
         save_config(self.app.config)
         messagebox.showinfo("변경 완료", f"{title} 비밀번호를 변경했습니다.", parent=self.window)
+
+
+class LicenseSettingsPopup:
+    """마스터 PC와 허용 IP 대역을 관리하는 관리자 전용 창입니다."""
+
+    def __init__(self, app: JiinDncManager, parent: tk.Toplevel):
+        self.app = app
+        self.parent = parent
+        self.window = tk.Toplevel(parent)
+        self.window.title("라이선스 관리")
+        self.window.geometry("700x460")
+        self.window.minsize(700, 460)
+        self.window.configure(bg=APP_BG)
+        self.master_pc_var = tk.StringVar(value=str(app.config.get("license_master_pc_name", DEFAULT_MASTER_PC_NAME)))
+        self.create_ui()
+        self.window.transient(parent)
+        self.window.grab_set()
+
+    def create_ui(self) -> None:
+        panel = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground=NG_COLOR, bd=0)
+        panel.pack(fill=tk.BOTH, expand=True, padx=14, pady=14)
+        panel.columnconfigure(1, weight=1)
+        tk.Label(
+            panel,
+            text="라이선스 관리",
+            bg=NG_COLOR,
+            fg="#ffffff",
+            font=("맑은 고딕", 14, "bold"),
+            height=2,
+        ).grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 14))
+
+        ttk.Label(panel, text="현재 PC 이름", background=SURFACE_BG, width=16).grid(row=1, column=0, sticky="e", padx=10, pady=7)
+        ttk.Label(panel, text=get_current_pc_name(), background=SURFACE_BG, foreground=PRIMARY, font=("맑은 고딕", 10, "bold")).grid(row=1, column=1, sticky="w", padx=8, pady=7)
+
+        ttk.Label(panel, text="현재 IP", background=SURFACE_BG, width=16).grid(row=2, column=0, sticky="e", padx=10, pady=7)
+        current_ips = ", ".join(get_current_ip_addresses()) or "확인 안됨"
+        ttk.Label(panel, text=current_ips, background=SURFACE_BG, foreground=MUTED_TEXT).grid(row=2, column=1, sticky="w", padx=8, pady=7)
+
+        ttk.Label(panel, text="마스터 PC 이름", background=SURFACE_BG, width=16).grid(row=3, column=0, sticky="e", padx=10, pady=7)
+        ttk.Entry(panel, textvariable=self.master_pc_var, style="Wide.TEntry").grid(row=3, column=1, sticky="ew", padx=8, pady=7)
+        ttk.Label(panel, text="예: KUKJIN", background=SURFACE_BG, foreground=MUTED_TEXT).grid(row=3, column=2, sticky="w", padx=(0, 10), pady=7)
+
+        ttk.Label(panel, text="허용 IP 대역", background=SURFACE_BG, width=16).grid(row=4, column=0, sticky="ne", padx=10, pady=7)
+        self.ip_text = tk.Text(panel, height=7, font=("맑은 고딕", 10), relief=tk.SOLID, bd=1, highlightthickness=0)
+        self.ip_text.grid(row=4, column=1, sticky="nsew", padx=8, pady=7)
+        panel.rowconfigure(4, weight=1)
+        prefixes = normalize_ip_prefixes(self.app.config.get("license_allowed_ip_prefixes", DEFAULT_ALLOWED_IP_PREFIXES))
+        self.ip_text.insert("1.0", "\n".join(prefixes))
+        ttk.Label(
+            panel,
+            text="한 줄에 하나씩\n빈칸이면 모든 PC 허용",
+            background=SURFACE_BG,
+            foreground=MUTED_TEXT,
+        ).grid(row=4, column=2, sticky="nw", padx=(0, 10), pady=7)
+
+        buttons = ttk.Frame(panel)
+        buttons.grid(row=5, column=0, columnspan=3, sticky="ew", padx=10, pady=(14, 8))
+        buttons.columnconfigure((0, 1, 2), weight=1)
+        ttk.Button(buttons, text="저장", command=self.save).grid(row=0, column=0, sticky="ew", padx=4)
+        ttk.Button(buttons, text="라이선스 비번 변경", command=self.change_license_password).grid(row=0, column=1, sticky="ew", padx=4)
+        ttk.Button(buttons, text="닫기", command=self.window.destroy).grid(row=0, column=2, sticky="ew", padx=4)
+
+    def save(self) -> None:
+        master_pc = self.master_pc_var.get().strip().upper()
+        ip_prefixes = normalize_ip_prefixes(self.ip_text.get("1.0", tk.END))
+        self.app.config["license_master_pc_name"] = master_pc
+        self.app.config["license_allowed_ip_prefixes"] = ip_prefixes
+        save_config(self.app.config)
+        messagebox.showinfo("저장 완료", "라이선스 설정을 저장했습니다.", parent=self.window)
+
+    def change_license_password(self) -> None:
+        current_password = str(self.app.config.get("license_password", LICENSE_PASSWORD))
+        old_password = simpledialog.askstring("라이선스 비번 변경", "현재 비밀번호를 입력하세요.", show="*", parent=self.window)
+        if old_password is None:
+            return
+        if old_password != current_password:
+            messagebox.showwarning("라이선스 비번 변경", "현재 비밀번호가 맞지 않습니다.", parent=self.window)
+            return
+        new_password = simpledialog.askstring("라이선스 비번 변경", "새 비밀번호를 입력하세요.", show="*", parent=self.window)
+        if new_password is None:
+            return
+        new_password = new_password.strip()
+        if not new_password:
+            messagebox.showwarning("라이선스 비번 변경", "새 비밀번호를 입력하세요.", parent=self.window)
+            return
+        confirm_password = simpledialog.askstring("라이선스 비번 변경", "새 비밀번호를 한 번 더 입력하세요.", show="*", parent=self.window)
+        if confirm_password is None:
+            return
+        if new_password != confirm_password.strip():
+            messagebox.showwarning("라이선스 비번 변경", "새 비밀번호가 서로 다릅니다.", parent=self.window)
+            return
+        self.app.config["license_password"] = new_password
+        save_config(self.app.config)
+        messagebox.showinfo("변경 완료", "라이선스 비밀번호를 변경했습니다.", parent=self.window)
 
 
 class ConditionMasterPopup:
@@ -4391,11 +4676,12 @@ def run_new_model_dnc(popup: NewModelPopup) -> None:
     condition_names = {lot.get("condition", "").strip() for lot in lots if lot.get("condition", "").strip()}
     jig_names = {lot.get("jig", "").strip() for lot in lots if lot.get("jig", "").strip()}
     if len(lots) > 1 and len(condition_names) > 1:
-        all_errors.append("LOT 1 / LOT 2 작업조건이 서로 다릅니다. 신규 DNC는 같은 작업조건일 때만 같이 적용할 수 있습니다.")
+        all_errors.append("LOT 1 / LOT 2 작업조건 다름")
     if len(lots) > 1 and len(jig_names) > 1:
-        all_errors.append("LOT 1 / LOT 2 지그가 서로 다릅니다. 신규 DNC는 같은 지그일 때만 같이 적용할 수 있습니다.")
+        all_errors.append("LOT 1 / LOT 2 지그 다름")
     if all_errors:
-        messagebox.showwarning("입력값 확인", "\n".join(all_errors), parent=popup.window)
+        log_app("신규 모델 DNC 입력값 NG: " + " / ".join(all_errors))
+        messagebox.showwarning("입력값 확인", format_operator_errors(all_errors), parent=popup.window)
         popup.dnc_label.configure(text="DNC 진행 상태: 입력값 NG", fg=NG_COLOR)
         return
     leader_name = simpledialog.askstring("조장명 입력", "신규 모델 검증 조장님 성함을 기재하세요", parent=popup.window)
@@ -4467,6 +4753,10 @@ def handle_popup_error(popup: NewModelPopup, exc: Exception) -> None:
 
 def main() -> None:
     if not acquire_single_instance_lock():
+        return
+    config = load_config()
+    if not is_license_allowed(config):
+        show_license_block_message()
         return
     root = tk.Tk()
     app = JiinDncManager(root)
