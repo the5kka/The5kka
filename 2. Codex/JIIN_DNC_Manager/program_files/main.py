@@ -20,6 +20,12 @@ from tkinter import filedialog, messagebox, scrolledtext, simpledialog, ttk
 from openpyxl import load_workbook
 from openpyxl.styles import Font
 
+from dnc_rules import (
+    format_duplicate_condition_files,
+    search_condition_file_exact_txt,
+    validate_process_paths,
+)
+
 
 # ==================================================
 # 기본 설정
@@ -530,11 +536,7 @@ def ensure_excel_file_selected(parent, config: dict, excel_var: tk.StringVar | N
         save_config(config)
         return True
 
-    messagebox.showwarning(
-        "작업일보 선택 필요",
-        "작업일보 파일 선택 필요",
-        parent=parent,
-    )
+    show_operator_alert(parent, "작업일보 확인", "작업일보 파일 선택 필요")
     file_path = filedialog.askopenfilename(
         parent=parent,
         title="작업일보 Excel 파일 선택",
@@ -581,22 +583,8 @@ def delete_existing_dnc_txt(transfer_folder: Path) -> None:
 
 
 def search_condition_file(condition_name: str, source_folder: Path) -> list[Path]:
-    """원본 DNC 폴더와 하위 폴더에서 조건명과 일치하는 txt 파일을 찾습니다."""
-    source_folder.mkdir(parents=True, exist_ok=True)
-
-    def normalize_name(value: str) -> str:
-        text = unicodedata.normalize("NFC", str(value or "")).strip()
-        if text.lower().endswith(".txt"):
-            text = text[:-4]
-        return text.casefold()
-
-    normalized = normalize_name(condition_name)
-
-    matches = []
-    for file_path in source_folder.rglob("*.txt"):
-        if normalize_name(file_path.stem) == normalized:
-            matches.append(file_path)
-    return matches
+    """원본 DNC 폴더와 하위 폴더에서 .txt 조건 파일명 완전일치만 찾습니다."""
+    return search_condition_file_exact_txt(condition_name, source_folder)
 
 
 def copy_dnc_file(source_file: Path, transfer_folder: Path) -> Path:
@@ -763,12 +751,17 @@ def validate_lot_required(lot: dict, lot_name: str, require_qty: bool) -> list[s
     return errors
 
 
+def missing_common_message(label: str) -> str:
+    """현장 알람용 공통 입력 누락 문구입니다."""
+    return f"{label} 입력 없음"
+
+
 def validate_normal_dnc(common: dict, lot1: dict, lot2: dict | None) -> tuple[bool, list[str]]:
     """일반 DNC 입력값 전체 검증입니다."""
     errors = []
     for key, label in (("work_date", "작업일자"), ("machine", "트리밍 호기"), ("shift_group", "조"), ("shift", "근무"), ("worker", "작업자")):
         if not common.get(key, "").strip():
-            errors.append(f"{label}을(를) 입력하세요.")
+            errors.append(missing_common_message(label))
 
     errors.extend(validate_lot_required(lot1, "LOT 1", require_qty=True))
     if lot2:
@@ -799,7 +792,7 @@ def validate_new_model_dnc(common: dict, lot: dict) -> tuple[bool, list[str]]:
     errors = []
     for key, label in (("work_date", "작업일자"), ("machine", "트리밍 호기"), ("shift_group", "조"), ("shift", "근무"), ("worker", "작업자")):
         if not common.get(key, "").strip():
-            errors.append(f"{label}을(를) 입력하세요.")
+            errors.append(missing_common_message(label))
 
     errors.extend(validate_lot_required(lot, "신규 모델", require_qty=False))
     ok, message = validate_zero_or_positive_number(lot.get("qty", ""), "신규 모델 매수")
@@ -819,6 +812,9 @@ def format_operator_errors(errors: list[str]) -> str:
     clean_errors = []
     for error in errors:
         text = str(error).strip()
+        text = text.replace("을(를) 입력해야 DNC를 진행할 수 있습니다.", " 입력 없음")
+        text = text.replace("을(를) 입력하세요.", " 입력 없음")
+        text = text.replace("입력해야 DNC를 진행할 수 있습니다.", "입력 없음")
         if text and text not in clean_errors:
             clean_errors.append(text)
     if not clean_errors:
@@ -828,6 +824,56 @@ def format_operator_errors(errors: list[str]) -> str:
     visible = clean_errors[:8]
     visible.append(f"외 {len(clean_errors) - 8}건 추가 확인 필요")
     return "\n".join(visible)
+
+
+def show_operator_alert(parent, title: str, message: str, kind: str = "warning") -> None:
+    """작업자용 큰 글씨 알람입니다. 핵심 문장만 크게 보여줍니다."""
+    dialog = tk.Toplevel(parent) if parent else tk.Toplevel()
+    dialog.title(title)
+    dialog.configure(bg=SURFACE_BG)
+    dialog.resizable(False, False)
+    dialog.transient(parent if parent else None)
+
+    accent = NG_COLOR if kind in {"warning", "error"} else OK_COLOR
+    body = tk.Frame(dialog, bg=SURFACE_BG, padx=28, pady=22)
+    body.pack(fill=tk.BOTH, expand=True)
+    tk.Label(
+        body,
+        text=title,
+        bg=SURFACE_BG,
+        fg=accent,
+        font=("맑은 고딕", 16, "bold"),
+        anchor="w",
+    ).pack(fill=tk.X, pady=(0, 14))
+    tk.Label(
+        body,
+        text=format_operator_errors(message.splitlines()),
+        bg=SURFACE_BG,
+        fg=TEXT_COLOR,
+        font=("맑은 고딕", 13, "bold"),
+        justify=tk.LEFT,
+        anchor="w",
+        wraplength=520,
+    ).pack(fill=tk.X)
+
+    footer = tk.Frame(dialog, bg=APP_BG, padx=18, pady=14)
+    footer.pack(fill=tk.X)
+    ttk.Button(footer, text="확인", command=dialog.destroy, style="Primary.TButton", width=14).pack(side=tk.RIGHT)
+
+    dialog.update_idletasks()
+    width = max(460, dialog.winfo_reqwidth())
+    height = max(220, dialog.winfo_reqheight())
+    if parent:
+        x = parent.winfo_rootx() + max((parent.winfo_width() - width) // 2, 0)
+        y = parent.winfo_rooty() + max((parent.winfo_height() - height) // 2, 0)
+    else:
+        x = (dialog.winfo_screenwidth() - width) // 2
+        y = (dialog.winfo_screenheight() - height) // 2
+    dialog.geometry(f"{width}x{height}+{x}+{y}")
+    dialog.grab_set()
+    dialog.lift()
+    dialog.focus_force()
+    dialog.wait_window()
 
 
 # ==================================================
@@ -996,7 +1042,7 @@ def ask_numeric_input(parent, title: str, prompt: str) -> str | None:
     def confirm() -> None:
         value = value_var.get().strip()
         if not value:
-            messagebox.showwarning(title, "숫자를 입력하세요.", parent=dialog)
+            show_operator_alert(dialog, title, "숫자 입력 필요")
             return
         result["value"] = value
         dialog.destroy()
@@ -1637,6 +1683,31 @@ def should_replace_condition_record(current: dict, incoming: dict) -> bool:
     return True
 
 
+def find_manage_no_conflict(records: list[dict], incoming: dict) -> dict | None:
+    """동일 관리번호가 다른 조건 키로 존재하는지 확인합니다."""
+    incoming_manage_no = str(incoming.get("manage_no", "")).strip()
+    if not incoming_manage_no:
+        return None
+    incoming_key = make_condition_key(
+        incoming.get("step", ""),
+        incoming.get("round", ""),
+        incoming.get("manage_no", ""),
+        incoming.get("process_code", ""),
+    )
+    for record in records:
+        if str(record.get("manage_no", "")).strip() != incoming_manage_no:
+            continue
+        record_key = make_condition_key(
+            record.get("step", ""),
+            record.get("round", ""),
+            record.get("manage_no", ""),
+            record.get("process_code", ""),
+        )
+        if record_key != incoming_key:
+            return record
+    return None
+
+
 def merge_condition_records(records: list[dict]) -> list[dict]:
     """같은 STEP/차수/관리번호 조건은 한 줄로 합치되 출처 우선순위를 보호합니다."""
     merged: dict[str, dict] = {}
@@ -1652,6 +1723,15 @@ def merge_condition_records(records: list[dict]) -> list[dict]:
         if not key.replace("|", "").strip():
             continue
         if key not in merged:
+            conflict = find_manage_no_conflict(list(merged.values()), record)
+            if conflict:
+                log_app(
+                    "조건 마스터 동일 관리번호 차단: "
+                    f"관리번호={record.get('manage_no', '')}, "
+                    f"기존 STEP={conflict.get('step', '')}, 기존 차수={conflict.get('round', '')}, 기존 공정={conflict.get('process_code', '')}, "
+                    f"신규 STEP={record.get('step', '')}, 신규 차수={record.get('round', '')}, 신규 공정={record.get('process_code', '')}"
+                )
+                continue
             merged[key] = dict(record)
             continue
 
@@ -1772,6 +1852,25 @@ def upsert_condition_master(lot: dict, condition: str, jig: str, source: str) ->
 
     key = make_condition_key(step, round_no, manage_no, process_code)
     records = load_condition_master()
+    incoming_record = {
+        "step": step,
+        "round": round_no,
+        "manage_no": manage_no,
+        "process_code": process_code,
+        "lot_no": lot.get("lot_no", "").strip(),
+        "condition": condition,
+        "jig": jig,
+        "source": source,
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    conflict = find_manage_no_conflict(records, incoming_record)
+    if conflict:
+        log_app(
+            "조건 마스터 동일 관리번호 등록 차단: "
+            f"관리번호={manage_no}, 기존 STEP={conflict.get('step', '')}, 기존 차수={conflict.get('round', '')}, "
+            f"기존 공정={conflict.get('process_code', '')}, 신규 STEP={step}, 신규 차수={round_no}, 신규 공정={process_code}"
+        )
+        return
     for record in records:
         record_key = make_condition_key(
             record.get("step", ""),
@@ -1800,19 +1899,7 @@ def upsert_condition_master(lot: dict, condition: str, jig: str, source: str) ->
             save_condition_master(records)
             return
 
-    records.append(
-        {
-            "step": step,
-            "round": round_no,
-            "manage_no": manage_no,
-            "process_code": process_code,
-            "lot_no": lot.get("lot_no", "").strip(),
-            "condition": condition,
-            "jig": jig,
-            "source": source,
-            "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        }
-    )
+    records.append(incoming_record)
     save_condition_master(records)
 
 
@@ -2140,6 +2227,9 @@ class LabeledEntry(ttk.Frame):
             self.entry.bind("<KeyRelease>", lambda _event: on_change())
             self.entry.bind("<FocusOut>", lambda _event: on_change())
 
+    def set_readonly(self, readonly: bool = True) -> None:
+        self.entry.configure(state="readonly" if readonly else "normal")
+
     def normalize_value(self, *_args) -> None:
         if self._normalizing:
             return
@@ -2325,6 +2415,7 @@ class RoundField(ttk.Frame):
         super().__init__(parent)
         self.var = tk.StringVar()
         self.buttons: list[tk.Button] = []
+        self.readonly = False
         ttk.Label(self, text=label, width=9, anchor="e").pack(side=tk.LEFT, padx=(0, 6))
         wrap = tk.Frame(self, bg=APP_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
         wrap.pack(side=tk.LEFT, fill=tk.X, expand=True)
@@ -2350,6 +2441,8 @@ class RoundField(ttk.Frame):
 
     def toggle(self, value: str) -> None:
         """작업자가 같은 차수 버튼을 한 번 더 누르면 선택을 취소합니다."""
+        if self.readonly:
+            return
         self.var.set("" if self.var.get() == value else value)
         self.update_buttons()
 
@@ -2361,10 +2454,18 @@ class RoundField(ttk.Frame):
         self.var.set("")
         self.update_buttons()
 
+    def set_readonly(self, readonly: bool = True) -> None:
+        self.readonly = readonly
+        self.update_buttons()
+
     def update_buttons(self) -> None:
         for button in self.buttons:
             selected = button.cget("text") == self.var.get()
-            button.configure(bg=PRIMARY_LIGHT if selected else SURFACE_BG, fg=PRIMARY if selected else TEXT_COLOR)
+            button.configure(
+                bg=PRIMARY_LIGHT if selected else SURFACE_BG,
+                fg=PRIMARY if selected else TEXT_COLOR,
+                cursor="arrow" if self.readonly else "hand2",
+            )
 
 
 class SimpleTabNotebook(ttk.Frame):
@@ -3008,11 +3109,10 @@ class JiinDncManager:
             self.common_entries["worker"].clear()
             self.set_status("dnc", "근무 전환 확인 필요", False)
             if not initial:
-                messagebox.showwarning(
+                show_operator_alert(
+                    self.root,
                     "근무 전환 확인",
-                    "작업일자/근무가 자동 변경되었습니다.\n\n"
-                    "작업자를 다시 입력해야 DNC를 진행할 수 있습니다.",
-                    parent=self.root,
+                    "작업일자/근무 변경됨\n작업자 입력 필요",
                 )
         elif period_changed and prepared_next_shift:
             self.set_status("dnc", "근무 전환 확인 완료", True)
@@ -3027,14 +3127,10 @@ class JiinDncManager:
         if not self.common_entries["worker"].get():
             missing.append("작업자")
         if missing:
-            shift_notice = "08:30 / 20:30 근무 전환 후에는 작업자를 다시 확인해주세요."
-            if not self.config.get("auto_shift_group_enabled", True):
-                shift_notice = "08:30 / 20:30 근무 전환 후에는 조와 작업자를 다시 확인해주세요."
-            messagebox.showwarning(
+            show_operator_alert(
+                self.root,
                 "근무 정보 확인",
-                " / ".join(missing) + "을(를) 입력해야 DNC를 진행할 수 있습니다.\n\n"
-                f"{shift_notice}",
-                parent=self.root,
+                "\n".join(missing_common_message(label) for label in missing),
             )
             self.set_status("dnc", "근무 정보 확인 필요", False)
             return False
@@ -3183,16 +3279,27 @@ class JiinDncManager:
         self.set_dnc_status("조건 파일 검색중")
         matches = search_condition_file(condition_name, Path(self.config["source_dnc_folder"]))
         if len(matches) == 0:
-            messagebox.showerror("조건 파일 없음", f"조건 파일 없음\n\n{condition_name}")
+            show_operator_alert(self.root, "조건 파일 없음", "DNC 파일 없음", "error")
             return None
         if len(matches) >= 2:
             log_app(f"동일 조건 파일 차단: 조건={condition_name}, 검색수량={len(matches)}, 파일={matches}")
-            messagebox.showerror(
-                "동일 프로그램 차단",
-                f"동일 조건 파일 {len(matches)}개\n\n관리자 확인 필요",
+            show_operator_alert(
+                self.root,
+                "동일 DNC 파일",
+                format_duplicate_condition_files(matches),
+                "error",
             )
             return None
         return matches[0]
+
+    def validate_kcc_pkg_process_paths(self) -> bool:
+        ok, message = validate_process_paths(self.config, "KCC PKG")
+        if not ok:
+            log_app(f"KCC PKG 필수 경로 확인 실패: {message}")
+            show_operator_alert(self.root, "경로 확인", message)
+            self.set_status("dnc", "경로 확인 필요", False)
+            return False
+        return True
 
     def make_lot_lookup_key(self, lot: dict) -> str:
         """조건/지그를 불러온 기준 키입니다. 이 값이 바뀌면 기존 조건을 비웁니다."""
@@ -3229,10 +3336,7 @@ class JiinDncManager:
             if not lot.get(key, "").strip()
         ]
         if missing:
-            messagebox.showwarning(
-                "입력 확인",
-                f"LOT {lot_number} {' / '.join(missing)} 입력 필요",
-            )
+            show_operator_alert(self.root, "입력 확인", f"LOT {lot_number} {' / '.join(missing)} 입력 필요")
             return False
         try:
             condition, jig, source = lookup_condition_jig_from_history(self.config, lot)
@@ -3246,10 +3350,7 @@ class JiinDncManager:
                 f"LOT {lot_number}, STEP={lot.get('step')}, 차수={lot.get('round')}, "
                 f"관리번호={lot.get('manage_no')}, 공정코드={lot.get('process_code')} / {detail}"
             )
-            messagebox.showwarning(
-                "이력 없음",
-                f"LOT {lot_number} 조건/지그 없음\n\n입력값 확인 필요",
-            )
+            show_operator_alert(self.root, "이력 없음", f"LOT {lot_number} 조건/지그 없음")
             return False
         entries["condition"].set(condition)
         entries["jig"].set(jig)
@@ -3264,11 +3365,13 @@ class JiinDncManager:
 
     def run_normal_dnc(self) -> None:
         if self.is_running:
-            messagebox.showwarning("진행 중", "DNC 실행중입니다.\n작업 완료 후 다시 실행해주세요.")
+            show_operator_alert(self.root, "진행 중", "DNC 실행중")
             return
         if not self.ensure_work_period_ready():
             return
         if not self.save_settings_from_ui_silent():
+            return
+        if not self.validate_kcc_pkg_process_paths():
             return
         self.set_status("dnc", "입력값 확인중", None)
         common = self.get_common_data()
@@ -3289,7 +3392,7 @@ class JiinDncManager:
         ok, errors = validate_normal_dnc(common, lot1, lot2)
         if not ok:
             log_app("일반 DNC 입력값 NG: " + " / ".join(errors))
-            messagebox.showwarning("입력값 확인", format_operator_errors(errors))
+            show_operator_alert(self.root, "입력값 확인", format_operator_errors(errors))
             self.set_status("dnc", "입력값 NG", False)
             return
         model_change = messagebox.askyesno("기종교체 확인", "기종교체 입니까?", parent=self.root)
@@ -3304,7 +3407,7 @@ class JiinDncManager:
         stack = ask_numeric_input(self.root, "Stack 수 입력", "Stack 수를 입력 하세요.")
         ok, message = validate_positive_number(stack or "", "Stack 수", required=True)
         if not ok:
-            messagebox.showwarning("Stack 수 확인", message)
+            show_operator_alert(self.root, "Stack 수 확인", message)
             return
         lots = [lot1] + ([lot2] if lot2 else [])
         if model_change:
@@ -3320,7 +3423,7 @@ class JiinDncManager:
             self.work_axis_values = capacity_values[:6]
         capacity_ok, capacity_message = validate_frequent_check_capacity(lots, stack, capacity_values)
         if not capacity_ok:
-            messagebox.showwarning("작업 수량 확인", capacity_message)
+            show_operator_alert(self.root, "작업 수량 확인", capacity_message)
             self.set_status("dnc", "수량/Stack NG", False)
             return
         if model_change:
@@ -3407,9 +3510,10 @@ class JiinDncManager:
                             f"하부Pin축={','.join(str(axis + 1) for axis in allowed_axes)}, "
                             f"초품축={','.join(str(axis + 1) for axis in first_axes) or '없음'}"
                         )
-                        messagebox.showwarning(
+                        show_operator_alert(
+                            self.root,
                             "초품 4Point 확인",
-                            "하부 Pin 축과 초품 축이 다릅니다.\n\n축 선택 확인 필요",
+                            "하부 Pin 축과 초품 축 다름",
                         )
                         self.set_status("dnc", "초품 축 확인 NG", False)
                         continue
@@ -3417,7 +3521,7 @@ class JiinDncManager:
                 if ok:
                     self.set_status("dnc", message, True)
                     break
-                messagebox.showwarning("초품 수량 확인", message)
+                show_operator_alert(self.root, "초품 수량 확인", message)
                 self.set_status("dnc", "초품 수량 NG", False)
             update_normal_frequent_check_db(log_ids, model_change, self.frequent_check_values)
             burr_ok = messagebox.askyesno("Burr 확인", "4면 Burr 이상 없습니까?")
@@ -3484,10 +3588,10 @@ class JiinDncManager:
             pending_after = get_unexported_kcc_pkg_count()
             self.set_status("excel", f"자동 반영 실패 / Excel 미반영 {pending_after}건", False)
             self.append_log(f"작업일보 자동 반영 실패: {exc}")
-            messagebox.showwarning(
+            show_operator_alert(
+                parent or self.root,
                 "작업일보 반영 실패",
-                "DB 저장 완료\n\n나중에 [작업일보 반영]",
-                parent=parent or self.root,
+                "DB 저장 완료\n나중에 작업일보 반영",
             )
             return False
         pending_after = get_unexported_kcc_pkg_count()
@@ -4353,6 +4457,10 @@ class NewModelPopup:
             "lot2": dict(empty_lot),
         }
         self.target_lots = self.get_new_model_target_lots()
+        self.lock_imported_fields = any(
+            self.app.lot_has_any_value(self.app.get_lot_data(entries))
+            for entries in (self.app.lot1_entries, self.app.lot2_entries)
+        )
         if not self.target_lots:
             messagebox.showinfo(
                 "신규 모델 검증 DNC",
@@ -4480,21 +4588,37 @@ class NewModelPopup:
             ("round", "차수"),
             ("manage_no", "관리번호"),
             ("lot_no", "LOT No"),
-            ("qty", "매수"),
             ("process_code", "공정코드"),
+            ("qty", "매수"),
             ("condition", "작업조건"),
             ("jig", "지그"),
         ]
+        readonly_keys = {"step", "round", "manage_no", "lot_no", "process_code"} if self.lock_imported_fields else set()
         entries: dict[str, LabeledEntry] = {}
         for index, (key, label) in enumerate(fields):
             if key == "round":
                 entry = RoundField(parent, label)
+                entry.set_readonly(key in readonly_keys)
             elif key in {"step", "qty"}:
-                entry = LabeledEntry(parent, label, width=24, numeric_only=True)
+                entry = LabeledEntry(
+                    parent,
+                    label,
+                    width=24,
+                    numeric_only=True,
+                    readonly=key in readonly_keys,
+                    style="Lookup.TEntry" if key in readonly_keys else "Wide.TEntry",
+                )
             elif key == "condition":
                 entry = LabeledEntry(parent, label, width=24)
             else:
-                entry = LabeledEntry(parent, label, width=24, uppercase=True)
+                entry = LabeledEntry(
+                    parent,
+                    label,
+                    width=24,
+                    uppercase=True,
+                    readonly=key in readonly_keys,
+                    style="Lookup.TEntry" if key in readonly_keys else "Wide.TEntry",
+                )
             row = index // columns_per_row
             column = index % columns_per_row
             entry.grid(row=row, column=column, sticky="ew", padx=10, pady=8)
@@ -4633,10 +4757,13 @@ class NewModelPopup:
     def clear_inputs(self) -> None:
         run_keys = ["lot1", "lot2"] if self.run_mode.get() == "both" else [self.selected_lot.get()]
         for lot_key in run_keys:
-            self.lot_drafts[lot_key] = {
-                key: ""
-                for key in ["step", "round", "manage_no", "lot_no", "qty", "process_code", "condition", "jig"]
-            }
+            draft = dict(self.lot_drafts[lot_key])
+            clear_keys = ["qty", "condition", "jig"]
+            if not self.lock_imported_fields:
+                clear_keys = ["step", "round", "manage_no", "lot_no", "qty", "process_code", "condition", "jig"]
+            for key in clear_keys:
+                draft[key] = ""
+            self.lot_drafts[lot_key] = draft
         self.load_selected_lot()
         self.load_both_lot_panels()
         self.update_checks()
@@ -4645,7 +4772,7 @@ class NewModelPopup:
     def clear_after_done(self) -> None:
         _common, lot_items = self.get_run_lots()
         for lot_key, draft in lot_items:
-            for key in ["round", "qty", "condition", "jig"]:
+            for key in ["qty", "condition", "jig"]:
                 draft[key] = ""
             self.lot_drafts[lot_key] = draft
         self.load_selected_lot()
@@ -4661,9 +4788,11 @@ def open_new_model_popup(app: JiinDncManager) -> None:
 def run_new_model_dnc(popup: NewModelPopup) -> None:
     """신규 모델 DNC 실행 버튼 흐름입니다."""
     if popup.is_running or popup.app.is_running:
-        messagebox.showwarning("진행 중", "DNC 실행중입니다.\n작업 완료 후 다시 실행해주세요.")
+        show_operator_alert(popup.window, "진행 중", "DNC 실행중")
         return
     if not popup.app.save_settings_from_ui_silent():
+        return
+    if not popup.app.validate_kcc_pkg_process_paths():
         return
     common, lot_items = popup.get_run_lots()
     lots = [lot for _lot_key, lot in lot_items]
@@ -4681,7 +4810,7 @@ def run_new_model_dnc(popup: NewModelPopup) -> None:
         all_errors.append("LOT 1 / LOT 2 지그 다름")
     if all_errors:
         log_app("신규 모델 DNC 입력값 NG: " + " / ".join(all_errors))
-        messagebox.showwarning("입력값 확인", format_operator_errors(all_errors), parent=popup.window)
+        show_operator_alert(popup.window, "입력값 확인", format_operator_errors(all_errors))
         popup.dnc_label.configure(text="DNC 진행 상태: 입력값 NG", fg=NG_COLOR)
         return
     leader_name = simpledialog.askstring("조장명 입력", "신규 모델 검증 조장님 성함을 기재하세요", parent=popup.window)
