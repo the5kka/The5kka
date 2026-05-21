@@ -34,6 +34,7 @@ from dnc_rules import (
 DNC_DELETE_SECONDS = 10
 # DNC 완료 후 초품 확인 팝업이 뜨기 전 대기 시간입니다. 현장 적용 시 이 값만 바꾸면 됩니다.
 FIRST_ARTICLE_WAIT_SECONDS = 5
+EXCEL_LOCK_STALE_SECONDS = 10 * 60
 WORK_LOG_SCHEMA_VERSION = 2
 CONDITION_MASTER_SCHEMA_VERSION = 1
 MASTER_SETTINGS_PASSWORD = "1"
@@ -44,6 +45,8 @@ DEFAULT_ALLOWED_IP_PREFIXES = ["121.155.196"]
 
 APP_TITLE = "JIIN DNC Manager"
 LOG_SHEET_NAME = "KCC PKG"
+EXCEL_PROCESS_CODE_COLUMN = 30
+EXCEL_EXPORT_ID_COLUMN = 31
 SINGLE_INSTANCE_MUTEX_NAME = "JIIN_DNC_Manager_Single_Instance"
 ERROR_ALREADY_EXISTS = 183
 SINGLE_INSTANCE_HANDLE = None
@@ -569,7 +572,7 @@ def open_log_excel(config: dict) -> None:
     try:
         open_path(excel_file)
     except Exception as exc:
-        messagebox.showerror("작업일보 열기 실패", str(exc))
+        show_operator_alert(None, "작업일보 열기 실패", str(exc), "error")
 
 
 # ==================================================
@@ -835,6 +838,9 @@ def show_operator_alert(parent, title: str, message: str, kind: str = "warning")
     dialog.transient(parent if parent else None)
 
     accent = NG_COLOR if kind in {"warning", "error"} else OK_COLOR
+    icon = "⚠" if kind in {"warning", "error"} else "✓"
+    lines = format_operator_errors(message.splitlines()).splitlines()
+    icon_message = "\n".join(f"{icon}  {line}" for line in lines if line.strip())
     body = tk.Frame(dialog, bg=SURFACE_BG, padx=28, pady=22)
     body.pack(fill=tk.BOTH, expand=True)
     tk.Label(
@@ -843,22 +849,23 @@ def show_operator_alert(parent, title: str, message: str, kind: str = "warning")
         bg=SURFACE_BG,
         fg=accent,
         font=("맑은 고딕", 16, "bold"),
-        anchor="w",
+        anchor="center",
+        justify=tk.CENTER,
     ).pack(fill=tk.X, pady=(0, 14))
     tk.Label(
         body,
-        text=format_operator_errors(message.splitlines()),
+        text=icon_message,
         bg=SURFACE_BG,
         fg=TEXT_COLOR,
         font=("맑은 고딕", 13, "bold"),
-        justify=tk.LEFT,
-        anchor="w",
+        justify=tk.CENTER,
+        anchor="center",
         wraplength=520,
     ).pack(fill=tk.X)
 
     footer = tk.Frame(dialog, bg=APP_BG, padx=18, pady=14)
     footer.pack(fill=tk.X)
-    ttk.Button(footer, text="확인", command=dialog.destroy, style="Primary.TButton", width=14).pack(side=tk.RIGHT)
+    ttk.Button(footer, text="확인", command=dialog.destroy, style="Primary.TButton", width=14).pack(anchor="center")
 
     dialog.update_idletasks()
     width = max(460, dialog.winfo_reqwidth())
@@ -874,6 +881,99 @@ def show_operator_alert(parent, title: str, message: str, kind: str = "warning")
     dialog.lift()
     dialog.focus_force()
     dialog.wait_window()
+
+
+def center_dialog(dialog: tk.Toplevel, parent=None, min_width: int = 460, min_height: int = 220) -> None:
+    dialog.update_idletasks()
+    width = max(min_width, dialog.winfo_reqwidth())
+    height = max(min_height, dialog.winfo_reqheight())
+    if parent:
+        x = parent.winfo_rootx() + max((parent.winfo_width() - width) // 2, 0)
+        y = parent.winfo_rooty() + max((parent.winfo_height() - height) // 2, 0)
+    else:
+        x = (dialog.winfo_screenwidth() - width) // 2
+        y = (dialog.winfo_screenheight() - height) // 2
+    dialog.geometry(f"{width}x{height}+{x}+{y}")
+
+
+def ask_system_input(parent, title: str, prompt: str, show: str | None = None, numeric_only: bool = False, initial: str = "") -> str | None:
+    """기본 simpledialog 대신 사용하는 시스템 스타일 입력창입니다."""
+    dialog = tk.Toplevel(parent) if parent else tk.Toplevel()
+    dialog.title(title)
+    dialog.resizable(False, False)
+    dialog.configure(bg=SURFACE_BG)
+    dialog.transient(parent if parent else None)
+    result = {"value": None}
+    value_var = tk.StringVar(value=initial)
+
+    body = tk.Frame(dialog, bg=SURFACE_BG, padx=30, pady=24)
+    body.pack(fill=tk.BOTH, expand=True)
+    tk.Label(body, text=title, bg=SURFACE_BG, fg=PRIMARY, font=("맑은 고딕", 16, "bold"), anchor="center").pack(fill=tk.X, pady=(0, 14))
+    tk.Label(body, text=prompt, bg=SURFACE_BG, fg=TEXT_COLOR, font=("맑은 고딕", 12, "bold"), anchor="center", justify=tk.CENTER).pack(fill=tk.X, pady=(0, 12))
+    vcmd = (dialog.register(lambda text: text.isdigit() or text == ""), "%P") if numeric_only else None
+    entry = ttk.Entry(
+        body,
+        textvariable=value_var,
+        style="Wide.TEntry",
+        show=show or "",
+        width=34,
+        validate="key" if numeric_only else "none",
+        validatecommand=vcmd,
+        font=("맑은 고딕", 12),
+    )
+    entry.pack(fill=tk.X)
+
+    footer = tk.Frame(dialog, bg=APP_BG, padx=18, pady=14)
+    footer.pack(fill=tk.X)
+
+    def confirm() -> None:
+        result["value"] = value_var.get().strip()
+        dialog.destroy()
+
+    ttk.Button(footer, text="확인", command=confirm, style="Primary.TButton", width=14).pack(side=tk.LEFT, expand=True, padx=(60, 8))
+    ttk.Button(footer, text="취소", command=dialog.destroy, width=14).pack(side=tk.LEFT, expand=True, padx=(8, 60))
+    dialog.bind("<Return>", lambda _event: confirm())
+    dialog.bind("<Escape>", lambda _event: dialog.destroy())
+    dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+    center_dialog(dialog, parent, 500, 250)
+    dialog.grab_set()
+    dialog.lift()
+    entry.focus_set()
+    dialog.wait_window()
+    return result["value"]
+
+
+def ask_system_yes_no(parent, title: str, message: str) -> bool:
+    """기본 askyesno 대신 사용하는 시스템 스타일 확인창입니다."""
+    dialog = tk.Toplevel(parent) if parent else tk.Toplevel()
+    dialog.title(title)
+    dialog.resizable(False, False)
+    dialog.configure(bg=SURFACE_BG)
+    dialog.transient(parent if parent else None)
+    result = {"ok": False}
+
+    body = tk.Frame(dialog, bg=SURFACE_BG, padx=30, pady=24)
+    body.pack(fill=tk.BOTH, expand=True)
+    tk.Label(body, text=title, bg=SURFACE_BG, fg=PRIMARY, font=("맑은 고딕", 16, "bold"), anchor="center").pack(fill=tk.X, pady=(0, 14))
+    tk.Label(body, text=f"⚙  {message}", bg=SURFACE_BG, fg=TEXT_COLOR, font=("맑은 고딕", 13, "bold"), justify=tk.CENTER, anchor="center", wraplength=520).pack(fill=tk.X)
+
+    footer = tk.Frame(dialog, bg=APP_BG, padx=18, pady=14)
+    footer.pack(fill=tk.X)
+
+    def choose(value: bool) -> None:
+        result["ok"] = value
+        dialog.destroy()
+
+    ttk.Button(footer, text="예", command=lambda: choose(True), style="Primary.TButton", width=14).pack(side=tk.LEFT, expand=True, padx=(70, 8))
+    ttk.Button(footer, text="아니오", command=lambda: choose(False), width=14).pack(side=tk.LEFT, expand=True, padx=(8, 70))
+    dialog.bind("<Return>", lambda _event: choose(True))
+    dialog.bind("<Escape>", lambda _event: choose(False))
+    dialog.protocol("WM_DELETE_WINDOW", lambda: choose(False))
+    center_dialog(dialog, parent, 500, 250)
+    dialog.grab_set()
+    dialog.lift()
+    dialog.wait_window()
+    return bool(result["ok"])
 
 
 # ==================================================
@@ -893,9 +993,30 @@ def write_process_code_backup(ws, row: int, process_code: str) -> None:
     """조건 마스터 복구용으로 작업일보 AD열에 공정코드를 백업합니다."""
     # A열에 호기가 추가되어 기존 A:AC 양식이 한 칸씩 밀렸습니다.
     # AD열만 프로그램 복구용 공정코드 백업 칸으로 사용합니다.
-    if not ws.cell(row=6, column=30).value:
-        ws.cell(row=6, column=30).value = "공정코드"
-    ws.cell(row=row, column=30).value = excel_upper_value(process_code)
+    if not ws.cell(row=6, column=EXCEL_PROCESS_CODE_COLUMN).value:
+        ws.cell(row=6, column=EXCEL_PROCESS_CODE_COLUMN).value = "공정코드"
+    ws.cell(row=row, column=EXCEL_PROCESS_CODE_COLUMN).value = excel_upper_value(process_code)
+
+
+def write_export_id_backup(ws, row: int, log_id: int) -> None:
+    """Excel 저장 직후 강제 종료되어도 중복 반영을 막기 위한 DB ID 백업 칸입니다."""
+    if not ws.cell(row=6, column=EXCEL_EXPORT_ID_COLUMN).value:
+        ws.cell(row=6, column=EXCEL_EXPORT_ID_COLUMN).value = "DNC_LOG_ID"
+    ws.cell(row=row, column=EXCEL_EXPORT_ID_COLUMN).value = int(log_id)
+
+
+def get_excel_exported_log_ids(ws) -> set[int]:
+    """작업일보에 이미 기록된 DB ID를 읽어 중복 반영을 방지합니다."""
+    existing_ids: set[int] = set()
+    for row in range(8, ws.max_row + 1):
+        value = ws.cell(row=row, column=EXCEL_EXPORT_ID_COLUMN).value
+        if value in (None, ""):
+            continue
+        try:
+            existing_ids.add(int(value))
+        except (TypeError, ValueError):
+            continue
+    return existing_ids
 
 
 def excel_upper_value(value):
@@ -945,6 +1066,58 @@ def open_log_workbook(config: dict):
     ws = workbook[LOG_SHEET_NAME]
     ensure_log_sheet_machine_column(ws)
     return workbook, ws, path
+
+
+def get_excel_lock_path(path: Path) -> Path:
+    """작업일보와 같은 폴더에 PC 간 Excel 반영 잠금 파일 경로를 만듭니다."""
+    return path.with_name(f"{path.name}.lock")
+
+
+def acquire_excel_export_lock(path: Path) -> Path:
+    """여러 PC가 같은 작업일보를 동시에 저장하지 못하게 잠금 파일을 생성합니다."""
+    lock_path = get_excel_lock_path(path)
+    now = datetime.now()
+    if lock_path.exists():
+        try:
+            lock_age = now - datetime.fromtimestamp(lock_path.stat().st_mtime)
+        except OSError:
+            lock_age = timedelta(seconds=0)
+        if lock_age.total_seconds() < EXCEL_LOCK_STALE_SECONDS:
+            raise PermissionError("다른 PC 작업일보 반영 중")
+        try:
+            lock_path.unlink()
+            log_app(f"오래된 작업일보 lock 자동 삭제: {lock_path}")
+        except OSError as exc:
+            log_error("오래된 작업일보 lock 삭제 실패", exc)
+            raise PermissionError("작업일보 반영 대기") from exc
+
+    lock_text = {
+        "created_at": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "pc_name": socket.gethostname(),
+        "pid": os.getpid(),
+        "excel_file": str(path),
+    }
+    try:
+        fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        with os.fdopen(fd, "w", encoding="utf-8") as file:
+            json.dump(lock_text, file, ensure_ascii=False, indent=2)
+    except FileExistsError as exc:
+        raise PermissionError("다른 PC 작업일보 반영 중") from exc
+    except OSError as exc:
+        log_error("작업일보 lock 생성 실패", exc)
+        raise PermissionError("작업일보 반영 대기") from exc
+    return lock_path
+
+
+def release_excel_export_lock(lock_path: Path | None) -> None:
+    """작업일보 반영 성공/실패와 관계없이 잠금 파일을 정리합니다."""
+    if lock_path is None:
+        return
+    try:
+        if lock_path.exists():
+            lock_path.unlink()
+    except OSError as exc:
+        log_error("작업일보 lock 삭제 실패", exc)
 
 
 def save_workbook_safely(workbook, path: Path) -> None:
@@ -1021,46 +1194,11 @@ def ask_excel_save_retry() -> bool:
 
 def ask_numeric_input(parent, title: str, prompt: str) -> str | None:
     """숫자만 입력 가능한 간단한 팝업입니다."""
-    dialog = tk.Toplevel(parent)
-    dialog.title(title)
-    dialog.resizable(False, False)
-    dialog.configure(bg=SURFACE_BG)
-    result = {"value": None}
-    value_var = tk.StringVar()
-
-    body = tk.Frame(dialog, bg=SURFACE_BG, padx=18, pady=16)
-    body.pack(fill=tk.BOTH, expand=True)
-    tk.Label(body, text=prompt, bg=SURFACE_BG, fg=TEXT_COLOR, font=("맑은 고딕", 10, "bold"), anchor="w").pack(fill=tk.X, pady=(0, 8))
-
-    vcmd = (dialog.register(lambda text: text.isdigit() or text == ""), "%P")
-    entry = ttk.Entry(body, textvariable=value_var, style="Wide.TEntry", width=18, validate="key", validatecommand=vcmd)
-    entry.pack(fill=tk.X)
-
-    buttons = tk.Frame(dialog, bg=APP_BG, padx=14, pady=12)
-    buttons.pack(fill=tk.X)
-
-    def confirm() -> None:
-        value = value_var.get().strip()
-        if not value:
-            show_operator_alert(dialog, title, "숫자 입력 필요")
-            return
-        result["value"] = value
-        dialog.destroy()
-
-    ttk.Button(buttons, text="확인", command=confirm, style="Primary.TButton", width=12).pack(side=tk.RIGHT, padx=(8, 0))
-    ttk.Button(buttons, text="취소", command=dialog.destroy, width=12).pack(side=tk.RIGHT)
-    dialog.transient(parent)
-    dialog.grab_set()
-    dialog.update_idletasks()
-    width = dialog.winfo_reqwidth()
-    height = dialog.winfo_reqheight()
-    x = parent.winfo_rootx() + max((parent.winfo_width() - width) // 2, 0)
-    y = parent.winfo_rooty() + max((parent.winfo_height() - height) // 2, 0)
-    dialog.geometry(f"{width}x{height}+{x}+{y}")
-    dialog.lift()
-    entry.focus_set()
-    dialog.wait_window()
-    return result["value"]
+    value = ask_system_input(parent, title, prompt, numeric_only=True)
+    if value == "":
+        show_operator_alert(parent, title, "숫자 입력 필요")
+        return None
+    return value
 
 
 # ==================================================
@@ -1577,6 +1715,7 @@ def write_db_log_row_to_excel(ws, row: int, log: sqlite3.Row) -> None:
     ]
     for offset, value in enumerate(frequent_values, start=18):
         ws.cell(row=row, column=offset).value = value or ""
+    write_export_id_backup(ws, row, int(log["id"]))
 
 
 def export_kcc_pkg_db_to_excel(config: dict) -> int:
@@ -1588,19 +1727,36 @@ def export_kcc_pkg_db_to_excel(config: dict) -> int:
     exported_ids: list[int] = []
     log_app(f"작업일보 반영 시작: {len(logs)}건")
     workbook = None
+    lock_path = None
     try:
+        excel_path = Path(config.get("excel_file", ""))
+        if not excel_path:
+            raise FileNotFoundError("작업일보 파일 선택 필요")
+        if not excel_path.exists():
+            raise FileNotFoundError("작업일보 파일 없음")
+        lock_path = acquire_excel_export_lock(excel_path)
         workbook, ws, path = open_log_workbook(config)
+        existing_excel_ids = get_excel_exported_log_ids(ws)
         start_row = get_next_empty_row(ws)
-        for index, log in enumerate(logs):
-            write_db_log_row_to_excel(ws, start_row + index, log)
-            exported_ids.append(int(log["id"]))
-        save_workbook_safely(workbook, path)
+        written_count = 0
+        for log in logs:
+            log_id = int(log["id"])
+            if log_id in existing_excel_ids:
+                exported_ids.append(log_id)
+                log_app(f"작업일보 중복 반영 방지: 이미 Excel에 있는 DB id={log_id}")
+                continue
+            write_db_log_row_to_excel(ws, start_row + written_count, log)
+            exported_ids.append(log_id)
+            written_count += 1
+        if written_count:
+            save_workbook_safely(workbook, path)
     except Exception as exc:
         log_error("작업일보 반영 실패 - exported 상태 변경 안 함", exc)
         raise
     finally:
         if workbook is not None:
             workbook.close()
+        release_excel_export_lock(lock_path)
     mark_kcc_pkg_logs_exported(exported_ids)
     log_app(f"작업일보 반영 완료: {len(exported_ids)}건")
     return len(exported_ids)
@@ -2591,6 +2747,7 @@ class JiinDncManager:
             # 조건 마스터 동기화가 실패해도 현장 작업 화면은 열리게 둡니다.
             pass
         self.is_running = False
+        self.is_exporting_excel = False
 
         self.common_entries: dict[str, LabeledEntry] = {}
         self.lot1_entries: dict[str, LabeledEntry] = {}
@@ -2613,6 +2770,16 @@ class JiinDncManager:
         self.create_layout()
         self.apply_work_time_defaults(initial=True)
         self.update_status_checks()
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+
+    def on_close(self) -> None:
+        if self.is_running:
+            show_operator_alert(self.root, "DNC 진행중", "작업 완료 후 종료")
+            return
+        if self.is_exporting_excel:
+            show_operator_alert(self.root, "작업일보 반영중", "반영 완료 후 종료")
+            return
+        self.root.destroy()
 
     def setup_style(self) -> None:
         style = ttk.Style()
@@ -2994,7 +3161,7 @@ class JiinDncManager:
     def apply_auto_shift_settings(self) -> None:
         if self.save_settings_from_ui_silent(show_error=True):
             self.apply_work_time_defaults(initial=False, schedule_next=False)
-            messagebox.showinfo("근무표 자동 조", "근무표 자동 조 설정을 적용했습니다.", parent=self.root)
+            show_operator_alert(self.root, "근무표 자동 조", "설정 적용", "info")
 
     def update_auto_shift_buttons(self) -> None:
         if not hasattr(self, "auto_shift_buttons"):
@@ -3016,19 +3183,19 @@ class JiinDncManager:
         try:
             count = rebuild_condition_master_from_log(self.config)
         except Exception as exc:
-            messagebox.showerror("조건 마스터 갱신 실패", str(exc))
+            show_operator_alert(self.root, "조건 마스터 갱신 실패", str(exc), "error")
             return
-        messagebox.showinfo("조건 마스터 갱신 완료", f"{count}개 조건을 저장했습니다.")
+        show_operator_alert(self.root, "조건 마스터 갱신 완료", f"{count}개 조건 저장", "info")
 
     def open_work_history_popup(self) -> None:
         WorkHistoryPopup(self)
 
     def open_master_settings_popup(self) -> None:
-        password = simpledialog.askstring("마스터 설정", "비밀번호를 입력하세요.", show="*", parent=self.root)
+        password = ask_system_input(self.root, "마스터 설정", "비밀번호 입력", show="*")
         if password is None:
             return
         if password != str(self.config.get("master_password", MASTER_SETTINGS_PASSWORD)):
-            messagebox.showwarning("비밀번호 확인", "비밀번호가 맞지 않습니다.")
+            show_operator_alert(self.root, "비밀번호 확인", "비밀번호 불일치")
             return
         MasterSettingsPopup(self)
 
@@ -3341,7 +3508,7 @@ class JiinDncManager:
         try:
             condition, jig, source = lookup_condition_jig_from_history(self.config, lot)
         except Exception as exc:
-            messagebox.showerror("이력 조회 실패", str(exc))
+            show_operator_alert(self.root, "이력 조회 실패", str(exc), "error")
             return False
         if not condition or not jig:
             detail = describe_condition_lookup_mismatch(lot)
@@ -3395,7 +3562,7 @@ class JiinDncManager:
             show_operator_alert(self.root, "입력값 확인", format_operator_errors(errors))
             self.set_status("dnc", "입력값 NG", False)
             return
-        model_change = messagebox.askyesno("기종교체 확인", "기종교체 입니까?", parent=self.root)
+        model_change = ask_system_yes_no(self.root, "기종교체 확인", "기종교체 입니까?")
         self.frequent_check_values = [""] * 12
         self.work_axis_values = [""] * 6
         machine_axes = get_machine_allowed_axes(common.get("machine", ""))
@@ -3524,7 +3691,7 @@ class JiinDncManager:
                 show_operator_alert(self.root, "초품 수량 확인", message)
                 self.set_status("dnc", "초품 수량 NG", False)
             update_normal_frequent_check_db(log_ids, model_change, self.frequent_check_values)
-            burr_ok = messagebox.askyesno("Burr 확인", "4면 Burr 이상 없습니까?")
+            burr_ok = ask_system_yes_no(self.root, "Burr 확인", "4면 Burr 이상 없습니까?")
             update_normal_burr_db(log_ids, burr_ok)
             pending_count = get_unexported_kcc_pkg_count()
             self.set_status("dnc", "DNC 완료", True)
@@ -3553,10 +3720,11 @@ class JiinDncManager:
 
     def open_new_model_popup(self) -> None:
         if not self.has_new_model_target():
-            messagebox.showinfo(
+            show_operator_alert(
+                self.root,
                 "신규 모델 검증 DNC",
-                "현재 입력된 LOT는 조건/지그가 이미 조회되어 신규 검증 대상이 아닙니다.\n\n일반 DNC 실행을 사용해주세요.",
-                parent=self.root,
+                "신규 검증 대상 없음\n일반 DNC 실행 사용",
+                "info",
             )
             return
         if not self.ensure_work_period_ready():
@@ -3583,17 +3751,21 @@ class JiinDncManager:
             self.append_log(f"작업일보 자동 반영 실패: 작업일보 파일 없음 / 미반영 {pending_before}건")
             return False
         try:
+            self.is_exporting_excel = True
             exported_count = export_kcc_pkg_db_to_excel(self.config)
         except Exception as exc:
             pending_after = get_unexported_kcc_pkg_count()
             self.set_status("excel", f"자동 반영 실패 / Excel 미반영 {pending_after}건", False)
             self.append_log(f"작업일보 자동 반영 실패: {exc}")
+            alert_message = "다른 PC 반영 중\n나중에 작업일보 반영" if "다른 PC" in str(exc) else "DB 저장 완료\n나중에 작업일보 반영"
             show_operator_alert(
                 parent or self.root,
                 "작업일보 반영 실패",
-                "DB 저장 완료\n나중에 작업일보 반영",
+                alert_message,
             )
             return False
+        finally:
+            self.is_exporting_excel = False
         pending_after = get_unexported_kcc_pkg_count()
         self.set_status("excel", f"작업일보 자동 반영 완료 / Excel 미반영 {pending_after}건", True)
         self.append_log(f"작업일보 자동 반영 완료: {exported_count}건 / 미반영 {pending_after}건")
@@ -3606,43 +3778,46 @@ class JiinDncManager:
             self.set_status("excel", "작업일보 반영 취소", False)
             return
         try:
+            self.is_exporting_excel = True
             result = export_all_processes_to_excel(self.config)
         except FileNotFoundError as exc:
-            messagebox.showerror("작업일보 반영 실패", str(exc))
+            show_operator_alert(self.root, "작업일보 반영 실패", str(exc), "error")
             self.set_status("excel", "작업일보 파일 없음", False)
             return
         except PermissionError as exc:
-            messagebox.showerror("작업일보 반영 실패", str(exc))
+            show_operator_alert(self.root, "작업일보 반영 실패", str(exc), "error")
             self.set_status("excel", "작업일보 저장 실패", False)
             return
         except KeyError as exc:
-            messagebox.showerror("작업일보 반영 실패", str(exc))
+            show_operator_alert(self.root, "작업일보 반영 실패", str(exc), "error")
             self.set_status("excel", "작업일보 시트 없음", False)
             return
         except ValueError as exc:
-            messagebox.showerror("작업일보 반영 실패", str(exc))
+            show_operator_alert(self.root, "작업일보 반영 실패", str(exc), "error")
             self.set_status("excel", "작업일보 파일 오류", False)
             return
         except Exception as exc:
-            messagebox.showerror("작업일보 반영 실패", str(exc))
+            show_operator_alert(self.root, "작업일보 반영 실패", str(exc), "error")
             self.set_status("excel", "작업일보 반영 실패", False)
             return
+        finally:
+            self.is_exporting_excel = False
         total_count = sum(result.values())
         pending_total = sum(get_unexported_process_count(name) for name in PROCESS_NAMES)
         if total_count == 0:
-            messagebox.showinfo("작업일보 반영", "반영할 이력 없음")
+            show_operator_alert(self.root, "작업일보 반영", "반영할 이력 없음", "info")
             self.set_status("excel", "Excel 미반영 0건", True)
             return
         detail = "\n".join(f"{name}: {count}건" for name, count in result.items() if count)
-        messagebox.showinfo("작업일보 반영 완료", f"{total_count}건 반영 완료")
+        show_operator_alert(self.root, "작업일보 반영 완료", f"{total_count}건 반영 완료", "info")
         self.set_status("excel", f"작업일보 반영 완료 / Excel 미반영 {pending_total}건", True)
 
     def open_condition_master_popup(self) -> None:
-        password = simpledialog.askstring("조건 마스터 관리", "비밀번호를 입력하세요.", show="*", parent=self.root)
+        password = ask_system_input(self.root, "조건 마스터 관리", "비밀번호 입력", show="*")
         if password is None:
             return
         if password != str(self.config.get("condition_master_password", CONDITION_MASTER_PASSWORD)):
-            messagebox.showwarning("비밀번호 확인", "비밀번호가 맞지 않습니다.")
+            show_operator_alert(self.root, "비밀번호 확인", "비밀번호 불일치")
             return
         ConditionMasterPopup(self)
 
@@ -3665,12 +3840,12 @@ class JiinDncManager:
             ok, message = validate_positive_number(self.delete_seconds_var.get(), "삭제 대기 시간", required=True)
             if not ok:
                 if show_error:
-                    messagebox.showwarning("설정 확인", message)
+                    show_operator_alert(self.root, "설정 확인", message)
                 return False
             ok, message = validate_positive_number(self.first_article_wait_var.get(), "초품 알람 시간", required=True)
             if not ok:
                 if show_error:
-                    messagebox.showwarning("설정 확인", message)
+                    show_operator_alert(self.root, "설정 확인", message)
                 return False
             excel_path = self.excel_var.get().strip()
             if excel_path:
@@ -3696,7 +3871,7 @@ class JiinDncManager:
                     self.config["a_group_day_start_date"] = base_date
                 except ValueError:
                     if show_error:
-                        messagebox.showwarning("설정 확인", "A조 주간 시작 기준일은 YYYY-MM-DD 형식으로 입력해주세요.")
+                        show_operator_alert(self.root, "설정 확인", "기준일 형식 확인")
                     return False
             if "machine" in self.common_entries:
                 self.config["machine"] = self.common_entries["machine"].get()
@@ -3705,7 +3880,7 @@ class JiinDncManager:
 
     def handle_run_error(self, exc: Exception) -> None:
         log_error("DNC 실행 오류", exc)
-        messagebox.showerror("오류", str(exc))
+        show_operator_alert(self.root, "오류", str(exc), "error")
         self.set_status("dnc", "오류", False)
         self.set_running(False)
 
@@ -3857,7 +4032,7 @@ class FrequentCheckPopup:
         check_mode = "first" if self.mode == "capacity" else self.mode
         ok, message = validate_frequent_check_values(self.values, check_mode=check_mode)
         if not ok:
-            messagebox.showwarning(self.get_title(), message, parent=self.window)
+            show_operator_alert(self.window, self.get_title(), message)
             return
         self.app.frequent_check_values = self.values[:]
         if self.mode == "capacity":
@@ -4080,11 +4255,11 @@ class MasterSettingsPopup:
     def save_master_settings(self, show_message: bool = False) -> bool:
         ok, message = validate_positive_number(self.delete_seconds_var.get(), "삭제 대기 시간", required=True)
         if not ok:
-            messagebox.showwarning("마스터 설정", message, parent=self.window)
+            show_operator_alert(self.window, "마스터 설정", message)
             return False
         ok, message = validate_positive_number(self.first_article_wait_var.get(), "초품 알람 시간", required=True)
         if not ok:
-            messagebox.showwarning("마스터 설정", message, parent=self.window)
+            show_operator_alert(self.window, "마스터 설정", message)
             return False
         self.app.config["dnc_delete_seconds"] = int(self.delete_seconds_var.get().strip())
         self.app.config["first_article_wait_seconds"] = int(self.first_article_wait_var.get().strip())
@@ -4094,7 +4269,7 @@ class MasterSettingsPopup:
             self.app.first_article_wait_var.set(self.first_article_wait_var.get().strip())
         save_config(self.app.config)
         if show_message:
-            messagebox.showinfo("적용 완료", "마스터 설정을 적용했습니다.", parent=self.window)
+            show_operator_alert(self.window, "적용 완료", "마스터 설정 적용", "info")
         return True
 
     def close(self) -> None:
@@ -4107,43 +4282,43 @@ class MasterSettingsPopup:
         try:
             count = rebuild_condition_master_from_log(self.app.config)
         except Exception as exc:
-            messagebox.showerror("조건 복구 실패", str(exc), parent=self.window)
+            show_operator_alert(self.window, "조건 복구 실패", str(exc), "error")
             return
-        messagebox.showinfo("조건 복구 완료", f"{count}개 조건을 저장했습니다.", parent=self.window)
+        show_operator_alert(self.window, "조건 복구 완료", f"{count}개 조건 저장", "info")
 
     def open_license_settings(self) -> None:
-        password = simpledialog.askstring("라이선스 관리", "라이선스 비밀번호를 입력하세요.", show="*", parent=self.window)
+        password = ask_system_input(self.window, "라이선스 관리", "라이선스 비밀번호 입력", show="*")
         if password is None:
             return
         if password != str(self.app.config.get("license_password", LICENSE_PASSWORD)):
-            messagebox.showwarning("라이선스 관리", "비밀번호가 맞지 않습니다.", parent=self.window)
+            show_operator_alert(self.window, "라이선스 관리", "비밀번호 불일치")
             return
         LicenseSettingsPopup(self.app, self.window)
 
     def change_password(self, config_key: str, title: str, default_password: str) -> None:
         current_password = str(self.app.config.get(config_key, default_password))
-        old_password = simpledialog.askstring(f"{title} 비밀번호 변경", "현재 비밀번호를 입력하세요.", show="*", parent=self.window)
+        old_password = ask_system_input(self.window, f"{title} 비밀번호 변경", "현재 비밀번호 입력", show="*")
         if old_password is None:
             return
         if old_password != current_password:
-            messagebox.showwarning("비밀번호 확인", "현재 비밀번호가 맞지 않습니다.", parent=self.window)
+            show_operator_alert(self.window, "비밀번호 확인", "현재 비밀번호 불일치")
             return
-        new_password = simpledialog.askstring(f"{title} 비밀번호 변경", "새 비밀번호를 입력하세요.", show="*", parent=self.window)
+        new_password = ask_system_input(self.window, f"{title} 비밀번호 변경", "새 비밀번호 입력", show="*")
         if new_password is None:
             return
         new_password = new_password.strip()
         if not new_password:
-            messagebox.showwarning("비밀번호 확인", "새 비밀번호를 입력하세요.", parent=self.window)
+            show_operator_alert(self.window, "비밀번호 확인", "새 비밀번호 입력 없음")
             return
-        confirm_password = simpledialog.askstring(f"{title} 비밀번호 변경", "새 비밀번호를 한 번 더 입력하세요.", show="*", parent=self.window)
+        confirm_password = ask_system_input(self.window, f"{title} 비밀번호 변경", "새 비밀번호 재입력", show="*")
         if confirm_password is None:
             return
         if new_password != confirm_password.strip():
-            messagebox.showwarning("비밀번호 확인", "새 비밀번호가 서로 다릅니다.", parent=self.window)
+            show_operator_alert(self.window, "비밀번호 확인", "새 비밀번호 불일치")
             return
         self.app.config[config_key] = new_password
         save_config(self.app.config)
-        messagebox.showinfo("변경 완료", f"{title} 비밀번호를 변경했습니다.", parent=self.window)
+        show_operator_alert(self.window, "변경 완료", f"{title} 비밀번호 변경", "info")
 
 
 class LicenseSettingsPopup:
@@ -4212,32 +4387,32 @@ class LicenseSettingsPopup:
         self.app.config["license_master_pc_name"] = master_pc
         self.app.config["license_allowed_ip_prefixes"] = ip_prefixes
         save_config(self.app.config)
-        messagebox.showinfo("저장 완료", "라이선스 설정을 저장했습니다.", parent=self.window)
+        show_operator_alert(self.window, "저장 완료", "라이선스 설정 저장", "info")
 
     def change_license_password(self) -> None:
         current_password = str(self.app.config.get("license_password", LICENSE_PASSWORD))
-        old_password = simpledialog.askstring("라이선스 비번 변경", "현재 비밀번호를 입력하세요.", show="*", parent=self.window)
+        old_password = ask_system_input(self.window, "라이선스 비번 변경", "현재 비밀번호 입력", show="*")
         if old_password is None:
             return
         if old_password != current_password:
-            messagebox.showwarning("라이선스 비번 변경", "현재 비밀번호가 맞지 않습니다.", parent=self.window)
+            show_operator_alert(self.window, "라이선스 비번 변경", "현재 비밀번호 불일치")
             return
-        new_password = simpledialog.askstring("라이선스 비번 변경", "새 비밀번호를 입력하세요.", show="*", parent=self.window)
+        new_password = ask_system_input(self.window, "라이선스 비번 변경", "새 비밀번호 입력", show="*")
         if new_password is None:
             return
         new_password = new_password.strip()
         if not new_password:
-            messagebox.showwarning("라이선스 비번 변경", "새 비밀번호를 입력하세요.", parent=self.window)
+            show_operator_alert(self.window, "라이선스 비번 변경", "새 비밀번호 입력 없음")
             return
-        confirm_password = simpledialog.askstring("라이선스 비번 변경", "새 비밀번호를 한 번 더 입력하세요.", show="*", parent=self.window)
+        confirm_password = ask_system_input(self.window, "라이선스 비번 변경", "새 비밀번호 재입력", show="*")
         if confirm_password is None:
             return
         if new_password != confirm_password.strip():
-            messagebox.showwarning("라이선스 비번 변경", "새 비밀번호가 서로 다릅니다.", parent=self.window)
+            show_operator_alert(self.window, "라이선스 비번 변경", "새 비밀번호 불일치")
             return
         self.app.config["license_password"] = new_password
         save_config(self.app.config)
-        messagebox.showinfo("변경 완료", "라이선스 비밀번호를 변경했습니다.", parent=self.window)
+        show_operator_alert(self.window, "변경 완료", "라이선스 비밀번호 변경", "info")
 
 
 class ConditionMasterPopup:
@@ -4376,7 +4551,7 @@ class ConditionMasterPopup:
     def save_selected_edit(self) -> None:
         selected = self.tree.selection()
         if not selected:
-            messagebox.showwarning("선택 필요", "수정할 조건을 먼저 선택하세요.", parent=self.window)
+            show_operator_alert(self.window, "선택 필요", "수정할 조건 선택")
             return
         index = int(selected[0])
         record = self.records[index]
@@ -4387,25 +4562,19 @@ class ConditionMasterPopup:
         save_condition_master(self.records)
         self.refresh_tree()
         self.tree.selection_set(str(index))
-        messagebox.showinfo("저장 완료", "조건 마스터를 수정했습니다.", parent=self.window)
+        show_operator_alert(self.window, "저장 완료", "조건 마스터 수정", "info")
 
     def delete_selected_record(self) -> None:
         selected = self.tree.selection()
         if not selected:
-            messagebox.showwarning("선택 필요", "삭제할 조건을 먼저 선택하세요.", parent=self.window)
+            show_operator_alert(self.window, "선택 필요", "삭제할 조건 선택")
             return
         index = int(selected[0])
         record = self.records[index]
-        ok = messagebox.askyesno(
+        ok = ask_system_yes_no(
+            self.window,
             "조건 삭제 확인",
-            "선택한 조건을 조건 마스터에서 삭제하시겠습니까?\n\n"
-            f"STEP: {record.get('step', '')}\n"
-            f"차수: {record.get('round', '')}\n"
-            f"관리번호: {record.get('manage_no', '')}\n"
-            f"공정코드: {record.get('process_code', '')}\n"
-            f"작업조건: {record.get('condition', '')}\n"
-            f"지그: {record.get('jig', '')}",
-            parent=self.window,
+            f"조건 삭제\n{record.get('manage_no', '')}",
         )
         if not ok:
             return
@@ -4413,23 +4582,22 @@ class ConditionMasterPopup:
         save_condition_master(self.records)
         self.records = load_condition_master()
         self.refresh_tree()
-        messagebox.showinfo("삭제 완료", "선택한 조건을 삭제했습니다.", parent=self.window)
+        show_operator_alert(self.window, "삭제 완료", "조건 삭제 완료", "info")
 
     def rebuild_from_log(self) -> None:
         self.app.save_settings_from_ui_silent()
         try:
             count = rebuild_condition_master_from_log(self.app.config)
         except Exception as exc:
-            messagebox.showerror("갱신 실패", str(exc), parent=self.window)
+            show_operator_alert(self.window, "갱신 실패", str(exc), "error")
             return
         self.records = load_condition_master()
         self.refresh_tree()
-        messagebox.showinfo(
+        show_operator_alert(
+            self.window,
             "갱신 완료",
-            f"조건 마스터를 최신 이력으로 정리했습니다.\n\n"
-            f"현재 보관 조건: {count}개\n"
-            "작업일보에서 삭제된 모델도 마스터에서는 보존됩니다.",
-            parent=self.window,
+            f"조건 마스터 정리 완료\n현재 {count}개",
+            "info",
         )
 
 
@@ -4462,10 +4630,11 @@ class NewModelPopup:
             for entries in (self.app.lot1_entries, self.app.lot2_entries)
         )
         if not self.target_lots:
-            messagebox.showinfo(
+            show_operator_alert(
+                app.root,
                 "신규 모델 검증 DNC",
-                "조건 적용이 필요한 LOT가 없습니다.\n\n조건/지그가 없는 LOT가 있을 때 신규 모델 검증 DNC를 실행해주세요.",
-                parent=app.root,
+                "신규 검증 대상 없음",
+                "info",
             )
             self.window.destroy()
             return
@@ -4478,6 +4647,13 @@ class NewModelPopup:
         self.load_both_lot_panels()
         self.refresh_input_mode()
         self.update_checks()
+        self.window.protocol("WM_DELETE_WINDOW", self.close)
+
+    def close(self) -> None:
+        if self.is_running or self.app.is_running:
+            show_operator_alert(self.window, "DNC 진행중", "작업 완료 후 종료")
+            return
+        self.window.destroy()
 
     def get_new_model_target_lots(self) -> list[str]:
         """메인 화면에서 조건/지그가 없는 LOT만 신규 검증 대상으로 반환합니다."""
@@ -4813,7 +4989,7 @@ def run_new_model_dnc(popup: NewModelPopup) -> None:
         show_operator_alert(popup.window, "입력값 확인", format_operator_errors(all_errors))
         popup.dnc_label.configure(text="DNC 진행 상태: 입력값 NG", fg=NG_COLOR)
         return
-    leader_name = simpledialog.askstring("조장명 입력", "신규 모델 검증 조장님 성함을 기재하세요", parent=popup.window)
+    leader_name = ask_system_input(popup.window, "조장명 입력", "신규 모델 검증 조장명 입력")
     if not leader_name or not leader_name.strip():
         popup.dnc_label.configure(text="DNC 진행 상태: 취소", fg=MUTED_TEXT)
         return
@@ -4850,7 +5026,7 @@ def new_model_worker(popup: NewModelPopup, common: dict, lots: list[dict], leade
 def finish_new_model_dnc(popup: NewModelPopup, log_ids: list[int], lots: list[dict]) -> None:
     """신규 모델 DNC 완료 후 초도품 확인 결과를 저장합니다."""
     try:
-        first_article_ok = messagebox.askyesno("초도품 확인", "초도품 이상 없습니까?", parent=popup.window)
+        first_article_ok = ask_system_yes_no(popup.window, "초도품 확인", "초도품 이상 없습니까?")
         for log_id, lot in zip(log_ids, lots):
             condition_name = lot["condition"]
             update_new_model_db(log_id, condition_name, first_article_ok)
@@ -4874,7 +5050,7 @@ def finish_new_model_dnc(popup: NewModelPopup, log_ids: list[int], lots: list[di
 
 def handle_popup_error(popup: NewModelPopup, exc: Exception) -> None:
     log_error("신규 모델 DNC 오류", exc)
-    messagebox.showerror("오류", str(exc), parent=popup.window)
+    show_operator_alert(popup.window, "오류", str(exc), "error")
     popup.dnc_label.configure(text="DNC 진행 상태: 오류", fg=NG_COLOR)
     popup.set_running(False)
     popup.app.set_running(False)

@@ -1,6 +1,6 @@
 {
   "config_version": 1,
-  "excel_file": "C:/Users/오국진/Desktop/KCC PKG 작업일보.xlsm",
+  "excel_file": "C:/Users/오국진/Desktop/타사 작업일보 (신규).xlsm",
   "source_dnc_folder": "C:/Users/오국진/Desktop/KCC_PKG",
   "source_dnc_folders": {
     "TLB": "C:\\Users\\오국진\\Desktop\\TLB",
@@ -23,6 +23,6 @@
     "121.155.196"
   ],
   "clear_common_after_normal": false,
-  "machine": "트리밍 1호기",
+  "machine": "트리밍 3호기",
   "theme": "MES 블루"
 }
