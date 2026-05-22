@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from tkinter import filedialog, messagebox, scrolledtext, simpledialog, ttk
 
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
 from dnc_rules import (
@@ -87,7 +87,10 @@ APP_DIR = get_app_dir()
 DATA_DIR = APP_DIR / "data"
 LOG_DIR = DATA_DIR / "logs"
 BACKUP_DIR = DATA_DIR / "backup"
+EXPORT_DIR = DATA_DIR / "export"
+AUTO_BACKUP_DIR = DATA_DIR / "auto_backup"
 CONFIG_FILE = DATA_DIR / "config.json"
+CONFIG_BACKUP_FILE = DATA_DIR / "config.json.bak"
 LOGO_FILE = DATA_DIR / "company_logo.png"
 BUNDLED_LOGO_FILE = Path(getattr(sys, "_MEIPASS", APP_DIR)) / "company_logo.png"
 KCC_LOGO_FILE = DATA_DIR / "korea_circuit_logo.png"
@@ -326,6 +329,7 @@ def get_default_config() -> dict:
         "clear_common_after_normal": False,
         "machine": "트리밍 1호기",
         "theme": "MES 블루",
+        "last_master_auto_backup_date": "",
     }
 
 
@@ -402,7 +406,17 @@ def load_config() -> dict:
             shutil.copy2(LEGACY_CONFIG_FILE, CONFIG_FILE)
             log_app("기존 config.json을 data/config.json으로 복사")
         if CONFIG_FILE.exists():
-            saved = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+            try:
+                saved = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+            except Exception as exc:
+                log_error("config.json 로드 실패 - 백업 복구 시도", exc)
+                if CONFIG_BACKUP_FILE.exists():
+                    saved = json.loads(CONFIG_BACKUP_FILE.read_text(encoding="utf-8"))
+                    shutil.copy2(CONFIG_BACKUP_FILE, CONFIG_FILE)
+                    log_app("config.json.bak에서 설정 복구")
+                    changed = True
+                else:
+                    raise
             if isinstance(saved, dict):
                 config.update({key: value for key, value in saved.items() if value not in (None, "")})
                 for key, value in get_default_config().items():
@@ -438,7 +452,16 @@ def load_config() -> dict:
 def save_config(config: dict) -> None:
     """현재 설정을 config.json에 저장합니다."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    if CONFIG_FILE.exists():
+        try:
+            shutil.copy2(CONFIG_FILE, CONFIG_BACKUP_FILE)
+        except Exception as exc:
+            log_error("config.json.bak 저장 실패", exc)
     CONFIG_FILE.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        shutil.copy2(CONFIG_FILE, CONFIG_BACKUP_FILE)
+    except Exception as exc:
+        log_error("config.json.bak 갱신 실패", exc)
 
 
 def get_current_pc_name() -> str:
@@ -604,10 +627,30 @@ def delete_after_delay(copied_file: Path, seconds: int, status_callback=None) ->
         if status_callback:
             status_callback(f"DNC 삭제 대기중 ({remaining})")
         time.sleep(1)
+    for attempt in range(1, 31):
+        if not copied_file.exists():
+            break
+        try:
+            copied_file.unlink()
+            log_app(f"DNC 복사 파일 삭제 완료: {copied_file}")
+            break
+        except PermissionError as exc:
+            log_error(f"DNC 복사 파일 사용중 - 삭제 재시도 {attempt}/30: {copied_file}", exc)
+            if status_callback:
+                status_callback(f"DNC 파일 사용중 - 삭제 재시도 ({attempt})")
+            time.sleep(1)
+        except OSError as exc:
+            log_error(f"DNC 복사 파일 삭제 실패 - 재시도 {attempt}/30: {copied_file}", exc)
+            if status_callback:
+                status_callback(f"DNC 삭제 재시도 ({attempt})")
+            time.sleep(1)
     if copied_file.exists():
-        copied_file.unlink()
+        log_error(f"DNC 복사 파일 삭제 실패: {copied_file}")
+        if status_callback:
+            status_callback("DNC 삭제 실패")
+        return
     if status_callback:
-        status_callback("DNC 완료")
+        status_callback("DNC 파일 삭제 완료")
 
 
 # ==================================================
@@ -829,6 +872,32 @@ def format_operator_errors(errors: list[str]) -> str:
     return "\n".join(visible)
 
 
+def keep_modal_on_top(dialog: tk.Toplevel, parent=None, focus_widget=None) -> None:
+    """모달창이 다른 Windows 창 뒤로 숨어 프로그램이 멈춘 것처럼 보이는 상황을 막습니다."""
+    target = focus_widget or dialog
+
+    def raise_dialog(count: int = 0) -> None:
+        try:
+            if not dialog.winfo_exists():
+                return
+            dialog.deiconify()
+            dialog.attributes("-topmost", True)
+            dialog.lift()
+            target.focus_force()
+            if count < 12:
+                dialog.after(500, lambda: raise_dialog(count + 1))
+        except tk.TclError:
+            return
+
+    if parent is not None:
+        try:
+            dialog.transient(parent)
+        except tk.TclError:
+            pass
+    dialog.bind("<Visibility>", lambda _event: raise_dialog(0))
+    raise_dialog()
+
+
 def show_operator_alert(parent, title: str, message: str, kind: str = "warning") -> None:
     """작업자용 큰 글씨 알람입니다. 핵심 문장만 크게 보여줍니다."""
     dialog = tk.Toplevel(parent) if parent else tk.Toplevel()
@@ -878,8 +947,7 @@ def show_operator_alert(parent, title: str, message: str, kind: str = "warning")
         y = (dialog.winfo_screenheight() - height) // 2
     dialog.geometry(f"{width}x{height}+{x}+{y}")
     dialog.grab_set()
-    dialog.lift()
-    dialog.focus_force()
+    keep_modal_on_top(dialog, parent)
     dialog.wait_window()
 
 
@@ -937,8 +1005,7 @@ def ask_system_input(parent, title: str, prompt: str, show: str | None = None, n
     dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
     center_dialog(dialog, parent, 500, 250)
     dialog.grab_set()
-    dialog.lift()
-    entry.focus_set()
+    keep_modal_on_top(dialog, parent, entry)
     dialog.wait_window()
     return result["value"]
 
@@ -971,9 +1038,51 @@ def ask_system_yes_no(parent, title: str, message: str) -> bool:
     dialog.protocol("WM_DELETE_WINDOW", lambda: choose(False))
     center_dialog(dialog, parent, 500, 250)
     dialog.grab_set()
-    dialog.lift()
+    keep_modal_on_top(dialog, parent)
     dialog.wait_window()
     return bool(result["ok"])
+
+
+def ask_incomplete_action(parent, count: int) -> str:
+    """시작 시 미완료 이력을 작업자가 바로 처리할 수 있게 묻습니다."""
+    dialog = tk.Toplevel(parent) if parent else tk.Toplevel()
+    dialog.title("미완료 이력 확인")
+    dialog.resizable(False, False)
+    dialog.configure(bg=SURFACE_BG)
+    dialog.transient(parent if parent else None)
+    result = {"action": "later"}
+
+    body = tk.Frame(dialog, bg=SURFACE_BG, padx=30, pady=24)
+    body.pack(fill=tk.BOTH, expand=True)
+    tk.Label(body, text="미완료 이력 있음", bg=SURFACE_BG, fg=NG_COLOR, font=("맑은 고딕", 16, "bold"), anchor="center").pack(fill=tk.X, pady=(0, 14))
+    tk.Label(
+        body,
+        text=f"완료 처리되지 않은 이력 {count}건\n처리 방법을 선택하세요.",
+        bg=SURFACE_BG,
+        fg=TEXT_COLOR,
+        font=("맑은 고딕", 13, "bold"),
+        justify=tk.CENTER,
+        anchor="center",
+        wraplength=520,
+    ).pack(fill=tk.X)
+
+    footer = tk.Frame(dialog, bg=APP_BG, padx=18, pady=14)
+    footer.pack(fill=tk.X)
+
+    def choose(action: str) -> None:
+        result["action"] = action
+        dialog.destroy()
+
+    ttk.Button(footer, text="삭제", command=lambda: choose("delete"), width=14).pack(side=tk.LEFT, expand=True, padx=(20, 6))
+    ttk.Button(footer, text="완료처리", command=lambda: choose("complete"), style="Primary.TButton", width=14).pack(side=tk.LEFT, expand=True, padx=6)
+    ttk.Button(footer, text="나중에", command=lambda: choose("later"), width=14).pack(side=tk.LEFT, expand=True, padx=(6, 20))
+    dialog.bind("<Escape>", lambda _event: choose("later"))
+    dialog.protocol("WM_DELETE_WINDOW", lambda: choose("later"))
+    center_dialog(dialog, parent, 520, 260)
+    dialog.grab_set()
+    keep_modal_on_top(dialog, parent)
+    dialog.wait_window()
+    return result["action"]
 
 
 # ==================================================
@@ -1185,9 +1294,7 @@ def ask_excel_save_retry() -> bool:
     screen_height = dialog.winfo_screenheight()
     dialog.geometry(f"{width}x{height}+{(screen_width - width) // 2}+{(screen_height - height) // 2}")
     dialog.grab_set()
-    dialog.lift()
-    dialog.focus_force()
-    dialog.attributes("-topmost", True)
+    keep_modal_on_top(dialog)
     dialog.wait_window()
     return result["retry"]
 
@@ -1269,9 +1376,12 @@ def get_kcc_pkg_connection() -> sqlite3.Connection:
     """KCC PKG DB 연결을 만들고 필요한 테이블을 자동 생성합니다."""
     db_path = get_kcc_pkg_db_path()
     existing_db = db_path.exists()
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(db_path, timeout=10)
     conn.row_factory = sqlite3.Row
     try:
+        conn.execute("PRAGMA busy_timeout=10000")
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=NORMAL")
         need_backup = False
         if existing_db:
             need_backup = not table_exists(conn, "schema_version")
@@ -1346,9 +1456,12 @@ def get_condition_master_connection() -> sqlite3.Connection:
     """KCC PKG 조건 마스터 DB 연결을 만들고 필요한 테이블을 자동 생성합니다."""
     KCC_PKG_DATA_DIR.mkdir(parents=True, exist_ok=True)
     existing_db = CONDITION_MASTER_DB_FILE.exists()
-    conn = sqlite3.connect(CONDITION_MASTER_DB_FILE)
+    conn = sqlite3.connect(CONDITION_MASTER_DB_FILE, timeout=10)
     conn.row_factory = sqlite3.Row
     try:
+        conn.execute("PRAGMA busy_timeout=10000")
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=NORMAL")
         need_backup = False
         if existing_db:
             need_backup = not table_exists(conn, "schema_version")
@@ -1611,6 +1724,61 @@ def get_incomplete_kcc_pkg_count() -> int:
         conn.close()
 
 
+def fetch_incomplete_kcc_pkg_logs() -> list[sqlite3.Row]:
+    """앱 시작 시 안내할 미완료 이력을 조회합니다."""
+    conn = get_kcc_pkg_connection()
+    try:
+        return conn.execute(
+            """
+            SELECT id, dnc_type, status, work_date, worker, step, round_no,
+                   manage_no, lot_no, condition_name, created_at
+              FROM dnc_logs
+             WHERE status!='완료'
+             ORDER BY id
+            """
+        ).fetchall()
+    finally:
+        conn.close()
+
+
+def delete_incomplete_kcc_pkg_logs(log_ids: list[int]) -> None:
+    """미완료 이력을 삭제합니다. 시작 알림에서 작업자가 선택했을 때만 사용합니다."""
+    if not log_ids:
+        return
+    conn = get_kcc_pkg_connection()
+    try:
+        conn.executemany("DELETE FROM dnc_logs WHERE id=? AND status!='완료'", [(log_id,) for log_id in log_ids])
+        conn.commit()
+        log_app(f"미완료 이력 삭제: ids={log_ids}")
+    finally:
+        conn.close()
+
+
+def complete_incomplete_kcc_pkg_logs(log_ids: list[int]) -> None:
+    """미완료 이력을 완료 처리합니다. 작업일보 반영 대상은 아니게 exported=1로 처리합니다."""
+    if not log_ids:
+        return
+    conn = get_kcc_pkg_connection()
+    try:
+        now_text = datetime.now().strftime("%H:%M:%S")
+        exported_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conn.executemany(
+            """
+            UPDATE dnc_logs
+               SET status='완료',
+                   record_time=COALESCE(NULLIF(record_time, ''), ?),
+                   exported=1,
+                   exported_at=COALESCE(NULLIF(exported_at, ''), ?)
+             WHERE id=? AND status!='완료'
+            """,
+            [(now_text, exported_at, log_id) for log_id in log_ids],
+        )
+        conn.commit()
+        log_app(f"미완료 이력 완료 처리: ids={log_ids}")
+    finally:
+        conn.close()
+
+
 def load_work_history(limit: int = 500, only_unexported: bool = False, only_incomplete: bool = False, keyword: str = "") -> list[sqlite3.Row]:
     """작업 이력 보기 창에서 사용할 최근 DNC 이력을 조회합니다."""
     conn = get_kcc_pkg_connection()
@@ -1640,6 +1808,175 @@ def load_work_history(limit: int = 500, only_unexported: bool = False, only_inco
         return conn.execute(sql, params).fetchall()
     finally:
         conn.close()
+
+
+def autosize_excel_columns(ws) -> None:
+    """내보낸 엑셀 파일을 바로 보기 좋게 열 너비를 맞춥니다."""
+    for column_cells in ws.columns:
+        column_letter = column_cells[0].column_letter
+        max_length = 0
+        for cell in column_cells:
+            value = "" if cell.value is None else str(cell.value)
+            max_length = max(max_length, len(value))
+        ws.column_dimensions[column_letter].width = min(max(max_length + 3, 10), 45)
+
+
+def save_rows_to_excel(path: Path, sheet_name: str, headers: list[str], rows: list[list[object]]) -> None:
+    """조회 결과를 새 Excel 파일로 저장합니다."""
+    workbook = Workbook()
+    ws = workbook.active
+    ws.title = sheet_name
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+    for row in rows:
+        ws.append(row)
+    ws.freeze_panes = "A2"
+    autosize_excel_columns(ws)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    workbook.save(path)
+
+
+def export_kcc_pkg_work_history_excel(path: Path) -> Path:
+    """KCC PKG 작업 이력을 확인용 Excel 파일로 내보냅니다."""
+    conn = get_kcc_pkg_connection()
+    try:
+        records = conn.execute(
+            """
+            SELECT id, dnc_type, status, exported, machine, work_date, shift_group, shift_name,
+                   worker, step, round_no, manage_no, lot_no, qty_text, result_value,
+                   process_code, condition_name, jig, stack, model_change_text, burr_result,
+                   record_time, exported_at, created_at
+              FROM dnc_logs
+             ORDER BY id
+            """
+        ).fetchall()
+    finally:
+        conn.close()
+
+    headers = [
+        "ID", "구분", "상태", "Excel", "호기", "작업일자", "조", "근무", "작업자",
+        "STEP", "차수", "관리번호", "LOT", "매수", "실적", "공정코드",
+        "작업P/G", "지그", "Stack", "기종교체", "Burr", "DNC 시작시간", "DNC 완료시간", "엑셀 반영시간",
+    ]
+    rows = [
+        [
+            record["id"],
+            record["dnc_type"],
+            record["status"],
+            "반영" if int(record["exported"] or 0) else "미반영",
+            record["machine"],
+            record["work_date"],
+            record["shift_group"],
+            record["shift_name"],
+            record["worker"],
+            record["step"],
+            record["round_no"],
+            record["manage_no"],
+            record["lot_no"],
+            record["qty_text"],
+            record["result_value"],
+            record["process_code"],
+            record["condition_name"],
+            record["jig"],
+            record["stack"],
+            record["model_change_text"],
+            record["burr_result"],
+            record["created_at"],
+            record["record_time"],
+            record["exported_at"],
+        ]
+        for record in records
+    ]
+    save_rows_to_excel(path, "KCC PKG 작업이력", headers, rows)
+    log_app(f"KCC PKG 작업 이력 Excel 내보내기: {path}")
+    return path
+
+
+def export_kcc_pkg_condition_master_excel(path: Path) -> Path:
+    """KCC PKG 작업조건/지그 마스터를 확인용 Excel 파일로 내보냅니다."""
+    records = load_condition_master()
+    headers = ["STEP", "차수", "관리번호", "공정코드", "LOT", "작업조건", "지그", "출처", "수정시간"]
+    rows = [
+        [
+            record.get("step", ""),
+            record.get("round", ""),
+            record.get("manage_no", ""),
+            record.get("process_code", ""),
+            record.get("lot_no", ""),
+            record.get("condition", ""),
+            record.get("jig", ""),
+            record.get("source", ""),
+            record.get("updated_at", ""),
+        ]
+        for record in records
+    ]
+    save_rows_to_excel(path, "KCC PKG 조건마스터", headers, rows)
+    log_app(f"KCC PKG 작업조건/지그 Excel 내보내기: {path}")
+    return path
+
+
+def create_full_data_backup_zip(path: Path) -> Path:
+    """현장 data 폴더 전체를 zip으로 백업합니다. export 폴더는 중복 백업 방지를 위해 제외합니다."""
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as backup_zip:
+        for item in DATA_DIR.rglob("*"):
+            if not item.is_file():
+                continue
+            try:
+                item.relative_to(EXPORT_DIR)
+                continue
+            except ValueError:
+                pass
+            backup_zip.write(item, item.relative_to(DATA_DIR))
+    log_app(f"전체 data 백업 생성: {path}")
+    return path
+
+
+def cleanup_old_text_logs(days: int = 90) -> None:
+    """오래된 텍스트 로그만 조용히 정리합니다. DB/작업일보/마스터는 건드리지 않습니다."""
+    try:
+        if not LOG_DIR.exists():
+            return
+        cutoff = datetime.now() - timedelta(days=days)
+        for log_file in LOG_DIR.glob("*.log"):
+            try:
+                modified = datetime.fromtimestamp(log_file.stat().st_mtime)
+                if modified < cutoff:
+                    log_file.unlink()
+            except OSError:
+                continue
+    except Exception as exc:
+        log_error("오래된 로그 정리 실패", exc)
+
+
+def create_daily_master_backup(config: dict) -> None:
+    """조건 마스터와 설정만 하루 1회 자동 백업합니다."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    if config.get("last_master_auto_backup_date") == today:
+        return
+    try:
+        AUTO_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+        path = AUTO_BACKUP_DIR / f"{datetime.now().strftime('%Y%m%d')}_master_backup.zip"
+        with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as backup_zip:
+            if CONFIG_FILE.exists():
+                backup_zip.write(CONFIG_FILE, "config.json")
+            if CONFIG_BACKUP_FILE.exists():
+                backup_zip.write(CONFIG_BACKUP_FILE, "config.json.bak")
+            if CONDITION_MASTER_DB_FILE.exists():
+                backup_zip.write(CONDITION_MASTER_DB_FILE, "KCC_PKG/condition_master.db")
+            wal_file = CONDITION_MASTER_DB_FILE.with_name(CONDITION_MASTER_DB_FILE.name + "-wal")
+            shm_file = CONDITION_MASTER_DB_FILE.with_name(CONDITION_MASTER_DB_FILE.name + "-shm")
+            if wal_file.exists():
+                backup_zip.write(wal_file, "KCC_PKG/condition_master.db-wal")
+            if shm_file.exists():
+                backup_zip.write(shm_file, "KCC_PKG/condition_master.db-shm")
+        config["last_master_auto_backup_date"] = today
+        save_config(config)
+        log_app(f"마스터 자동 백업 생성: {path}")
+    except Exception as exc:
+        log_error("마스터 자동 백업 실패", exc)
 
 
 def fetch_unexported_kcc_pkg_logs() -> list[sqlite3.Row]:
@@ -2770,16 +3107,52 @@ class JiinDncManager:
         self.create_layout()
         self.apply_work_time_defaults(initial=True)
         self.update_status_checks()
+        cleanup_old_text_logs(days=90)
+        create_daily_master_backup(self.config)
+        self.root.after(500, self.handle_startup_incomplete_logs)
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def on_close(self) -> None:
-        if self.is_running:
-            show_operator_alert(self.root, "DNC 진행중", "작업 완료 후 종료")
+        """작업표시줄 닫기/X 버튼은 숨은 알람창 때문에 막히지 않도록 항상 종료합니다."""
+        try:
+            if self.is_running:
+                log_app("프로그램 종료 요청: DNC 진행 중 강제 종료")
+            if self.is_exporting_excel:
+                log_app("프로그램 종료 요청: 작업일보 반영 중 강제 종료")
+            for child in list(self.root.winfo_children()):
+                try:
+                    if isinstance(child, tk.Toplevel) and child.winfo_exists():
+                        child.grab_release()
+                        child.destroy()
+                except tk.TclError:
+                    pass
+            self.root.quit()
+            self.root.destroy()
+        except Exception as exc:
+            log_error("프로그램 종료 처리 실패", exc)
+            os._exit(0)
+
+    def handle_startup_incomplete_logs(self) -> None:
+        """앱 시작 시 미완료 이력이 있으면 현장에서 바로 처리할 수 있게 안내합니다."""
+        try:
+            rows = fetch_incomplete_kcc_pkg_logs()
+        except Exception as exc:
+            log_error("미완료 이력 조회 실패", exc)
             return
-        if self.is_exporting_excel:
-            show_operator_alert(self.root, "작업일보 반영중", "반영 완료 후 종료")
+        if not rows:
             return
-        self.root.destroy()
+        log_ids = [int(row["id"]) for row in rows]
+        action = ask_incomplete_action(self.root, len(log_ids))
+        try:
+            if action == "delete":
+                delete_incomplete_kcc_pkg_logs(log_ids)
+                self.set_status("excel", "미완료 이력 삭제 완료", True)
+            elif action == "complete":
+                complete_incomplete_kcc_pkg_logs(log_ids)
+                self.set_status("excel", "미완료 이력 완료처리", True)
+        except Exception as exc:
+            log_error("미완료 이력 처리 실패", exc)
+            show_operator_alert(self.root, "미완료 처리 실패", "처리 실패", "error")
 
     def setup_style(self) -> None:
         style = ttk.Style()
@@ -3064,13 +3437,14 @@ class JiinDncManager:
         self.clear_common_var = tk.BooleanVar(value=bool(self.config.get("clear_common_after_normal", False)))
         self.auto_shift_group_var = tk.BooleanVar(value=bool(self.config.get("auto_shift_group_enabled", True)))
         self.a_group_day_start_var = tk.StringVar(value=str(self.config.get("a_group_day_start_date", "2026-05-17")))
+        settings_label_width = 16
 
         common_rows = [
             ("작업일보 경로", self.excel_var, lambda: select_excel_file(self.root, self.config, self.excel_var)),
             ("DNC 전송 폴더", self.transfer_var, lambda: self.select_folder_to_var(self.transfer_var, save_after=True)),
         ]
         for row, (label, var, command) in enumerate(common_rows, start=1):
-            ttk.Label(panel, text=label, background=SURFACE_BG, width=16).grid(row=row, column=0, sticky="e", padx=10, pady=8)
+            ttk.Label(panel, text=label, background=SURFACE_BG, width=settings_label_width, anchor="e").grid(row=row, column=0, sticky="e", padx=10, pady=8)
             entry = ttk.Entry(panel, textvariable=var, style="Wide.TEntry")
             entry.grid(row=row, column=1, sticky="ew", padx=8, pady=8)
             entry.bind("<FocusOut>", lambda _event: self.save_settings_from_ui_silent(show_error=False))
@@ -3083,7 +3457,7 @@ class JiinDncManager:
         for index, process_name in enumerate(PROCESS_NAMES):
             row = 4 + index
             label_bg = process_bg[index % len(process_bg)]
-            ttk.Label(panel, text=process_name, background=label_bg, foreground=TEXT_COLOR, width=16, anchor="center").grid(row=row, column=0, sticky="ew", padx=10, pady=5)
+            ttk.Label(panel, text=process_name, background=label_bg, foreground=TEXT_COLOR, width=settings_label_width, anchor="center").grid(row=row, column=0, sticky="ew", padx=10, pady=5)
             entry = ttk.Entry(panel, textvariable=self.source_vars[process_name], style="Wide.TEntry")
             entry.grid(row=row, column=1, sticky="ew", padx=8, pady=5)
             entry.bind("<FocusOut>", lambda _event: self.save_settings_from_ui_silent(show_error=False))
@@ -3095,10 +3469,11 @@ class JiinDncManager:
         )
         auto_wrap = tk.Frame(panel, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
         auto_wrap.grid(row=shift_row + 1, column=0, columnspan=3, sticky="ew", padx=10, pady=5)
-        auto_wrap.columnconfigure(2, weight=1)
-        tk.Label(auto_wrap, text="조 자동 선택", bg=SURFACE_BG, fg=TEXT_COLOR, width=16, anchor="e").grid(row=0, column=0, sticky="e", padx=(10, 6), pady=8)
+        auto_wrap.columnconfigure(0, minsize=126)
+        auto_wrap.columnconfigure(6, weight=1)
+        tk.Label(auto_wrap, text="조 자동 선택", bg=SURFACE_BG, fg=TEXT_COLOR, width=settings_label_width, anchor="center", font=("맑은 고딕", 10)).grid(row=0, column=0, sticky="ew", padx=10, pady=8)
         toggle_wrap = tk.Frame(auto_wrap, bg=APP_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
-        toggle_wrap.grid(row=0, column=1, sticky="w", padx=(0, 18), pady=8)
+        toggle_wrap.grid(row=0, column=1, sticky="w", padx=8, pady=8)
         self.auto_shift_buttons = {}
         for value, text in ((True, "사용"), (False, "미사용")):
             button = tk.Button(
@@ -3116,10 +3491,10 @@ class JiinDncManager:
             button.pack(side=tk.LEFT, fill=tk.X, expand=True)
             self.auto_shift_buttons[value] = button
         self.update_auto_shift_buttons()
-        tk.Label(auto_wrap, text="A조 주간 시작 기준일", bg=PRIMARY_LIGHT, fg=TEXT_COLOR, width=18, anchor="center").grid(row=0, column=2, sticky="e", padx=(0, 8), pady=8)
+        tk.Label(auto_wrap, text="A조 주간 시작 기준일", bg=PRIMARY_LIGHT, fg=TEXT_COLOR, width=18, anchor="center").grid(row=0, column=2, sticky="w", padx=(14, 6), pady=8)
         a_entry = ttk.Entry(auto_wrap, textvariable=self.a_group_day_start_var, style="Wide.TEntry", width=14)
-        a_entry.grid(row=0, column=3, sticky="w", padx=(0, 8), pady=8)
-        tk.Label(auto_wrap, text="예: 2026-05-17", bg=SURFACE_BG, fg=MUTED_TEXT).grid(row=0, column=4, sticky="w", padx=(0, 10), pady=8)
+        a_entry.grid(row=0, column=3, sticky="w", padx=(0, 6), pady=8)
+        tk.Label(auto_wrap, text="예: 2026-05-17", bg=SURFACE_BG, fg=MUTED_TEXT).grid(row=0, column=4, sticky="w", padx=(0, 8), pady=8)
         apply_button = tk.Button(
             auto_wrap,
             text="적용",
@@ -3136,9 +3511,41 @@ class JiinDncManager:
             activeforeground=PRIMARY,
             font=("맑은 고딕", 10, "bold"),
         )
-        apply_button.grid(row=0, column=5, sticky="e", padx=(4, 10), pady=8)
+        apply_button.grid(row=0, column=5, sticky="w", padx=(0, 10), pady=8)
 
-        ttk.Button(panel, text="마스터 설정", command=self.open_master_settings_popup, style="Primary.TButton", width=20).grid(row=shift_row + 2, column=2, padx=8, pady=(18, 14))
+        ttk.Button(panel, text="마스터 설정", command=self.open_master_settings_popup, style="Primary.TButton", width=20).grid(
+            row=shift_row + 1, column=2, sticky="e", padx=(8, 20), pady=5
+        )
+
+        manage_row = shift_row + 2
+        ttk.Label(panel, text="공정별 관리 도구", background=PRIMARY_LIGHT, foreground=PRIMARY, anchor="center", font=("맑은 고딕", 10, "bold")).grid(
+            row=manage_row, column=0, columnspan=3, sticky="ew", padx=10, pady=(16, 6)
+        )
+        manage_wrap = tk.Frame(panel, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        manage_wrap.grid(row=manage_row + 1, column=0, columnspan=3, sticky="ew", padx=10, pady=5)
+        for index, process_name in enumerate(PROCESS_NAMES):
+            manage_wrap.columnconfigure(index, weight=1, uniform="process_manage")
+            process_box = tk.Frame(manage_wrap, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+            process_box.grid(row=0, column=index, sticky="nsew", padx=5, pady=8)
+            process_box.columnconfigure(0, weight=1)
+            header_bg = process_bg[index % len(process_bg)]
+            tk.Label(
+                process_box,
+                text=process_name,
+                bg=header_bg,
+                fg=PRIMARY if process_name == "KCC PKG" else TEXT_COLOR,
+                font=("맑은 고딕", 9, "bold"),
+                anchor="center",
+                pady=7,
+            ).grid(row=0, column=0, sticky="ew")
+            process_buttons = [
+                ("작업 이력 보기", lambda name=process_name: self.open_process_work_history(name)),
+                ("작업 이력 Excel 내보내기", lambda name=process_name: self.export_process_work_history(name)),
+                ("작업조건/지그 Excel 내보내기", lambda name=process_name: self.export_process_condition_master(name)),
+                ("전체 data 백업 만들기", self.create_data_backup_from_settings),
+            ]
+            for button_index, (text, command) in enumerate(process_buttons, start=1):
+                ttk.Button(process_box, text=text, command=command).grid(row=button_index, column=0, sticky="ew", padx=6, pady=4)
 
     def select_folder_to_var(self, var: tk.StringVar, save_after: bool = False) -> None:
         folder = filedialog.askdirectory(initialdir=var.get() or str(get_desktop_path()))
@@ -3175,6 +3582,78 @@ class JiinDncManager:
                 activeforeground=PRIMARY,
             )
 
+    def require_kcc_pkg_management(self, process_name: str) -> bool:
+        if process_name == "KCC PKG":
+            return True
+        show_operator_alert(self.root, "추후 개발 예정", f"{process_name} 준비중", "info")
+        return False
+
+    def open_process_work_history(self, process_name: str) -> None:
+        if not self.require_kcc_pkg_management(process_name):
+            return
+        self.open_work_history_popup()
+
+    def export_process_work_history(self, process_name: str) -> None:
+        if not self.require_kcc_pkg_management(process_name):
+            return
+        default_name = f"KCC_PKG_작업이력_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        selected_path = filedialog.asksaveasfilename(
+            parent=self.root,
+            title="작업 이력 Excel 저장",
+            initialfile=default_name,
+            defaultextension=".xlsx",
+            filetypes=[("Excel 파일", "*.xlsx")],
+        )
+        if not selected_path:
+            return
+        try:
+            path = export_kcc_pkg_work_history_excel(Path(selected_path))
+        except Exception as exc:
+            log_error("작업 이력 Excel 내보내기 실패", exc)
+            show_operator_alert(self.root, "내보내기 실패", "작업 이력 저장 실패")
+            return
+        show_operator_alert(self.root, "내보내기 완료", f"작업 이력 Excel 생성\n{path}", "info")
+
+    def export_process_condition_master(self, process_name: str) -> None:
+        if not self.require_kcc_pkg_management(process_name):
+            return
+        default_name = f"KCC_PKG_작업조건_지그_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        selected_path = filedialog.asksaveasfilename(
+            parent=self.root,
+            title="작업조건/지그 Excel 저장",
+            initialfile=default_name,
+            defaultextension=".xlsx",
+            filetypes=[("Excel 파일", "*.xlsx")],
+        )
+        if not selected_path:
+            return
+        try:
+            path = export_kcc_pkg_condition_master_excel(Path(selected_path))
+        except Exception as exc:
+            log_error("작업조건/지그 Excel 내보내기 실패", exc)
+            show_operator_alert(self.root, "내보내기 실패", "작업조건/지그 저장 실패")
+            return
+        show_operator_alert(self.root, "내보내기 완료", f"작업조건/지그 Excel 생성\n{path}", "info")
+
+    def create_data_backup_from_settings(self) -> None:
+        default_name = f"data_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        selected_path = filedialog.asksaveasfilename(
+            parent=self.root,
+            title="전체 data 백업 저장",
+            initialfile=default_name,
+            defaultextension=".zip",
+            filetypes=[("ZIP 파일", "*.zip")],
+        )
+        if not selected_path:
+            return
+        try:
+            path = create_full_data_backup_zip(Path(selected_path))
+        except Exception as exc:
+            log_error("전체 data 백업 실패", exc)
+            show_operator_alert(self.root, "백업 실패", "data 백업 실패")
+            return
+        show_operator_alert(self.root, "백업 완료", f"data 백업 생성\n{path}", "info")
+
     def save_settings_from_ui(self) -> None:
         self.save_settings_from_ui_silent(show_error=True)
 
@@ -3197,7 +3676,11 @@ class JiinDncManager:
         if password != str(self.config.get("master_password", MASTER_SETTINGS_PASSWORD)):
             show_operator_alert(self.root, "비밀번호 확인", "비밀번호 불일치")
             return
-        MasterSettingsPopup(self)
+        try:
+            MasterSettingsPopup(self)
+        except Exception as exc:
+            log_error("마스터 설정 창 열기 실패", exc)
+            show_operator_alert(self.root, "마스터 설정", "창 열기 실패", "error")
 
     def get_common_data(self) -> dict:
         return {key: entry.get() for key, entry in self.common_entries.items()}
@@ -3626,8 +4109,12 @@ class JiinDncManager:
             for remain in range(wait_seconds, 0, -1):
                 self.set_dnc_status(f"초품 확인 대기중 ({remain}초)")
                 time.sleep(1)
+            if delete_thread.is_alive():
+                self.set_dnc_status("DNC 파일 정리중")
+                log_app("초품 확인 전 DNC 파일 삭제 완료 대기")
+                delete_thread.join()
             log_app("초품 확인 팝업 호출")
-            self.root.after(0, lambda: self.finish_normal_dnc(log_ids, lots, stack, model_change, delete_thread))
+            self.root.after(0, lambda: self.finish_normal_dnc(log_ids, lots, stack, model_change, None))
         except Exception as exc:
             self.root.after(0, lambda error=exc: self.handle_run_error(error))
 
@@ -3924,10 +4411,8 @@ class FrequentCheckPopup:
         self.create_ui()
         self.window.transient(app.root)
         self.window.grab_set()
-        self.window.lift()
-        self.window.focus_force()
-        self.window.attributes("-topmost", True)
         self.center_on_parent()
+        keep_modal_on_top(self.window, app.root)
 
     def center_on_parent(self) -> None:
         self.window.update_idletasks()
@@ -4082,7 +4567,7 @@ class WorkHistoryPopup:
         columns = (
             "id", "dnc_type", "status", "exported", "machine", "work_date", "shift_group", "shift_name",
             "worker", "step", "round_no", "manage_no", "lot_no", "qty_text", "result_value",
-            "condition_name", "jig", "stack", "model_change_text", "burr_result", "record_time", "created_at",
+            "condition_name", "jig", "stack", "model_change_text", "burr_result", "created_at", "record_time", "exported_at",
         )
         self.tree = ttk.Treeview(body, columns=columns, show="headings", selectmode="browse")
         headings = {
@@ -4106,8 +4591,9 @@ class WorkHistoryPopup:
             "stack": "Stack",
             "model_change_text": "기종/검증",
             "burr_result": "Burr",
-            "record_time": "작업시간",
-            "created_at": "DB저장시간",
+            "created_at": "DNC 시작시간",
+            "record_time": "DNC 완료시간",
+            "exported_at": "엑셀 반영시간",
         }
         widths = {
             "id": 60,
@@ -4130,8 +4616,9 @@ class WorkHistoryPopup:
             "stack": 70,
             "model_change_text": 90,
             "burr_result": 90,
-            "record_time": 90,
             "created_at": 150,
+            "record_time": 110,
+            "exported_at": 150,
         }
         for column in columns:
             self.tree.heading(column, text=headings[column])
@@ -4179,8 +4666,9 @@ class WorkHistoryPopup:
                 row["stack"] or "",
                 row["model_change_text"] or "",
                 row["burr_result"] or "",
-                row["record_time"] or "",
                 row["created_at"] or "",
+                row["record_time"] or "",
+                row["exported_at"] or "",
             )
             self.tree.insert("", "end", values=values)
         pending_count = get_unexported_kcc_pkg_count()
