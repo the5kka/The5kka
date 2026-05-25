@@ -36,7 +36,7 @@ DNC_DELETE_SECONDS = 10
 FIRST_ARTICLE_WAIT_SECONDS = 5
 EXCEL_LOCK_STALE_SECONDS = 10 * 60
 WORK_LOG_SCHEMA_VERSION = 2
-CONDITION_MASTER_SCHEMA_VERSION = 1
+CONDITION_MASTER_SCHEMA_VERSION = 2
 MASTER_SETTINGS_PASSWORD = "1"
 CONDITION_MASTER_PASSWORD = "1"
 LICENSE_PASSWORD = "1"
@@ -60,24 +60,32 @@ def get_app_dir() -> Path:
     return Path(__file__).resolve().parent
 
 
+def bring_existing_app_to_front() -> None:
+    """?? ?? ?? JIIN DNC Manager ?? ?? ??? ????."""
+    if not sys.platform.startswith("win"):
+        return
+    try:
+        user32 = ctypes.windll.user32
+        hwnd = user32.FindWindowW(None, APP_TITLE)
+        if hwnd:
+            user32.ShowWindow(hwnd, 9)  # SW_RESTORE
+            user32.SetForegroundWindow(hwnd)
+    except Exception:
+        pass
+
+
 def acquire_single_instance_lock() -> bool:
-    """프로그램이 이미 실행 중이면 두 번째 실행을 막습니다."""
+    """????? ?? ?? ??? ? ?? ??? ?? ?? ?? ??? ????."""
     global SINGLE_INSTANCE_HANDLE
     if not sys.platform.startswith("win"):
         return True
     kernel32 = ctypes.windll.kernel32
-    user32 = ctypes.windll.user32
     handle = kernel32.CreateMutexW(None, False, SINGLE_INSTANCE_MUTEX_NAME)
     if not handle:
         return True
     if kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
-        user32.MessageBoxW(
-            None,
-            "JIIN DNC Manager가 이미 실행 중입니다.\n\n현재 열린 프로그램을 사용해주세요.",
-            "중복 실행 차단",
-            0x40,
-        )
         kernel32.CloseHandle(handle)
+        bring_existing_app_to_front()
         return False
     SINGLE_INSTANCE_HANDLE = handle
     return True
@@ -995,6 +1003,13 @@ def ask_system_input(parent, title: str, prompt: str, show: str | None = None, n
     footer.pack(fill=tk.X)
 
     def confirm() -> None:
+        # Korean IME may still be composing the last syllable when the button is
+        # clicked. Move focus once and read shortly after so the final character
+        # is committed before we capture the value.
+        dialog.focus_set()
+        dialog.after(80, finalize_confirm)
+
+    def finalize_confirm() -> None:
         result["value"] = value_var.get().strip()
         dialog.destroy()
 
@@ -1489,9 +1504,10 @@ def get_condition_master_connection() -> sqlite3.Connection:
         )
         added = migrate_table_columns(conn, "condition_master", CONDITION_MASTER_COLUMNS)
         ensure_schema_version_table(conn, "condition_master", CONDITION_MASTER_SCHEMA_VERSION)
+        conn.execute("DROP INDEX IF EXISTS idx_condition_master_key")
         conn.execute(
             """
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_condition_master_key
+            CREATE INDEX IF NOT EXISTS idx_condition_master_lookup
             ON condition_master(step, round_no, process_code, manage_no)
             """
         )
@@ -2144,6 +2160,38 @@ def make_condition_key(step: str, round_no: str, manage_no: str, process_code: s
     )
 
 
+def make_condition_record_key(record: dict) -> str:
+    """조건 마스터의 조회 기준 키입니다. 4개 항목이 모두 같아야 같은 조건입니다."""
+    return make_condition_key(
+        record.get("step", ""),
+        record.get("round", ""),
+        record.get("manage_no", ""),
+        record.get("process_code", ""),
+    )
+
+
+def make_condition_value_key(record: dict) -> str:
+    """동일 조회 키 안에서 작업조건/지그까지 같은 완전 동일 행인지 확인합니다."""
+    return "|".join(
+        [
+            make_condition_record_key(record),
+            str(record.get("condition", "")).strip(),
+            str(record.get("jig", "")).strip(),
+        ]
+    )
+
+
+def get_duplicate_condition_keys(records: list[dict]) -> set[str]:
+    """같은 STEP/차수/관리번호/공정코드에 조건이 2개 이상인 키를 찾습니다."""
+    counts: dict[str, set[str]] = {}
+    for record in records:
+        key = make_condition_record_key(record)
+        if not key.replace("|", "").strip():
+            continue
+        counts.setdefault(key, set()).add(make_condition_value_key(record))
+    return {key for key, values in counts.items() if len(values) >= 2}
+
+
 def get_condition_source_priority(source: str) -> int:
     """조건 마스터 출처별 신뢰 우선순위를 반환합니다.
 
@@ -2178,57 +2226,31 @@ def should_replace_condition_record(current: dict, incoming: dict) -> bool:
 
 def find_manage_no_conflict(records: list[dict], incoming: dict) -> dict | None:
     """동일 관리번호가 다른 조건 키로 존재하는지 확인합니다."""
-    incoming_manage_no = str(incoming.get("manage_no", "")).strip()
-    if not incoming_manage_no:
-        return None
-    incoming_key = make_condition_key(
-        incoming.get("step", ""),
-        incoming.get("round", ""),
-        incoming.get("manage_no", ""),
-        incoming.get("process_code", ""),
-    )
-    for record in records:
-        if str(record.get("manage_no", "")).strip() != incoming_manage_no:
-            continue
-        record_key = make_condition_key(
-            record.get("step", ""),
-            record.get("round", ""),
-            record.get("manage_no", ""),
-            record.get("process_code", ""),
-        )
-        if record_key != incoming_key:
-            return record
+    # 관리번호가 같아도 STEP/차수/공정코드가 다르면 실제 작업 조건이 다를 수 있습니다.
+    # 중복 판단은 make_condition_key(STEP+차수+관리번호+공정코드) 기준으로만 처리합니다.
     return None
 
 
 def merge_condition_records(records: list[dict]) -> list[dict]:
-    """같은 STEP/차수/관리번호 조건은 한 줄로 합치되 출처 우선순위를 보호합니다."""
+    """?? ???? ?????.
+
+    STEP/??/????/????? ??? ???? ?? ??? ???
+    ??? ? ? ?????. ? ?? ?? ? ?? ???? ????,
+    ??? ?? ????? ??? ????? ???.
+    """
     merged: dict[str, dict] = {}
     for record in records:
         if not str(record.get("process_code", "")).strip():
             continue
-        key = make_condition_key(
-            record.get("step", ""),
-            record.get("round", ""),
-            record.get("manage_no", ""),
-            record.get("process_code", ""),
-        )
-        if not key.replace("|", "").strip():
+        lookup_key = make_condition_record_key(record)
+        if not lookup_key.replace("|", "").strip():
             continue
-        if key not in merged:
-            conflict = find_manage_no_conflict(list(merged.values()), record)
-            if conflict:
-                log_app(
-                    "조건 마스터 동일 관리번호 차단: "
-                    f"관리번호={record.get('manage_no', '')}, "
-                    f"기존 STEP={conflict.get('step', '')}, 기존 차수={conflict.get('round', '')}, 기존 공정={conflict.get('process_code', '')}, "
-                    f"신규 STEP={record.get('step', '')}, 신규 차수={record.get('round', '')}, 신규 공정={record.get('process_code', '')}"
-                )
-                continue
-            merged[key] = dict(record)
+        value_key = make_condition_value_key(record)
+        if value_key not in merged:
+            merged[value_key] = dict(record)
             continue
 
-        current = merged[key]
+        current = merged[value_key]
         if not should_replace_condition_record(current, record):
             continue
         for field in ("step", "round", "manage_no", "condition", "jig", "source", "updated_at", "lot_no"):
@@ -2239,8 +2261,17 @@ def merge_condition_records(records: list[dict]) -> list[dict]:
         if process_code:
             current["process_code"] = process_code
 
-    return sorted(merged.values(), key=lambda item: (item.get("step", ""), item.get("round", ""), item.get("process_code", ""), item.get("manage_no", "")))
-
+    return sorted(
+        merged.values(),
+        key=lambda item: (
+            item.get("manage_no", ""),
+            item.get("round", ""),
+            item.get("step", ""),
+            item.get("process_code", ""),
+            item.get("condition", ""),
+            item.get("jig", ""),
+        ),
+    )
 
 def load_condition_master() -> list[dict]:
     """KCC PKG 조건 마스터 DB를 읽습니다. 예전 JSON 파일이 있으면 1회 가져옵니다."""
@@ -2281,7 +2312,7 @@ def load_condition_master() -> list[dict]:
             SELECT step, round_no, manage_no, process_code, lot_no,
                    condition_name, jig, source, updated_at
               FROM condition_master
-             ORDER BY step, round_no, process_code, manage_no
+             ORDER BY manage_no, round_no, step, process_code
             """
         ).fetchall()
         return [
@@ -2335,11 +2366,17 @@ def save_condition_master(records: list[dict]) -> None:
 
 
 def upsert_condition_master(lot: dict, condition: str, jig: str, source: str) -> None:
-    """현재 입력값과 불러온 조건/지그를 조건 마스터에 추가 또는 갱신합니다."""
+    """?? ???? ??/??? ?? ???? ?? ?? ?????.
+
+    ?? ??? STEP + ?? + ???? + ???????.
+    ?? ?? ??? ????/??? ??? ?? ??? ? ? ?????.
+    """
     step = lot.get("step", "").strip()
     round_no = lot.get("round", "").strip()
     manage_no = lot.get("manage_no", "").strip()
     process_code = lot.get("process_code", "").strip()
+    condition = str(condition or "").strip()
+    jig = str(jig or "").strip()
     if not (step and round_no and process_code and manage_no and condition and jig):
         return
 
@@ -2356,45 +2393,43 @@ def upsert_condition_master(lot: dict, condition: str, jig: str, source: str) ->
         "source": source,
         "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
-    conflict = find_manage_no_conflict(records, incoming_record)
-    if conflict:
-        log_app(
-            "조건 마스터 동일 관리번호 등록 차단: "
-            f"관리번호={manage_no}, 기존 STEP={conflict.get('step', '')}, 기존 차수={conflict.get('round', '')}, "
-            f"기존 공정={conflict.get('process_code', '')}, 신규 STEP={step}, 신규 차수={round_no}, 신규 공정={process_code}"
-        )
-        return
-    for record in records:
-        record_key = make_condition_key(
-            record.get("step", ""),
-            record.get("round", ""),
-            record.get("manage_no", ""),
-            record.get("process_code", ""),
-        )
-        if record_key == key:
-            incoming = {"source": source}
-            if not should_replace_condition_record(record, incoming):
-                log_app(
-                    "조건 마스터 갱신 건너뜀: "
-                    f"기존 출처={record.get('source', '')}, 새 출처={source}, "
-                    f"STEP={step}, 차수={round_no}, 관리번호={manage_no}, 공정코드={process_code}"
-                )
-                return
-            record.update(
-                {
-                    "lot_no": lot.get("lot_no", "").strip(),
-                    "condition": condition,
-                    "jig": jig,
-                    "source": source,
-                    "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                }
-            )
-            save_condition_master(records)
-            return
+    incoming_value_key = make_condition_value_key(incoming_record)
 
+    same_lookup_count = 0
+    for record in records:
+        record_key = make_condition_record_key(record)
+        if record_key != key:
+            continue
+        same_lookup_count += 1
+        if make_condition_value_key(record) != incoming_value_key:
+            continue
+        incoming = {"source": source}
+        if not should_replace_condition_record(record, incoming):
+            log_app(
+                "조건 마스터 갱신 건너뜀: "
+                f"기존 출처={record.get('source', '')}, 새 출처={source}, "
+                f"STEP={step}, 차수={round_no}, 관리번호={manage_no}, 공정코드={process_code}"
+            )
+            return
+        record.update(
+            {
+                "lot_no": lot.get("lot_no", "").strip(),
+                "condition": condition,
+                "jig": jig,
+                "source": source,
+                "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        )
+        save_condition_master(records)
+        return
+
+    if same_lookup_count:
+        log_app(
+            "조건 마스터 중복 후보 추가: "
+            f"STEP={step}, 차수={round_no}, 관리번호={manage_no}, 공정코드={process_code}"
+        )
     records.append(incoming_record)
     save_condition_master(records)
-
 
 def rebuild_condition_master_from_log(config: dict) -> int:
     """작업일보 KCC PKG 시트의 최신 이력을 기존 마스터에 병합합니다.
@@ -2406,6 +2441,7 @@ def rebuild_condition_master_from_log(config: dict) -> int:
     sync_condition_master_from_completed_logs()
     workbook, ws, _path = open_log_workbook(config)
     records = load_condition_master()
+    before_keys = {make_condition_value_key(record) for record in records}
     try:
         for row in range(8, ws.max_row + 1):
             step = str(ws.cell(row=row, column=6).value or "").strip()
@@ -2438,30 +2474,48 @@ def rebuild_condition_master_from_log(config: dict) -> int:
         workbook.close()
 
     save_condition_master(records)
-    return len(load_condition_master())
+    after_records = load_condition_master()
+    after_keys = {make_condition_value_key(record) for record in after_records}
+    return len(after_keys - before_keys)
 
 
 def lookup_condition_jig_from_master(lot: dict) -> tuple[str, str, str]:
-    """조건 마스터에서 작업조건/지그를 먼저 찾습니다."""
+    """?? ????? ????/??? ????.
+
+    STEP + ?? + ???? + ????? ?? ???? ?????.
+    ?? ?? ??/??? 2? ???? ???? ?? ???? ??? ?????.
+    """
     records = load_condition_master()
     step = lot.get("step", "").strip()
     round_no = lot.get("round", "").strip()
     manage_no = lot.get("manage_no", "").strip()
     process_code = lot.get("process_code", "").strip()
-    if not (step and round_no and process_code):
+    if not (step and round_no and manage_no and process_code):
         return "", "", ""
 
-    for record in reversed(records):
-        if (
-            record.get("step", "") == step
-            and record.get("round", "") == round_no
-            and record.get("process_code", "") == process_code
-            and (not manage_no or record.get("manage_no", "") == manage_no)
-        ):
-            return record.get("condition", ""), record.get("jig", ""), f"조건 마스터({record.get('source', '저장값')})"
+    matches = [
+        record
+        for record in records
+        if record.get("step", "") == step
+        and record.get("round", "") == round_no
+        and record.get("manage_no", "") == manage_no
+        and record.get("process_code", "") == process_code
+    ]
+    distinct: dict[str, dict] = {}
+    for record in matches:
+        distinct[make_condition_value_key(record)] = record
+    matches = list(distinct.values())
+    if len(matches) >= 2:
+        details = " / ".join(
+            f"{record.get('condition', '')}, 지그 {record.get('jig', '')}"
+            for record in matches[:3]
+        )
+        raise ValueError(f"중복 조건\n조건 마스터에서 하나만 남기세요.\n{details}")
+    if len(matches) == 1:
+        record = matches[0]
+        return record.get("condition", ""), record.get("jig", ""), f"조건 마스터({record.get('source', '저장값')})"
 
     return "", "", ""
-
 
 def describe_condition_lookup_mismatch(lot: dict) -> str:
     """조건 마스터에서 왜 조건을 찾지 못했는지 작업자용 문구로 설명합니다."""
@@ -3102,6 +3156,8 @@ class JiinDncManager:
         self.lot_condition_keys: dict[int, str] = {1: "", 2: ""}
         self.current_work_period_key = ""
         self.last_common_manual_change_at: datetime | None = None
+        self.master_settings_popup = None
+        self.condition_master_popup = None
 
         self.setup_style()
         self.create_layout()
@@ -3169,6 +3225,8 @@ class JiinDncManager:
         style.configure("Primary.TButton", font=("맑은 고딕", 11, "bold"), padding=(16, 10), background=PRIMARY_LIGHT, foreground=PRIMARY)
         style.configure("Side.TButton", font=("맑은 고딕", 10), padding=(12, 8), background=SURFACE_BG, foreground=TEXT_COLOR)
         style.configure("SidePrimary.TButton", font=("맑은 고딕", 10, "bold"), padding=(12, 8), background=PRIMARY_LIGHT, foreground=PRIMARY)
+        style.configure("SideDanger.TButton", font=("중복 조건", 10, "bold"), padding=(12, 8), background="#fee2e2", foreground=NG_COLOR)
+        style.map("SideDanger.TButton", background=[("active", "#fecaca")], foreground=[("active", NG_COLOR)])
         style.configure("Wide.TEntry", padding=(8, 5), fieldbackground=SURFACE_BG)
         style.configure("White.TCombobox", padding=(8, 5), fieldbackground=SURFACE_BG, background=SURFACE_BG, foreground=TEXT_COLOR)
         style.map(
@@ -3327,13 +3385,15 @@ class JiinDncManager:
 
         button_panel = ttk.Frame(bottom)
         button_panel.grid(row=0, column=1, rowspan=2, sticky="ne")
-        for column in range(2):
+        for column in range(3):
             button_panel.columnconfigure(column, weight=1, uniform="side_buttons")
+        self.add_side_button(button_panel, "작업일보 마스터 갱신", self.rebuild_condition_master, "SidePrimary.TButton").grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
         self.new_model_button = self.add_side_button(button_panel, "신규 모델 검증 DNC", self.open_new_model_popup, "SidePrimary.TButton")
-        self.new_model_button.grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
-        self.add_side_button(button_panel, "조건 마스터 관리", self.open_condition_master_popup, "SidePrimary.TButton").grid(row=0, column=1, sticky="nsew", padx=4, pady=4)
+        self.new_model_button.grid(row=0, column=1, sticky="nsew", padx=4, pady=4)
+        self.add_side_button(button_panel, "조건 마스터 관리", self.open_condition_master_popup, "SideDanger.TButton").grid(row=0, column=2, sticky="nsew", padx=4, pady=4)
         self.add_side_button(button_panel, "작업일보 반영", self.export_kcc_pkg_to_excel_from_ui).grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
         self.add_side_button(button_panel, "작업일보 열기", self.open_log_excel_from_ui).grid(row=1, column=1, sticky="nsew", padx=4, pady=4)
+
 
         for entry in list(self.lot1_entries.values()) + list(self.lot2_entries.values()):
             entry.var.trace_add("write", lambda *_args: self.update_status_checks())
@@ -3664,23 +3724,46 @@ class JiinDncManager:
         except Exception as exc:
             show_operator_alert(self.root, "조건 마스터 갱신 실패", str(exc), "error")
             return
-        show_operator_alert(self.root, "조건 마스터 갱신 완료", f"{count}개 조건 저장", "info")
+        show_operator_alert(self.root, "작업일보 마스터 갱신", f"신규 등록 {count}건", "info")
 
     def open_work_history_popup(self) -> None:
         WorkHistoryPopup(self)
 
+    def focus_existing_popup(self, attr_name: str) -> bool:
+        popup = getattr(self, attr_name, None)
+        window = getattr(popup, "window", None) if popup is not None else None
+        try:
+            if window is not None and window.winfo_exists():
+                window.deiconify()
+                window.lift()
+                window.focus_force()
+                return True
+        except tk.TclError:
+            pass
+        setattr(self, attr_name, None)
+        return False
+
     def open_master_settings_popup(self) -> None:
-        password = ask_system_input(self.root, "마스터 설정", "비밀번호 입력", show="*")
+        if self.focus_existing_popup("master_settings_popup"):
+            return
+        password = ask_system_input(self.root, "\uB9C8\uC2A4\uD130 \uC124\uC815", "\uBE44\uBC00\uBC88\uD638 \uC785\uB825", show="*")
         if password is None:
             return
         if password != str(self.config.get("master_password", MASTER_SETTINGS_PASSWORD)):
-            show_operator_alert(self.root, "비밀번호 확인", "비밀번호 불일치")
+            show_operator_alert(self.root, "\uBE44\uBC00\uBC88\uD638 \uD655\uC778", "\uBE44\uBC00\uBC88\uD638 \uBD88\uC77C\uCE58")
             return
-        try:
-            MasterSettingsPopup(self)
-        except Exception as exc:
-            log_error("마스터 설정 창 열기 실패", exc)
-            show_operator_alert(self.root, "마스터 설정", "창 열기 실패", "error")
+
+        def delayed_open() -> None:
+            if self.focus_existing_popup("master_settings_popup"):
+                return
+            try:
+                self.master_settings_popup = MasterSettingsPopup(self)
+            except Exception as exc:
+                self.master_settings_popup = None
+                log_error("\uB9C8\uC2A4\uD130 \uC124\uC815 \uCC3D \uC5F4\uAE30 \uC2E4\uD328", exc)
+                show_operator_alert(self.root, "\uB9C8\uC2A4\uD130 \uC124\uC815", "\uCC3D \uC5F4\uAE30 \uC2E4\uD328", "error")
+
+        self.root.after(150, delayed_open)
 
     def get_common_data(self) -> dict:
         return {key: entry.get() for key, entry in self.common_entries.items()}
@@ -3990,6 +4073,10 @@ class JiinDncManager:
             return False
         try:
             condition, jig, source = lookup_condition_jig_from_history(self.config, lot)
+        except ValueError as exc:
+            show_operator_alert(self.root, "중복 조건", str(exc), "error")
+            self.set_status("dnc", "중복 조건 확인 필요", False)
+            return False
         except Exception as exc:
             show_operator_alert(self.root, "이력 조회 실패", str(exc), "error")
             return False
@@ -4109,12 +4196,8 @@ class JiinDncManager:
             for remain in range(wait_seconds, 0, -1):
                 self.set_dnc_status(f"초품 확인 대기중 ({remain}초)")
                 time.sleep(1)
-            if delete_thread.is_alive():
-                self.set_dnc_status("DNC 파일 정리중")
-                log_app("초품 확인 전 DNC 파일 삭제 완료 대기")
-                delete_thread.join()
             log_app("초품 확인 팝업 호출")
-            self.root.after(0, lambda: self.finish_normal_dnc(log_ids, lots, stack, model_change, None))
+            self.root.after(0, lambda: self.finish_normal_dnc(log_ids, lots, stack, model_change, delete_thread))
         except Exception as exc:
             self.root.after(0, lambda error=exc: self.handle_run_error(error))
 
@@ -4178,6 +4261,21 @@ class JiinDncManager:
                 show_operator_alert(self.root, "초품 수량 확인", message)
                 self.set_status("dnc", "초품 수량 NG", False)
             update_normal_frequent_check_db(log_ids, model_change, self.frequent_check_values)
+            if delete_thread and delete_thread.is_alive():
+                self.set_status("dnc", "DNC 완료 대기중", None)
+
+                def wait_and_continue() -> None:
+                    delete_thread.join()
+                    self.root.after(0, lambda: self.finish_normal_after_delete(log_ids))
+
+                threading.Thread(target=wait_and_continue, daemon=True).start()
+                return
+            self.finish_normal_after_delete(log_ids)
+        except Exception as exc:
+            self.handle_run_error(exc)
+
+    def finish_normal_after_delete(self, log_ids: list[int]) -> None:
+        try:
             burr_ok = ask_system_yes_no(self.root, "Burr 확인", "4면 Burr 이상 없습니까?")
             update_normal_burr_db(log_ids, burr_ok)
             pending_count = get_unexported_kcc_pkg_count()
@@ -4189,7 +4287,7 @@ class JiinDncManager:
         except Exception as exc:
             self.handle_run_error(exc)
         finally:
-            self.release_running_after_delete(delete_thread)
+            self.set_running(False)
 
     def clear_normal_inputs(self, after_done: bool = False) -> None:
         for entry in self.lot1_entries.values():
@@ -4300,13 +4398,21 @@ class JiinDncManager:
         self.set_status("excel", f"작업일보 반영 완료 / Excel 미반영 {pending_total}건", True)
 
     def open_condition_master_popup(self) -> None:
-        password = ask_system_input(self.root, "조건 마스터 관리", "비밀번호 입력", show="*")
+        if self.focus_existing_popup("condition_master_popup"):
+            return
+        password = ask_system_input(self.root, "\uC870\uAC74 \uB9C8\uC2A4\uD130 \uAD00\uB9AC", "\uBE44\uBC00\uBC88\uD638 \uC785\uB825", show="*")
         if password is None:
             return
         if password != str(self.config.get("condition_master_password", CONDITION_MASTER_PASSWORD)):
-            show_operator_alert(self.root, "비밀번호 확인", "비밀번호 불일치")
+            show_operator_alert(self.root, "\uBE44\uBC00\uBC88\uD638 \uD655\uC778", "\uBE44\uBC00\uBC88\uD638 \uBD88\uC77C\uCE58")
             return
-        ConditionMasterPopup(self)
+
+        def delayed_open() -> None:
+            if self.focus_existing_popup("condition_master_popup"):
+                return
+            self.condition_master_popup = ConditionMasterPopup(self)
+
+        self.root.after(150, delayed_open)
 
     def open_frequent_check_popup(self, mode: str, allowed_axes: list[int] | None = None) -> bool:
         if mode == "first":
@@ -4692,6 +4798,7 @@ class MasterSettingsPopup:
         self.first_article_wait_var = tk.StringVar(value=str(app.config.get("first_article_wait_seconds", FIRST_ARTICLE_WAIT_SECONDS)))
         self.create_ui()
         self.window.protocol("WM_DELETE_WINDOW", self.close)
+        self.window.after_idle(self.window.focus_set)
 
     def create_ui(self) -> None:
         panel = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
@@ -4762,6 +4869,7 @@ class MasterSettingsPopup:
 
     def close(self) -> None:
         if self.save_master_settings(show_message=False):
+            self.app.master_settings_popup = None
             self.window.destroy()
 
     def rebuild_condition_master(self) -> None:
@@ -4910,17 +5018,25 @@ class ConditionMasterPopup:
         self.app = app
         self.records = load_condition_master()
         self.search_var = tk.StringVar()
+        self.show_duplicates_only = False
+        self.duplicate_keys: set[str] = set()
         self.window = tk.Toplevel(app.root)
         self.window.title("KCC PKG 조건 마스터 관리")
         self.window.geometry("980x620")
         self.window.configure(bg=APP_BG)
         self.create_ui()
         self.refresh_tree()
+        self.window.protocol("WM_DELETE_WINDOW", self.close)
+        self.window.after_idle(self.window.focus_set)
+
+    def close(self) -> None:
+        self.app.condition_master_popup = None
+        self.window.destroy()
 
     def create_ui(self) -> None:
         top = ttk.Frame(self.window, padding=(12, 12, 12, 8))
         top.pack(fill=tk.X)
-        ttk.Button(top, text="작업일보 이력으로 갱신", command=self.rebuild_from_log, style="Primary.TButton").pack(side=tk.LEFT, padx=(0, 8))
+        ttk.Button(top, text="작업일보 마스터 갱신", command=self.rebuild_from_log, style="Primary.TButton").pack(side=tk.LEFT, padx=(0, 8))
         ttk.Button(top, text="선택 수정 저장", command=self.save_selected_edit).pack(side=tk.LEFT, padx=(0, 8))
         ttk.Button(top, text="선택 삭제", command=self.delete_selected_record).pack(side=tk.LEFT, padx=(0, 8))
         ttk.Button(top, text="닫기", command=self.window.destroy).pack(side=tk.RIGHT)
@@ -4931,6 +5047,7 @@ class ConditionMasterPopup:
         search_entry = ttk.Entry(search, textvariable=self.search_var, style="Wide.TEntry", width=42)
         search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
         ttk.Button(search, text="조회", command=self.refresh_tree).pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Button(search, text="중복 조건만", command=self.toggle_duplicate_view).pack(side=tk.LEFT, padx=(0, 6))
         ttk.Button(search, text="전체 보기", command=self.clear_search).pack(side=tk.LEFT)
         self.search_var.trace_add("write", lambda *_args: self.refresh_tree())
 
@@ -4963,6 +5080,7 @@ class ConditionMasterPopup:
             self.tree.heading(column, text=headings[column])
             self.tree.column(column, width=widths[column], anchor="w")
         self.tree.grid(row=0, column=0, sticky="nsew")
+        self.tree.tag_configure("duplicate", background="#fee2e2", foreground=NG_COLOR)
         self.tree.bind("<<TreeviewSelect>>", self.on_select)
         scroll = ttk.Scrollbar(body, orient=tk.VERTICAL, command=self.tree.yview)
         scroll.grid(row=0, column=1, sticky="ns")
@@ -4993,8 +5111,12 @@ class ConditionMasterPopup:
 
     def refresh_tree(self) -> None:
         self.tree.delete(*self.tree.get_children())
+        self.duplicate_keys = get_duplicate_condition_keys(self.records)
         keyword = self.search_var.get().strip().lower()
         for index, record in enumerate(self.records):
+            is_duplicate = make_condition_record_key(record) in self.duplicate_keys
+            if self.show_duplicates_only and not is_duplicate:
+                continue
             if keyword and not self.record_matches_keyword(record, keyword):
                 continue
             self.tree.insert(
@@ -5010,10 +5132,16 @@ class ConditionMasterPopup:
                     record.get("jig", ""),
                     record.get("source", ""),
                 ),
+                tags=("duplicate",) if is_duplicate else (),
             )
+
+    def toggle_duplicate_view(self) -> None:
+        self.show_duplicates_only = not self.show_duplicates_only
+        self.refresh_tree()
 
     def clear_search(self) -> None:
         self.search_var.set("")
+        self.show_duplicates_only = False
         self.refresh_tree()
 
     def record_matches_keyword(self, record: dict, keyword: str) -> bool:
@@ -5081,12 +5209,8 @@ class ConditionMasterPopup:
             return
         self.records = load_condition_master()
         self.refresh_tree()
-        show_operator_alert(
-            self.window,
-            "갱신 완료",
-            f"조건 마스터 정리 완료\n현재 {count}개",
-            "info",
-        )
+        show_operator_alert(self.window, "작업일보 마스터 갱신", f"신규 등록 {count}건", "info")
+
 
 
 class NewModelPopup:
@@ -5529,10 +5653,14 @@ def finish_new_model_dnc(popup: NewModelPopup, log_ids: list[int], lots: list[di
         else:
             popup.excel_label.configure(text=f"작업일보 반영: Excel 미반영 {get_unexported_kcc_pkg_count()}건", fg=NG_COLOR)
         popup.clear_after_done()
+        popup.set_running(False)
+        popup.app.set_running(False)
+        popup.window.after(200, popup.window.destroy)
     except Exception as exc:
         handle_popup_error(popup, exc)
     finally:
-        popup.set_running(False)
+        if popup.window.winfo_exists():
+            popup.set_running(False)
         popup.app.set_running(False)
 
 
@@ -5546,6 +5674,7 @@ def handle_popup_error(popup: NewModelPopup, exc: Exception) -> None:
 
 def main() -> None:
     if not acquire_single_instance_lock():
+        bring_existing_app_to_front()
         return
     config = load_config()
     if not is_license_allowed(config):
