@@ -1740,6 +1740,200 @@ def get_incomplete_kcc_pkg_count() -> int:
         conn.close()
 
 
+
+
+def get_unexported_process_log_count(process_name: str) -> int:
+    conn = get_kcc_pkg_connection()
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) AS count FROM dnc_logs WHERE customer_process=? AND exported=0 AND status='완료'",
+            (process_name,),
+        ).fetchone()
+        return int(row["count"])
+    finally:
+        conn.close()
+
+
+def get_incomplete_process_log_count(process_name: str) -> int:
+    conn = get_kcc_pkg_connection()
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) AS count FROM dnc_logs WHERE customer_process=? AND exported=0 AND status!='완료'",
+            (process_name,),
+        ).fetchone()
+        return int(row["count"])
+    finally:
+        conn.close()
+
+
+def format_excel_cell_value(value) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return str(value).strip()
+
+
+def normalize_round_key(value) -> str:
+    text = format_excel_cell_value(value).upper().replace(" ", "")
+    digits = "".join(ch for ch in text if ch.isdigit())
+    return digits or text
+
+
+def lookup_tlb_condition_record_from_sheet(config: dict, tool_no: str, round_no: str) -> dict:
+    sheet_path = Path(str(config.get("tlb_condition_sheet", "")).strip())
+    if not sheet_path:
+        raise FileNotFoundError("TLB 조건 시트 선택 필요")
+    if not sheet_path.exists():
+        raise FileNotFoundError("TLB 조건 시트 열림")
+    try:
+        workbook = load_workbook(sheet_path, read_only=True, data_only=True)
+    except PermissionError:
+        raise PermissionError("TLB 조건 시트 열림")
+    target_tool = tool_no.strip().upper()
+    target_round = normalize_round_key(round_no)
+    matches: list[dict] = []
+    try:
+        if "Database" not in workbook.sheetnames:
+            raise KeyError("Database 시트 없음")
+        ws = workbook["Database"]
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            row_tool = format_excel_cell_value(row[1] if len(row) > 1 else "").upper()
+            row_round = normalize_round_key(row[2] if len(row) > 2 else "")
+            if row_tool == target_tool and row_round == target_round:
+                trim_program = format_excel_cell_value(row[13] if len(row) > 13 else "")
+                jig_name = format_excel_cell_value(row[14] if len(row) > 14 else "")
+                jig_value = format_excel_cell_value(row[17] if len(row) > 17 else "")
+                jig = f"[{jig_name}] {jig_value}".strip() if jig_name else jig_value
+                matches.append(
+                    {
+                        "condition": trim_program,
+                        "jig": jig,
+                        "product": format_excel_cell_value(row[3] if len(row) > 3 else ""),
+                        "stack": format_excel_cell_value(row[6] if len(row) > 6 else ""),
+                        "ukp": format_excel_cell_value(row[7] if len(row) > 7 else ""),
+                        "top_left": format_excel_cell_value(row[15] if len(row) > 15 else ""),
+                        "top": format_excel_cell_value(row[16] if len(row) > 16 else ""),
+                        "center": format_excel_cell_value(row[17] if len(row) > 17 else ""),
+                        "bottom_left": format_excel_cell_value(row[18] if len(row) > 18 else ""),
+                        "bottom": format_excel_cell_value(row[19] if len(row) > 19 else ""),
+                        "right_top": format_excel_cell_value(row[20] if len(row) > 20 else ""),
+                        "left_mid": format_excel_cell_value(row[21] if len(row) > 21 else ""),
+                        "left_gap": format_excel_cell_value(row[22] if len(row) > 22 else ""),
+                        "right_mid": format_excel_cell_value(row[23] if len(row) > 23 else ""),
+                        "right_bottom": format_excel_cell_value(row[24] if len(row) > 24 else ""),
+                        "hole_shift": format_excel_cell_value(row[26] if len(row) > 26 else ""),
+                    }
+                )
+    finally:
+        workbook.close()
+    unique = []
+    for item in matches:
+        if item not in unique:
+            unique.append(item)
+    if not unique:
+        raise LookupError("조건 시트에서 Tool No / 차수를 찾을 수 없습니다.\n기술 문의 바랍니다.")
+    if len(unique) > 1:
+        raise ValueError("조건 시트에 동일 조건이 2개 이상입니다.\n기술 문의 바랍니다.")
+    condition = unique[0]["condition"]
+    jig = unique[0]["jig"]
+    if not condition or not jig:
+        raise LookupError("조건 시트에 Trim 조건 또는 지그가 없습니다.\n기술 문의 바랍니다.")
+    return unique[0]
+
+
+def lookup_tlb_condition_from_sheet(config: dict, tool_no: str, round_no: str) -> tuple[str, str]:
+    record = lookup_tlb_condition_record_from_sheet(config, tool_no, round_no)
+    condition = record["condition"]
+    jig = record["jig"]
+    return condition, jig
+
+
+def calculate_tlb_result_value(qty_number: int) -> float | None:
+    if qty_number <= 0:
+        return None
+    return round(qty_number * 3, 1)
+
+
+def insert_tlb_dnc_db(common: dict, lot: dict) -> list[int]:
+    now_text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    qty_number = int(lot["qty"])
+    conn = get_kcc_pkg_connection()
+    try:
+        cursor = conn.execute(
+            """
+            INSERT INTO dnc_logs (
+                customer_process, dnc_type, status, machine, work_date, shift_group, shift_name, worker,
+                step, round_no, manage_no, lot_no, qty_text, qty_number, result_value,
+                process_code, condition_name, jig, stack, model_change_text, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "TLB", "일반", "DNC 진행", normalize_machine_name(common["machine"]),
+                common["work_date"], common["shift_group"], common["shift"], common["worker"],
+                "", lot["round"], lot["manage_no"], lot["lot_no"], lot["qty"], qty_number,
+                calculate_tlb_result_value(qty_number), "", lot["condition"], lot["jig"], "", "", now_text,
+            ),
+        )
+        conn.commit()
+        log_id = int(cursor.lastrowid)
+        log_app(f"TLB DNC DB 저장: id={log_id}")
+        return [log_id]
+    finally:
+        conn.close()
+
+
+def fetch_unexported_process_logs(process_name: str) -> list[sqlite3.Row]:
+    conn = get_kcc_pkg_connection()
+    try:
+        return conn.execute(
+            "SELECT * FROM dnc_logs WHERE customer_process=? AND exported=0 AND status='완료' ORDER BY id",
+            (process_name,),
+        ).fetchall()
+    finally:
+        conn.close()
+
+
+def export_process_logs_to_excel(config: dict, process_name: str, sheet_name: str) -> int:
+    logs = fetch_unexported_process_logs(process_name)
+    if not logs:
+        return 0
+    exported_ids: list[int] = []
+    workbook = None
+    lock_path = None
+    try:
+        excel_path = Path(config.get("excel_file", ""))
+        if not excel_path:
+            raise FileNotFoundError("작업일보 경로 선택 필요")
+        if not excel_path.exists():
+            raise FileNotFoundError("작업일보 파일 없음")
+        lock_path = acquire_excel_export_lock(excel_path)
+        workbook, ws, path = open_log_workbook(config, sheet_name)
+        existing_excel_ids = get_excel_exported_log_ids(ws)
+        start_row = get_next_empty_row(ws)
+        written_count = 0
+        for log in logs:
+            log_id = int(log["id"])
+            if log_id in existing_excel_ids:
+                exported_ids.append(log_id)
+                continue
+            write_db_log_row_to_excel(ws, start_row + written_count, log)
+            exported_ids.append(log_id)
+            written_count += 1
+        if written_count:
+            save_workbook_safely(workbook, path)
+    except Exception as exc:
+        log_error(f"{process_name} 작업일보 반영 실패", exc)
+        raise
+    finally:
+        if workbook is not None:
+            workbook.close()
+        release_excel_export_lock(lock_path)
+    mark_kcc_pkg_logs_exported(exported_ids)
+    log_app(f"{process_name} 작업일보 반영 완료: {len(exported_ids)}건")
+    return len(exported_ids)
+
 def fetch_incomplete_kcc_pkg_logs() -> list[sqlite3.Row]:
     """앱 시작 시 안내할 미완료 이력을 조회합니다."""
     conn = get_kcc_pkg_connection()
@@ -2119,6 +2313,8 @@ def export_process_db_to_excel(process_name: str, config: dict) -> int:
     """공정별 미반영 이력을 작업일보에 반영합니다. 현재는 KCC PKG만 실제 구현되어 있습니다."""
     if process_name == "KCC PKG":
         return export_kcc_pkg_db_to_excel(config)
+    if process_name == "TLB":
+        return export_process_logs_to_excel(config, "TLB", "TLB")
     return 0
 
 
@@ -2126,6 +2322,8 @@ def get_unexported_process_count(process_name: str) -> int:
     """공정별 Excel 미반영 수를 반환합니다. 미구현 공정은 0건으로 둡니다."""
     if process_name == "KCC PKG":
         return get_unexported_kcc_pkg_count()
+    if process_name == "TLB":
+        return get_unexported_process_log_count("TLB")
     return 0
 
 
@@ -2133,6 +2331,8 @@ def get_incomplete_process_count(process_name: str) -> int:
     """공정별 미완료 수를 반환합니다. 미구현 공정은 0건으로 둡니다."""
     if process_name == "KCC PKG":
         return get_incomplete_kcc_pkg_count()
+    if process_name == "TLB":
+        return get_incomplete_process_log_count("TLB")
     return 0
 
 
@@ -3143,6 +3343,11 @@ class JiinDncManager:
         self.common_entries: dict[str, LabeledEntry] = {}
         self.lot1_entries: dict[str, LabeledEntry] = {}
         self.lot2_entries: dict[str, LabeledEntry] = {}
+        self.tlb_common_entries: dict[str, LabeledEntry] = {}
+        self.tlb_entries: dict[str, LabeledEntry] = {}
+        self.tlb_status_labels: dict[str, tk.Label] = {}
+        self.tlb_log_text: scrolledtext.ScrolledText | None = None
+        self.tlb_preview_canvas: tk.Canvas | None = None
         self.normal_buttons: list[ttk.Button] = []
         self.new_model_button: ttk.Button | None = None
         self.status_labels: dict[str, tk.Label] = {}
@@ -3260,7 +3465,9 @@ class JiinDncManager:
         self.notebook = SimpleTabNotebook(self.root)
         self.notebook.pack(fill=tk.BOTH, expand=True, padx=12, pady=(10, 8))
 
-        for tab_name in ["TLB", "심텍 SPS", "심텍 HDI"]:
+        self.tlb_page = tk.Frame(self.notebook.page_area, bg=APP_BG)
+        self.notebook.add(self.tlb_page, "TLB")
+        for tab_name in ["심텍 SPS", "심텍 HDI"]:
             self.notebook.add(self.create_placeholder_tab(tab_name), tab_name)
         self.kcc_pkg_page = tk.Frame(self.notebook.page_area, bg=APP_BG)
         self.notebook.add(self.kcc_pkg_page, "KCC PKG")
@@ -3268,14 +3475,391 @@ class JiinDncManager:
         self.settings_page = tk.Frame(self.notebook.page_area, bg=APP_BG)
         self.notebook.add(self.settings_page, "설정")
 
+        self.create_tlb_tab()
         self.create_kcc_pkg_tab()
         self.create_settings_tab()
-        self.notebook.select(3)
+        self.notebook.select(0)
 
     def create_placeholder_tab(self, name: str) -> tk.Frame:
         page = tk.Frame(self.notebook.page_area, bg=APP_BG)
         tk.Label(page, text=f"{name}\n추후 개발 예정", bg=APP_BG, fg=MUTED_TEXT, font=("맑은 고딕", 22, "bold")).pack(expand=True)
         return page
+
+    def create_tlb_tab(self) -> None:
+        font_name = "맑은 고딕"
+        self.tlb_page.columnconfigure(0, weight=1)
+        self.tlb_page.rowconfigure(2, weight=1)
+        title_wrap = tk.Frame(self.tlb_page, bg=PRIMARY_LIGHT)
+        title_wrap.grid(row=0, column=0, sticky="ew", padx=14, pady=(14, 8))
+        title_wrap.columnconfigure(0, weight=1)
+        tk.Label(title_wrap, text="TLB 일반 DNC", bg=PRIMARY_LIGHT, fg=PRIMARY, font=(font_name, 14, "bold"), height=2).grid(row=0, column=0, sticky="ew")
+        title_buttons = tk.Frame(title_wrap, bg=PRIMARY_LIGHT)
+        title_buttons.grid(row=0, column=1, sticky="e", padx=(8, 10))
+        self.add_normal_button(title_buttons, "TLB DNC 실행", self.run_tlb_dnc, "Primary.TButton").grid(row=0, column=0, padx=4, pady=4)
+        self.add_normal_button(title_buttons, "입력 초기화", self.clear_tlb_inputs).grid(row=0, column=1, padx=4, pady=4)
+
+        common = self.create_panel(self.tlb_page, "공통 입력")
+        common.grid(row=1, column=0, sticky="ew", padx=14, pady=(0, 8))
+        common_widgets = [
+            ("machine", ComboField(common, "설비 호기", ["트리밍 1호기", "트리밍 2호기", "트리밍 3호기"], initial=self.config.get("machine", "트리밍 1호기"), width=12)),
+            ("work_date", DateField(common, "작업일자", on_change=self.mark_common_manual_change)),
+            ("shift_group", SegmentedField(common, "조", ["A", "B", "C"], allow_empty=True, on_change=self.mark_common_manual_change)),
+            ("shift", SegmentedField(common, "근무", ["주간", "야간"], on_change=self.mark_common_manual_change)),
+            ("worker", LabeledEntry(common, "작업자", width=12, on_change=self.mark_common_manual_change)),
+        ]
+        for index, (key, entry) in enumerate(common_widgets):
+            entry.grid(row=1, column=index, sticky="ew", padx=8, pady=8)
+            self.tlb_common_entries[key] = entry
+        common.columnconfigure(0, weight=0, minsize=320)
+        common.columnconfigure(1, weight=1, minsize=430)
+        common.columnconfigure(2, weight=1, minsize=330)
+        common.columnconfigure(3, weight=1, minsize=360)
+        common.columnconfigure(4, weight=0, minsize=320)
+
+        body = ttk.Frame(self.tlb_page)
+        body.grid(row=2, column=0, sticky="nsew", padx=14, pady=0)
+        body.columnconfigure(0, weight=1, uniform="tlb_body")
+        body.columnconfigure(1, weight=1, uniform="tlb_body")
+        panel = self.create_panel(body, "TLB LOT 입력")
+        panel.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
+        blank_panel = tk.Frame(body, bg=APP_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        blank_panel.grid(row=0, column=1, sticky="nsew", padx=(8, 0))
+        blank_panel.columnconfigure(0, weight=1)
+        blank_panel.rowconfigure(1, weight=1)
+        tk.Label(blank_panel, text="조건 치수 미리보기", bg=PRIMARY_LIGHT, fg=PRIMARY, font=(font_name, 11, "bold"), height=2).grid(row=0, column=0, sticky="ew")
+        self.tlb_preview_canvas = tk.Canvas(blank_panel, bg=SURFACE_BG, highlightthickness=0, height=260)
+        self.tlb_preview_canvas.grid(row=1, column=0, sticky="nsew", padx=12, pady=12)
+        self.draw_tlb_condition_preview(None)
+        fields = [
+            ("manage_no", "Tool No"),
+            ("round", "차수"),
+            ("lot_no", "LOT No"),
+            ("qty", "매수"),
+            ("condition", "조건(조회)"),
+            ("jig", "지그(조회)"),
+        ]
+        for index, (key, label) in enumerate(fields):
+            row = index // 2 + 1
+            col = index % 2
+            if key == "round":
+                entry = RoundField(panel, label)
+            elif key in {"condition", "jig"}:
+                entry = LabeledEntry(panel, label, width=32, style="Lookup.TEntry", readonly=True)
+            elif key == "qty":
+                entry = LabeledEntry(panel, label, width=32, numeric_only=True)
+            else:
+                entry = LabeledEntry(panel, label, width=32, uppercase=True)
+            entry.grid(row=row, column=col, sticky="ew", padx=14, pady=9)
+            panel.columnconfigure(col, weight=1)
+            self.tlb_entries[key] = entry
+        ttk.Button(panel, text="조건 시트 조회", command=self.load_tlb_condition_jig, style="Primary.TButton").grid(row=4, column=0, columnspan=2, sticky="ew", padx=14, pady=(12, 8))
+        status = tk.Frame(panel, bg=SURFACE_BG)
+        status.grid(row=5, column=0, columnspan=2, sticky="ew", padx=14, pady=(0, 12))
+        status.columnconfigure(0, weight=1)
+        self.tlb_status_labels["condition"] = self.create_judgement_card(status, "조건 조회")
+        self.tlb_status_labels["condition"].grid(row=0, column=0, sticky="ew")
+
+        bottom = ttk.Frame(self.tlb_page)
+        bottom.grid(row=3, column=0, sticky="ew", padx=14, pady=(8, 14))
+        bottom.columnconfigure(0, weight=1)
+        status_panel = tk.Frame(bottom, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        status_panel.grid(row=0, column=0, sticky="ew", padx=(0, 10))
+        status_panel.columnconfigure(1, weight=1)
+        tk.Label(status_panel, text="DNC 진행 상태", bg=PRIMARY_LIGHT, fg=PRIMARY, font=(font_name, 11, "bold"), width=22, height=2).grid(row=0, column=0, sticky="nsw")
+        dnc_label = tk.Label(status_panel, text="대기중", bg=SURFACE_BG, fg=MUTED_TEXT, font=(font_name, 12, "bold"), anchor="w")
+        dnc_label.grid(row=0, column=1, sticky="ew", padx=14)
+        self.tlb_status_labels["dnc"] = dnc_label
+        tk.Label(status_panel, text="작업일보 반영", bg=PRIMARY_LIGHT, fg=PRIMARY, font=(font_name, 11, "bold"), width=22, height=2).grid(row=1, column=0, sticky="nsw")
+        excel_label = tk.Label(status_panel, text="대기중", bg=SURFACE_BG, fg=MUTED_TEXT, font=(font_name, 12, "bold"), anchor="w")
+        excel_label.grid(row=1, column=1, sticky="ew", padx=14)
+        self.tlb_status_labels["excel"] = excel_label
+        log_panel = tk.Frame(bottom, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        log_panel.grid(row=1, column=0, sticky="ew", padx=(0, 10), pady=(8, 0))
+        log_panel.columnconfigure(0, weight=1)
+        tk.Label(log_panel, text="TLB DNC 작업 로그", bg=PRIMARY_LIGHT, fg=PRIMARY, font=(font_name, 10, "bold"), height=1).grid(row=0, column=0, sticky="ew")
+        self.tlb_log_text = scrolledtext.ScrolledText(log_panel, height=5, wrap=tk.WORD, state="disabled", bg=SURFACE_BG, fg=TEXT_COLOR, font=(font_name, 10), relief=tk.FLAT, padx=10, pady=8)
+        self.tlb_log_text.grid(row=1, column=0, sticky="ew")
+        button_panel = ttk.Frame(bottom)
+        button_panel.grid(row=0, column=1, rowspan=2, sticky="ne")
+        button_panel.columnconfigure((0, 1), weight=1, uniform="tlb_side")
+        self.add_side_button(button_panel, "조건 시트 선택", self.select_tlb_condition_sheet, "SidePrimary.TButton").grid(row=0, column=0, columnspan=2, sticky="nsew", padx=4, pady=4)
+        self.add_side_button(button_panel, "작업일보 반영", self.export_tlb_to_excel_from_ui).grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
+        self.add_side_button(button_panel, "작업일보 열기", self.open_log_excel_from_ui).grid(row=1, column=1, sticky="nsew", padx=4, pady=4)
+
+    def get_tlb_common_data(self) -> dict:
+        return {key: entry.get() for key, entry in self.tlb_common_entries.items()}
+
+    def get_tlb_lot_data(self) -> dict:
+        return {key: entry.get() for key, entry in self.tlb_entries.items()}
+
+    def set_tlb_status(self, key: str, text: str, ok: bool | None = None) -> None:
+        label = self.tlb_status_labels.get(key)
+        if label is None:
+            return
+        fg = OK_COLOR if ok is True else NG_COLOR if ok is False else MUTED_TEXT
+        label.configure(text=text, fg=fg)
+
+    def draw_tlb_condition_preview(self, record: dict | None) -> None:
+        canvas = self.tlb_preview_canvas
+        if canvas is None:
+            return
+        canvas.delete("all")
+        width = max(canvas.winfo_width(), 520)
+        height = max(canvas.winfo_height(), 250)
+        if not record:
+            canvas.create_text(width / 2, height / 2, text="조건 시트 조회 후 표시", fill=MUTED_TEXT, font=("맑은 고딕", 12, "bold"))
+            return
+
+        line_color = "#2563eb"
+        guide_color = "#93c5fd"
+        value_bg = "#dff3f8"
+        text_color = TEXT_COLOR
+        red = "#ef4444"
+
+        x1, y1 = width * 0.25, height * 0.22
+        x2, y2 = width * 0.78, height * 0.78
+        mid_y = height * 0.50
+        hole_x = width * 0.245
+        right_hole_x = width * 0.79
+
+        def fmt(value: str) -> str:
+            if value in ("", None):
+                return ""
+            try:
+                return f"{float(value):.3f}"
+            except Exception:
+                return str(value)
+
+        def value_box(x: float, y: float, value: str, fill: str = value_bg) -> None:
+            text = fmt(value)
+            if not text:
+                return
+            canvas.create_rectangle(x - 48, y - 14, x + 48, y + 14, fill=fill, outline="")
+            canvas.create_text(x, y, text=text, fill=red if str(value).startswith("-") else text_color, font=("맑은 고딕", 10))
+
+        canvas.create_rectangle(x1, y1, x2, y2, outline=line_color, width=2)
+        canvas.create_line(x1, mid_y, x2 + 54, mid_y, fill=line_color, dash=(2, 2))
+        canvas.create_line(hole_x, y1 - 26, hole_x, y2 + 26, fill=line_color, dash=(2, 2))
+        canvas.create_line(right_hole_x, y1 - 26, right_hole_x, y2 + 26, fill=line_color, dash=(2, 2))
+        canvas.create_line(x1 - 50, mid_y + 22, x2 + 68, mid_y + 22, fill=guide_color)
+        canvas.create_line(x1 - 44, y1 - 14, x2 + 48, y1 - 14, fill=guide_color, dash=(2, 2))
+        canvas.create_line(x1 - 44, y2 + 14, x2 + 48, y2 + 14, fill=guide_color, dash=(2, 2))
+
+        for x, y in ((hole_x, mid_y), (hole_x, mid_y + 52), (right_hole_x, mid_y)):
+            canvas.create_oval(x - 8, y - 8, x + 8, y + 8, outline="#64748b", width=3)
+            canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill="#64748b", outline="")
+
+        value_box((x1 + x2) / 2, y1 - 38, record.get("top", ""))
+        value_box((x1 + x2) / 2, mid_y - 28, record.get("center", ""))
+        value_box((x1 + x2) / 2, mid_y + 58, record.get("bottom_left", ""))
+        value_box((x1 + x2) / 2, y2 + 38, record.get("bottom", ""))
+        value_box(x1 - 92, mid_y - 40, record.get("left_mid", ""))
+
+        left_gap = ""
+        try:
+            left_gap = f"{float(record.get('left_gap', '')) - float(record.get('left_mid', '')):.3f}"
+        except Exception:
+            left_gap = record.get("left_gap", "")
+        value_box(x1 - 92, mid_y + 52, left_gap)
+        value_box(x2 + 64, mid_y + 58, record.get("right_mid", ""))
+        value_box(x2 + 88, mid_y, record.get("hole_shift", ""), "#dff3f8")
+
+        product = record.get("product", "")
+        stack = record.get("stack", "")
+        if product or stack:
+            canvas.create_text(14, 18, text=f"{product}  Stack {stack}".strip(), anchor="w", fill=MUTED_TEXT, font=("맑은 고딕", 9, "bold"))
+
+    def append_tlb_log(self, text: str) -> None:
+        if self.tlb_log_text is None or text.startswith("DNC 삭제 대기중"):
+            return
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        self.tlb_log_text.configure(state="normal")
+        self.tlb_log_text.insert(tk.END, f"[{timestamp}] {text}\n")
+        self.tlb_log_text.see(tk.END)
+        self.tlb_log_text.configure(state="disabled")
+
+    def select_tlb_condition_sheet(self) -> None:
+        path = filedialog.askopenfilename(parent=self.root, title="TLB 조건 시트 선택", filetypes=[("Excel files", "*.xlsx *.xlsm")])
+        if not path:
+            return
+        self.config["tlb_condition_sheet"] = path
+        if hasattr(self, "tlb_condition_sheet_var"):
+            self.tlb_condition_sheet_var.set(path)
+        save_config(self.config)
+        show_operator_alert(self.root, "TLB 조건 시트", "조건 시트 선택 완료", "info")
+
+    def validate_tlb_paths(self) -> bool:
+        ok, message = validate_process_paths(self.config, "TLB")
+        if not ok:
+            show_operator_alert(self.root, "경로 확인", message)
+            self.set_tlb_status("dnc", "경로 확인 필요", False)
+            return False
+        if not str(self.config.get("tlb_condition_sheet", "")).strip():
+            show_operator_alert(self.root, "TLB 조건 시트", "조건 시트 선택 필요")
+            self.set_tlb_status("dnc", "조건 시트 선택 필요", False)
+            return False
+        return True
+
+    def apply_tlb_work_time_defaults(self) -> None:
+        period = get_work_period()
+        if "work_date" in self.tlb_common_entries:
+            self.tlb_common_entries["work_date"].set(period["work_date"])
+        if "shift" in self.tlb_common_entries:
+            self.tlb_common_entries["shift"].set(period["shift"])
+        if self.config.get("auto_shift_group_enabled", True) and "shift_group" in self.tlb_common_entries:
+            auto_group = get_auto_shift_group(
+                period["work_date"],
+                period["shift"],
+                str(self.config.get("a_group_day_start_date", "2026-05-17")),
+            )
+            if auto_group:
+                self.tlb_common_entries["shift_group"].set(auto_group)
+
+    def ensure_tlb_work_period_ready(self) -> bool:
+        self.apply_tlb_work_time_defaults()
+        missing = []
+        if not self.tlb_common_entries["shift_group"].get():
+            missing.append("조")
+        if not self.tlb_common_entries["worker"].get():
+            missing.append("작업자")
+        if missing:
+            show_operator_alert(
+                self.root,
+                "근무 정보 확인",
+                "\n".join(missing_common_message(label) for label in missing),
+            )
+            self.set_tlb_status("dnc", "근무 정보 확인 필요", False)
+            return False
+        return True
+
+    def load_tlb_condition_jig(self) -> bool:
+        self.save_settings_from_ui_silent()
+        lot = self.get_tlb_lot_data()
+        missing = [label for key, label in (("manage_no", "Tool No"), ("round", "차수")) if not lot.get(key, "").strip()]
+        if missing:
+            show_operator_alert(self.root, "입력 확인", " / ".join(missing) + " 입력 필요")
+            return False
+        try:
+            record = lookup_tlb_condition_record_from_sheet(self.config, lot["manage_no"], lot["round"])
+            condition = record["condition"]
+            jig = record["jig"]
+        except Exception as exc:
+            show_operator_alert(self.root, "조건 시트 조회", str(exc), "error")
+            self.tlb_status_labels["condition"].configure(text="\uC870\uAC74 \uC870\uD68C\\nNG", fg=NG_COLOR, bg="#fee2e2", highlightthickness=2, highlightbackground=NG_COLOR)
+            self.draw_tlb_condition_preview(None)
+            return False
+        self.tlb_entries["condition"].set(condition)
+        self.tlb_entries["jig"].set(jig)
+        self.draw_tlb_condition_preview(record)
+        self.tlb_status_labels["condition"].configure(text="\uC870\uAC74 \uC870\uD68C\\nOK", fg=OK_COLOR, bg="#dcfce7", highlightthickness=2, highlightbackground=OK_COLOR)
+        self.set_tlb_status("dnc", "조건 시트 조회 완료", True)
+        return True
+
+    def validate_tlb_dnc(self, common: dict, lot: dict) -> tuple[bool, list[str]]:
+        errors = []
+        for key, label in (("work_date", "작업일자"), ("machine", "트리밍 호기"), ("shift_group", "조"), ("shift", "근무"), ("worker", "작업자")):
+            if not common.get(key, "").strip():
+                errors.append(missing_common_message(label))
+        for key, label in (("manage_no", "Tool No"), ("round", "차수"), ("lot_no", "LOT No"), ("qty", "매수"), ("condition", "Trim 조건"), ("jig", "지그")):
+            if not lot.get(key, "").strip():
+                errors.append(f"{label} 입력 필요")
+        ok, message = validate_positive_number(lot.get("qty", ""), "매수", required=True)
+        if not ok:
+            errors.append(message)
+        return len(errors) == 0, errors
+
+    def validate_tlb_condition_file(self, condition_name: str) -> Path | None:
+        self.set_tlb_status("dnc", "조건 파일 검색중", None)
+        source = Path(self.config.get("source_dnc_folders", {}).get("TLB", self.config.get("source_dnc_folder", "")))
+        matches = search_condition_file(condition_name, source)
+        if not matches:
+            show_operator_alert(self.root, "조건 파일 없음", "DNC 파일 없음", "error")
+            return None
+        if len(matches) >= 2:
+            show_operator_alert(self.root, "동일 DNC 파일", format_duplicate_condition_files(matches), "error")
+            return None
+        return matches[0]
+
+    def run_tlb_dnc(self) -> None:
+        if self.is_running:
+            show_operator_alert(self.root, "진행 중", "DNC 실행중")
+            return
+        if not self.ensure_tlb_work_period_ready():
+            return
+        if not self.save_settings_from_ui_silent():
+            return
+        if not self.validate_tlb_paths():
+            return
+        if not self.load_tlb_condition_jig():
+            return
+        common = self.get_tlb_common_data()
+        lot = self.get_tlb_lot_data()
+        ok, errors = self.validate_tlb_dnc(common, lot)
+        if not ok:
+            show_operator_alert(self.root, "입력값 확인", format_operator_errors(errors))
+            self.set_tlb_status("dnc", "입력값 NG", False)
+            return
+        condition_file = self.validate_tlb_condition_file(lot["condition"])
+        if not condition_file:
+            self.set_tlb_status("dnc", "조건 파일 NG", False)
+            return
+        self.set_running(True)
+        threading.Thread(target=self.tlb_worker, args=(common, lot, condition_file), daemon=True).start()
+
+    def tlb_worker(self, common: dict, lot: dict, condition_file: Path) -> None:
+        try:
+            self.root.after(0, lambda: self.set_tlb_status("dnc", "DB 저장중", None))
+            log_ids = insert_tlb_dnc_db(common, lot)
+            delete_existing_dnc_txt(Path(self.config["transfer_dnc_folder"]))
+            copied_file = copy_dnc_file(condition_file, Path(self.config["transfer_dnc_folder"]))
+            self.root.after(0, lambda: self.set_tlb_status("dnc", "DNC 파일 복사 완료", True))
+            delete_after_delay(copied_file, int(self.config["dnc_delete_seconds"]), lambda text: self.root.after(0, lambda t=text: self.set_tlb_status("dnc", t, None)))
+            self.root.after(0, lambda: self.finish_tlb_dnc(log_ids))
+        except Exception as exc:
+            self.root.after(0, lambda error=exc: self.handle_run_error(error))
+
+    def finish_tlb_dnc(self, log_ids: list[int]) -> None:
+        try:
+            burr_ok = ask_system_yes_no(self.root, "Burr 확인", "4면 Burr 이상 없습니까?")
+            update_normal_burr_db(log_ids, burr_ok)
+            pending = get_unexported_process_log_count("TLB")
+            self.set_tlb_status("dnc", "DNC 완료", True)
+            self.set_tlb_status("excel", f"DB 저장 완료 / Excel 미반영 {pending}건", True)
+            self.auto_export_tlb_to_excel(parent=self.root)
+            self.clear_tlb_inputs(after_done=True)
+        except Exception as exc:
+            self.handle_run_error(exc)
+        finally:
+            self.set_running(False)
+
+    def auto_export_tlb_to_excel(self, parent=None) -> bool:
+        try:
+            export_process_logs_to_excel(self.config, "TLB", "TLB")
+            pending = get_unexported_process_log_count("TLB")
+            self.set_tlb_status("excel", f"작업일보 반영 완료 / Excel 미반영 {pending}건", True)
+            return True
+        except Exception as exc:
+            log_error("TLB 작업일보 자동 반영 실패", exc)
+            self.set_tlb_status("excel", f"Excel 미반영 {get_unexported_process_log_count('TLB')}건", False)
+            return False
+
+    def export_tlb_to_excel_from_ui(self) -> None:
+        try:
+            count = export_process_logs_to_excel(self.config, "TLB", "TLB")
+        except Exception as exc:
+            show_operator_alert(self.root, "작업일보 반영 실패", str(exc), "error")
+            self.set_tlb_status("excel", "작업일보 반영 실패", False)
+            return
+        pending = get_unexported_process_log_count("TLB")
+        show_operator_alert(self.root, "작업일보 반영", f"{count}건 반영 완료", "info")
+        self.set_tlb_status("excel", f"Excel 미반영 {pending}건", True)
+
+    def clear_tlb_inputs(self, after_done: bool = False) -> None:
+        for entry in self.tlb_entries.values():
+            entry.clear()
+        self.draw_tlb_condition_preview(None)
+        self.tlb_status_labels["condition"].configure(text="\uC870\uAC74 \uC870\uD68C\\n\uB300\uAE30\uC911", fg=MUTED_TEXT, bg="#f8fafc", highlightthickness=2, highlightbackground=BORDER_COLOR)
+        self.set_tlb_status("dnc", "DNC 완료" if after_done else "대기중", True if after_done else None)
 
     def create_kcc_pkg_tab(self) -> None:
         self.kcc_pkg_page.columnconfigure(0, weight=1)
@@ -3515,7 +4099,7 @@ class JiinDncManager:
         )
         process_bg = ["#eef6ff", "#ecfdf5", "#f5f3ff", "#f8fafc", "#ecfeff"]
         for index, process_name in enumerate(PROCESS_NAMES):
-            row = 4 + index
+            row = 5 + index
             label_bg = process_bg[index % len(process_bg)]
             ttk.Label(panel, text=process_name, background=label_bg, foreground=TEXT_COLOR, width=settings_label_width, anchor="center").grid(row=row, column=0, sticky="ew", padx=10, pady=5)
             entry = ttk.Entry(panel, textvariable=self.source_vars[process_name], style="Wide.TEntry")
@@ -3523,7 +4107,7 @@ class JiinDncManager:
             entry.bind("<FocusOut>", lambda _event: self.save_settings_from_ui_silent(show_error=False))
             ttk.Button(panel, text="폴더 선택", command=lambda name=process_name: self.select_source_folder(name), width=20).grid(row=row, column=2, padx=8, pady=5)
 
-        shift_row = 9
+        shift_row = 10
         ttk.Label(panel, text="근무표 자동 조", background=PRIMARY_LIGHT, foreground=PRIMARY, anchor="center", font=("맑은 고딕", 10, "bold")).grid(
             row=shift_row, column=0, columnspan=3, sticky="ew", padx=10, pady=(16, 6)
         )
@@ -3613,6 +4197,14 @@ class JiinDncManager:
             var.set(folder)
             if save_after:
                 self.save_settings_from_ui_silent(show_error=False)
+
+    def select_tlb_condition_sheet_from_settings(self) -> None:
+        path = filedialog.askopenfilename(parent=self.root, title="TLB 조건 시트 열림", filetypes=[("Excel files", "*.xlsx *.xlsm")])
+        if not path:
+            return
+        self.tlb_condition_sheet_var.set(path)
+        self.config["tlb_condition_sheet"] = path
+        save_config(self.config)
 
     def select_source_folder(self, process_name: str) -> None:
         var = self.source_vars[process_name]
