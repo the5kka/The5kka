@@ -121,6 +121,13 @@ PRIMARY_LIGHT = "#eaf2ff"
 OK_COLOR = "#0f9f63"
 NG_COLOR = "#dc2626"
 TAB_BG = "#eaf0f8"
+PROCESS_COLORS = {
+    "TLB": {"bg": "#eef8f7", "light": "#dff3f1", "primary": "#0f766e", "border": "#9ccfca"},
+    "심텍 SPS": {"bg": "#f1f8f4", "light": "#e4f5ec", "primary": "#047857", "border": "#a7d8bd"},
+    "심텍 HDI": {"bg": "#f7f4fb", "light": "#eee7f8", "primary": "#6d28d9", "border": "#cab8ee"},
+    "KCC PKG": {"bg": "#f3f6fb", "light": "#eaf2ff", "primary": PRIMARY, "border": BORDER_COLOR},
+    "KCC HDI": {"bg": "#eefafa", "light": "#dff5f5", "primary": "#0f6b78", "border": "#a5d8dc"},
+}
 
 THEMES = {
     "MES 블루": {
@@ -1855,31 +1862,33 @@ def calculate_tlb_result_value(qty_number: int) -> float | None:
     return round(qty_number * 3, 1)
 
 
-def insert_tlb_dnc_db(common: dict, lot: dict) -> list[int]:
+def insert_tlb_dnc_db(common: dict, lots: list[dict]) -> list[int]:
     now_text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    qty_number = int(lot["qty"])
     conn = get_kcc_pkg_connection()
+    log_ids: list[int] = []
     try:
-        cursor = conn.execute(
-            """
-            INSERT INTO dnc_logs (
-                customer_process, dnc_type, status, machine, work_date, shift_group, shift_name, worker,
-                step, round_no, manage_no, lot_no, qty_text, qty_number, result_value,
-                process_code, condition_name, jig, stack, model_change_text, created_at
+        for lot in lots:
+            qty_number = int(lot["qty"])
+            cursor = conn.execute(
+                """
+                INSERT INTO dnc_logs (
+                    customer_process, dnc_type, status, machine, work_date, shift_group, shift_name, worker,
+                    step, round_no, manage_no, lot_no, qty_text, qty_number, result_value,
+                    process_code, condition_name, jig, stack, model_change_text, created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    "TLB", "일반", "DNC 진행", normalize_machine_name(common["machine"]),
+                    common["work_date"], common["shift_group"], common["shift"], common["worker"],
+                    "", lot["round"], lot["manage_no"], lot["lot_no"], lot["qty"], qty_number,
+                    calculate_tlb_result_value(qty_number), "", lot["condition"], lot["jig"], "", "", now_text,
+                ),
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                "TLB", "일반", "DNC 진행", normalize_machine_name(common["machine"]),
-                common["work_date"], common["shift_group"], common["shift"], common["worker"],
-                "", lot["round"], lot["manage_no"], lot["lot_no"], lot["qty"], qty_number,
-                calculate_tlb_result_value(qty_number), "", lot["condition"], lot["jig"], "", "", now_text,
-            ),
-        )
+            log_ids.append(int(cursor.lastrowid))
         conn.commit()
-        log_id = int(cursor.lastrowid)
-        log_app(f"TLB DNC DB 저장: id={log_id}")
-        return [log_id]
+        log_app(f"TLB DNC DB 저장: ids={log_ids}")
+        return log_ids
     finally:
         conn.close()
 
@@ -3345,6 +3354,8 @@ class JiinDncManager:
         self.lot2_entries: dict[str, LabeledEntry] = {}
         self.tlb_common_entries: dict[str, LabeledEntry] = {}
         self.tlb_entries: dict[str, LabeledEntry] = {}
+        self.tlb_lot2_entries: dict[str, LabeledEntry] = {}
+        self.tlb_condition_records: dict[int, dict] = {}
         self.tlb_status_labels: dict[str, tk.Label] = {}
         self.tlb_log_text: scrolledtext.ScrolledText | None = None
         self.tlb_preview_canvas: tk.Canvas | None = None
@@ -3487,49 +3498,50 @@ class JiinDncManager:
 
     def create_tlb_tab(self) -> None:
         font_name = "맑은 고딕"
+        tlb_theme = PROCESS_COLORS["TLB"]
+        tlb_bg = tlb_theme["bg"]
+        tlb_light = tlb_theme["light"]
+        tlb_primary = tlb_theme["primary"]
+        tlb_border = tlb_theme["border"]
+        self.tlb_page.configure(bg=tlb_bg)
         self.tlb_page.columnconfigure(0, weight=1)
-        self.tlb_page.rowconfigure(2, weight=1)
-        title_wrap = tk.Frame(self.tlb_page, bg=PRIMARY_LIGHT)
+        self.tlb_page.rowconfigure(2, weight=0)
+        self.tlb_page.rowconfigure(3, weight=0)
+        title_wrap = tk.Frame(self.tlb_page, bg=tlb_light)
         title_wrap.grid(row=0, column=0, sticky="ew", padx=14, pady=(14, 8))
         title_wrap.columnconfigure(0, weight=1)
-        tk.Label(title_wrap, text="TLB 일반 DNC", bg=PRIMARY_LIGHT, fg=PRIMARY, font=(font_name, 14, "bold"), height=2).grid(row=0, column=0, sticky="ew")
-        title_buttons = tk.Frame(title_wrap, bg=PRIMARY_LIGHT)
+        tk.Label(title_wrap, text="TLB 일반 DNC", bg=tlb_light, fg=tlb_primary, font=(font_name, 14, "bold"), height=2).grid(row=0, column=0, sticky="ew")
+        title_buttons = tk.Frame(title_wrap, bg=tlb_light)
         title_buttons.grid(row=0, column=1, sticky="e", padx=(8, 10))
         self.add_normal_button(title_buttons, "TLB DNC 실행", self.run_tlb_dnc, "Primary.TButton").grid(row=0, column=0, padx=4, pady=4)
         self.add_normal_button(title_buttons, "입력 초기화", self.clear_tlb_inputs).grid(row=0, column=1, padx=4, pady=4)
 
         common = self.create_panel(self.tlb_page, "공통 입력")
+        common.configure(highlightbackground=tlb_border)
+        common.winfo_children()[0].configure(bg=tlb_light, fg=tlb_primary)
         common.grid(row=1, column=0, sticky="ew", padx=14, pady=(0, 8))
         common_widgets = [
             ("machine", ComboField(common, "설비 호기", ["트리밍 1호기", "트리밍 2호기", "트리밍 3호기"], initial=self.config.get("machine", "트리밍 1호기"), width=12)),
-            ("work_date", DateField(common, "작업일자", on_change=self.mark_common_manual_change)),
-            ("shift_group", SegmentedField(common, "조", ["A", "B", "C"], allow_empty=True, on_change=self.mark_common_manual_change)),
-            ("shift", SegmentedField(common, "근무", ["주간", "야간"], on_change=self.mark_common_manual_change)),
-            ("worker", LabeledEntry(common, "작업자", width=12, on_change=self.mark_common_manual_change)),
+            ("work_date", DateField(common, "작업일자", on_change=lambda key="work_date": self.handle_common_change(key, "tlb"))),
+            ("shift_group", SegmentedField(common, "조", ["A", "B", "C"], allow_empty=True, on_change=lambda key="shift_group": self.handle_common_change(key, "tlb"))),
+            ("shift", SegmentedField(common, "근무", ["주간", "야간"], on_change=lambda key="shift": self.handle_common_change(key, "tlb"))),
+            ("worker", LabeledEntry(common, "작업자", width=12, on_change=lambda key="worker": self.handle_common_change(key, "tlb"))),
         ]
         for index, (key, entry) in enumerate(common_widgets):
             entry.grid(row=1, column=index, sticky="ew", padx=8, pady=8)
             self.tlb_common_entries[key] = entry
+            if key == "machine":
+                entry.combo.bind("<<ComboboxSelected>>", lambda _event, field=key: self.handle_common_change(field, "tlb"))
         common.columnconfigure(0, weight=0, minsize=320)
         common.columnconfigure(1, weight=1, minsize=430)
         common.columnconfigure(2, weight=1, minsize=330)
         common.columnconfigure(3, weight=1, minsize=360)
         common.columnconfigure(4, weight=0, minsize=320)
 
-        body = ttk.Frame(self.tlb_page)
+        body = tk.Frame(self.tlb_page, bg=tlb_bg)
         body.grid(row=2, column=0, sticky="nsew", padx=14, pady=0)
         body.columnconfigure(0, weight=1, uniform="tlb_body")
         body.columnconfigure(1, weight=1, uniform="tlb_body")
-        panel = self.create_panel(body, "TLB LOT 입력")
-        panel.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
-        blank_panel = tk.Frame(body, bg=APP_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
-        blank_panel.grid(row=0, column=1, sticky="nsew", padx=(8, 0))
-        blank_panel.columnconfigure(0, weight=1)
-        blank_panel.rowconfigure(1, weight=1)
-        tk.Label(blank_panel, text="조건 치수 미리보기", bg=PRIMARY_LIGHT, fg=PRIMARY, font=(font_name, 11, "bold"), height=2).grid(row=0, column=0, sticky="ew")
-        self.tlb_preview_canvas = tk.Canvas(blank_panel, bg=SURFACE_BG, highlightthickness=0, height=260)
-        self.tlb_preview_canvas.grid(row=1, column=0, sticky="nsew", padx=12, pady=12)
-        self.draw_tlb_condition_preview(None)
         fields = [
             ("manage_no", "Tool No"),
             ("round", "차수"),
@@ -3538,51 +3550,74 @@ class JiinDncManager:
             ("condition", "조건(조회)"),
             ("jig", "지그(조회)"),
         ]
-        for index, (key, label) in enumerate(fields):
-            row = index // 2 + 1
-            col = index % 2
-            if key == "round":
-                entry = RoundField(panel, label)
-            elif key in {"condition", "jig"}:
-                entry = LabeledEntry(panel, label, width=32, style="Lookup.TEntry", readonly=True)
-            elif key == "qty":
-                entry = LabeledEntry(panel, label, width=32, numeric_only=True)
-            else:
-                entry = LabeledEntry(panel, label, width=32, uppercase=True)
-            entry.grid(row=row, column=col, sticky="ew", padx=14, pady=9)
-            panel.columnconfigure(col, weight=1)
-            self.tlb_entries[key] = entry
-        ttk.Button(panel, text="조건 시트 조회", command=self.load_tlb_condition_jig, style="Primary.TButton").grid(row=4, column=0, columnspan=2, sticky="ew", padx=14, pady=(12, 8))
-        status = tk.Frame(panel, bg=SURFACE_BG)
-        status.grid(row=5, column=0, columnspan=2, sticky="ew", padx=14, pady=(0, 12))
-        status.columnconfigure(0, weight=1)
-        self.tlb_status_labels["condition"] = self.create_judgement_card(status, "조건 조회")
-        self.tlb_status_labels["condition"].grid(row=0, column=0, sticky="ew")
 
-        bottom = ttk.Frame(self.tlb_page)
+        def build_tlb_lot_panel(parent: tk.Frame, title: str, entries: dict, status_key: str, column: int) -> None:
+            panel = self.create_panel(parent, title)
+            panel.configure(highlightbackground=tlb_border)
+            panel.winfo_children()[0].configure(bg=tlb_light, fg=tlb_primary)
+            panel.grid(row=0, column=column, sticky="nsew", padx=(0, 8) if column == 0 else (8, 0))
+            for index, (key, label) in enumerate(fields):
+                row = index // 2 + 1
+                col = index % 2
+                if key == "round":
+                    entry = RoundField(panel, label)
+                elif key in {"condition", "jig"}:
+                    entry = LabeledEntry(panel, label, width=32, style="Lookup.TEntry", readonly=True)
+                elif key == "qty":
+                    entry = LabeledEntry(panel, label, width=32, numeric_only=True)
+                else:
+                    entry = LabeledEntry(panel, label, width=32, uppercase=True)
+                entry.grid(row=row, column=col, sticky="ew", padx=14, pady=9)
+                panel.columnconfigure(col, weight=1)
+                entries[key] = entry
+            ttk.Button(
+                panel,
+                text="조건 시트 조회",
+                command=lambda lot_no=1 if column == 0 else 2: self.load_tlb_condition_jig(lot_no),
+                style="Primary.TButton",
+            ).grid(row=4, column=0, columnspan=2, sticky="ew", padx=14, pady=(12, 8))
+            status = tk.Frame(panel, bg=SURFACE_BG)
+            status.grid(row=5, column=0, columnspan=2, sticky="ew", padx=14, pady=(0, 12))
+            status.columnconfigure(0, weight=1)
+            status.columnconfigure(1, weight=1)
+            self.tlb_status_labels[status_key] = self.create_judgement_card(status, "조건 조회")
+            self.tlb_status_labels[status_key].grid(row=0, column=0, sticky="ew", padx=(0, 6))
+            if column == 0:
+                self.tlb_status_labels["cycle"] = self.create_judgement_card(status, "남은 사이클")
+                self.tlb_status_labels["cycle"].grid(row=0, column=1, sticky="ew", padx=(6, 0))
+
+        build_tlb_lot_panel(body, "LOT 1 입력", self.tlb_entries, "condition1", 0)
+        build_tlb_lot_panel(body, "LOT 2 입력 (선택)", self.tlb_lot2_entries, "condition2", 1)
+        self.tlb_status_labels["condition"] = self.tlb_status_labels["condition1"]
+
+        bottom = tk.Frame(self.tlb_page, bg=tlb_bg)
         bottom.grid(row=3, column=0, sticky="ew", padx=14, pady=(8, 14))
         bottom.columnconfigure(0, weight=1)
         status_panel = tk.Frame(bottom, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
         status_panel.grid(row=0, column=0, sticky="ew", padx=(0, 10))
         status_panel.columnconfigure(1, weight=1)
-        tk.Label(status_panel, text="DNC 진행 상태", bg=PRIMARY_LIGHT, fg=PRIMARY, font=(font_name, 11, "bold"), width=22, height=2).grid(row=0, column=0, sticky="nsw")
+        tk.Label(status_panel, text="2LOT 조건 일치 확인", bg=tlb_light, fg=tlb_primary, font=(font_name, 11, "bold"), width=22, height=2).grid(row=0, column=0, sticky="nsw")
+        match_label = tk.Label(status_panel, text="LOT 2 미사용", bg=SURFACE_BG, fg=MUTED_TEXT, font=(font_name, 12, "bold"), anchor="w")
+        match_label.grid(row=0, column=1, sticky="ew", padx=14)
+        self.tlb_status_labels["match"] = match_label
+        tk.Label(status_panel, text="DNC 진행 상태", bg=tlb_light, fg=tlb_primary, font=(font_name, 11, "bold"), width=22, height=2).grid(row=1, column=0, sticky="nsw")
         dnc_label = tk.Label(status_panel, text="대기중", bg=SURFACE_BG, fg=MUTED_TEXT, font=(font_name, 12, "bold"), anchor="w")
-        dnc_label.grid(row=0, column=1, sticky="ew", padx=14)
+        dnc_label.grid(row=1, column=1, sticky="ew", padx=14)
         self.tlb_status_labels["dnc"] = dnc_label
-        tk.Label(status_panel, text="작업일보 반영", bg=PRIMARY_LIGHT, fg=PRIMARY, font=(font_name, 11, "bold"), width=22, height=2).grid(row=1, column=0, sticky="nsw")
+        tk.Label(status_panel, text="작업일보 반영", bg=tlb_light, fg=tlb_primary, font=(font_name, 11, "bold"), width=22, height=2).grid(row=2, column=0, sticky="nsw")
         excel_label = tk.Label(status_panel, text="대기중", bg=SURFACE_BG, fg=MUTED_TEXT, font=(font_name, 12, "bold"), anchor="w")
-        excel_label.grid(row=1, column=1, sticky="ew", padx=14)
+        excel_label.grid(row=2, column=1, sticky="ew", padx=14)
         self.tlb_status_labels["excel"] = excel_label
         log_panel = tk.Frame(bottom, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
         log_panel.grid(row=1, column=0, sticky="ew", padx=(0, 10), pady=(8, 0))
         log_panel.columnconfigure(0, weight=1)
-        tk.Label(log_panel, text="TLB DNC 작업 로그", bg=PRIMARY_LIGHT, fg=PRIMARY, font=(font_name, 10, "bold"), height=1).grid(row=0, column=0, sticky="ew")
+        tk.Label(log_panel, text="TLB DNC 작업 로그", bg=tlb_light, fg=tlb_primary, font=(font_name, 10, "bold"), height=1).grid(row=0, column=0, sticky="ew")
         self.tlb_log_text = scrolledtext.ScrolledText(log_panel, height=5, wrap=tk.WORD, state="disabled", bg=SURFACE_BG, fg=TEXT_COLOR, font=(font_name, 10), relief=tk.FLAT, padx=10, pady=8)
         self.tlb_log_text.grid(row=1, column=0, sticky="ew")
-        button_panel = ttk.Frame(bottom)
+        button_panel = tk.Frame(bottom, bg=tlb_bg)
         button_panel.grid(row=0, column=1, rowspan=2, sticky="ne")
         button_panel.columnconfigure((0, 1), weight=1, uniform="tlb_side")
-        self.add_side_button(button_panel, "조건 시트 선택", self.select_tlb_condition_sheet, "SidePrimary.TButton").grid(row=0, column=0, columnspan=2, sticky="nsew", padx=4, pady=4)
+        self.add_side_button(button_panel, "조건 시트 선택", self.select_tlb_condition_sheet, "SidePrimary.TButton").grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
         self.add_side_button(button_panel, "작업일보 반영", self.export_tlb_to_excel_from_ui).grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
         self.add_side_button(button_panel, "작업일보 열기", self.open_log_excel_from_ui).grid(row=1, column=1, sticky="nsew", padx=4, pady=4)
 
@@ -3591,6 +3626,19 @@ class JiinDncManager:
 
     def get_tlb_lot_data(self) -> dict:
         return {key: entry.get() for key, entry in self.tlb_entries.items()}
+
+    def get_tlb_lot2_data(self) -> dict:
+        return {key: entry.get() for key, entry in self.tlb_lot2_entries.items()}
+
+    def is_tlb_lot_used(self, lot: dict) -> bool:
+        return any(str(lot.get(key, "")).strip() for key in ("manage_no", "round", "lot_no", "qty", "condition", "jig"))
+
+    def get_tlb_used_lots(self) -> list[dict]:
+        lots = [self.get_tlb_lot_data()]
+        lot2 = self.get_tlb_lot2_data()
+        if self.is_tlb_lot_used(lot2):
+            lots.append(lot2)
+        return lots
 
     def set_tlb_status(self, key: str, text: str, ok: bool | None = None) -> None:
         label = self.tlb_status_labels.get(key)
@@ -3704,8 +3752,12 @@ class JiinDncManager:
         period = get_work_period()
         if "work_date" in self.tlb_common_entries:
             self.tlb_common_entries["work_date"].set(period["work_date"])
+        if "work_date" in self.common_entries:
+            self.common_entries["work_date"].set(period["work_date"])
         if "shift" in self.tlb_common_entries:
             self.tlb_common_entries["shift"].set(period["shift"])
+        if "shift" in self.common_entries:
+            self.common_entries["shift"].set(period["shift"])
         if self.config.get("auto_shift_group_enabled", True) and "shift_group" in self.tlb_common_entries:
             auto_group = get_auto_shift_group(
                 period["work_date"],
@@ -3714,6 +3766,8 @@ class JiinDncManager:
             )
             if auto_group:
                 self.tlb_common_entries["shift_group"].set(auto_group)
+                if "shift_group" in self.common_entries:
+                    self.common_entries["shift_group"].set(auto_group)
 
     def ensure_tlb_work_period_ready(self) -> bool:
         self.apply_tlb_work_time_defaults()
@@ -3732,9 +3786,11 @@ class JiinDncManager:
             return False
         return True
 
-    def load_tlb_condition_jig(self) -> bool:
+    def load_tlb_condition_jig(self, lot_no: int = 1) -> bool:
         self.save_settings_from_ui_silent()
-        lot = self.get_tlb_lot_data()
+        entries = self.tlb_entries if lot_no == 1 else self.tlb_lot2_entries
+        status_key = "condition1" if lot_no == 1 else "condition2"
+        lot = {key: entry.get() for key, entry in entries.items()}
         missing = [label for key, label in (("manage_no", "Tool No"), ("round", "차수")) if not lot.get(key, "").strip()]
         if missing:
             show_operator_alert(self.root, "입력 확인", " / ".join(missing) + " 입력 필요")
@@ -3745,27 +3801,35 @@ class JiinDncManager:
             jig = record["jig"]
         except Exception as exc:
             show_operator_alert(self.root, "조건 시트 조회", str(exc), "error")
-            self.tlb_status_labels["condition"].configure(text="\uC870\uAC74 \uC870\uD68C\\nNG", fg=NG_COLOR, bg="#fee2e2", highlightthickness=2, highlightbackground=NG_COLOR)
-            self.draw_tlb_condition_preview(None)
+            self.tlb_status_labels[status_key].configure(text="\uC870\uAC74 \uC870\uD68C\\nNG", fg=NG_COLOR, bg="#fee2e2", highlightthickness=2, highlightbackground=NG_COLOR)
             return False
-        self.tlb_entries["condition"].set(condition)
-        self.tlb_entries["jig"].set(jig)
-        self.draw_tlb_condition_preview(record)
-        self.tlb_status_labels["condition"].configure(text="\uC870\uAC74 \uC870\uD68C\\nOK", fg=OK_COLOR, bg="#dcfce7", highlightthickness=2, highlightbackground=OK_COLOR)
-        self.set_tlb_status("dnc", "조건 시트 조회 완료", True)
+        entries["condition"].set(condition)
+        entries["jig"].set(jig)
+        self.tlb_status_labels[status_key].configure(text="\uC870\uAC74 \uC870\uD68C\\nOK", fg=OK_COLOR, bg="#dcfce7", highlightthickness=2, highlightbackground=OK_COLOR)
+        self.set_tlb_status("dnc", f"LOT {lot_no} 조건 조회 완료", True)
         return True
 
-    def validate_tlb_dnc(self, common: dict, lot: dict) -> tuple[bool, list[str]]:
+    def validate_tlb_dnc(self, common: dict, lots: list[dict]) -> tuple[bool, list[str]]:
         errors = []
         for key, label in (("work_date", "작업일자"), ("machine", "트리밍 호기"), ("shift_group", "조"), ("shift", "근무"), ("worker", "작업자")):
             if not common.get(key, "").strip():
                 errors.append(missing_common_message(label))
-        for key, label in (("manage_no", "Tool No"), ("round", "차수"), ("lot_no", "LOT No"), ("qty", "매수"), ("condition", "Trim 조건"), ("jig", "지그")):
-            if not lot.get(key, "").strip():
-                errors.append(f"{label} 입력 필요")
-        ok, message = validate_positive_number(lot.get("qty", ""), "매수", required=True)
-        if not ok:
-            errors.append(message)
+        if not lots:
+            errors.append("LOT 1 입력 필요")
+        for index, lot in enumerate(lots, start=1):
+            for key, label in (("manage_no", "Tool No"), ("round", "차수"), ("lot_no", "LOT No"), ("qty", "매수"), ("condition", "조건"), ("jig", "지그")):
+                if not lot.get(key, "").strip():
+                    errors.append(f"LOT {index} {label} 입력 필요")
+            ok, message = validate_positive_number(lot.get("qty", ""), f"LOT {index} 매수", required=True)
+            if not ok:
+                errors.append(message)
+        if len(lots) == 2:
+            if lots[0].get("lot_no", "").strip() == lots[1].get("lot_no", "").strip():
+                errors.append("LOT 1 / LOT 2 LOT No 동일")
+            if lots[0].get("condition", "").strip() != lots[1].get("condition", "").strip():
+                errors.append("LOT 1 / LOT 2 조건 불일치")
+            if lots[0].get("jig", "").strip() != lots[1].get("jig", "").strip():
+                errors.append("LOT 1 / LOT 2 지그 불일치")
         return len(errors) == 0, errors
 
     def validate_tlb_condition_file(self, condition_name: str) -> Path | None:
@@ -3790,26 +3854,28 @@ class JiinDncManager:
             return
         if not self.validate_tlb_paths():
             return
-        if not self.load_tlb_condition_jig():
+        if not self.load_tlb_condition_jig(1):
+            return
+        if self.is_tlb_lot_used(self.get_tlb_lot2_data()) and not self.load_tlb_condition_jig(2):
             return
         common = self.get_tlb_common_data()
-        lot = self.get_tlb_lot_data()
-        ok, errors = self.validate_tlb_dnc(common, lot)
+        lots = self.get_tlb_used_lots()
+        ok, errors = self.validate_tlb_dnc(common, lots)
         if not ok:
             show_operator_alert(self.root, "입력값 확인", format_operator_errors(errors))
             self.set_tlb_status("dnc", "입력값 NG", False)
             return
-        condition_file = self.validate_tlb_condition_file(lot["condition"])
+        condition_file = self.validate_tlb_condition_file(lots[0]["condition"])
         if not condition_file:
             self.set_tlb_status("dnc", "조건 파일 NG", False)
             return
         self.set_running(True)
-        threading.Thread(target=self.tlb_worker, args=(common, lot, condition_file), daemon=True).start()
+        threading.Thread(target=self.tlb_worker, args=(common, lots, condition_file), daemon=True).start()
 
-    def tlb_worker(self, common: dict, lot: dict, condition_file: Path) -> None:
+    def tlb_worker(self, common: dict, lots: list[dict], condition_file: Path) -> None:
         try:
             self.root.after(0, lambda: self.set_tlb_status("dnc", "DB 저장중", None))
-            log_ids = insert_tlb_dnc_db(common, lot)
+            log_ids = insert_tlb_dnc_db(common, lots)
             delete_existing_dnc_txt(Path(self.config["transfer_dnc_folder"]))
             copied_file = copy_dnc_file(condition_file, Path(self.config["transfer_dnc_folder"]))
             self.root.after(0, lambda: self.set_tlb_status("dnc", "DNC 파일 복사 완료", True))
@@ -3855,10 +3921,12 @@ class JiinDncManager:
         self.set_tlb_status("excel", f"Excel 미반영 {pending}건", True)
 
     def clear_tlb_inputs(self, after_done: bool = False) -> None:
-        for entry in self.tlb_entries.values():
-            entry.clear()
-        self.draw_tlb_condition_preview(None)
-        self.tlb_status_labels["condition"].configure(text="\uC870\uAC74 \uC870\uD68C\\n\uB300\uAE30\uC911", fg=MUTED_TEXT, bg="#f8fafc", highlightthickness=2, highlightbackground=BORDER_COLOR)
+        for entries in (self.tlb_entries, self.tlb_lot2_entries):
+            for entry in entries.values():
+                entry.clear()
+        for key in ("condition1", "condition2"):
+            if key in self.tlb_status_labels:
+                self.tlb_status_labels[key].configure(text="\uC870\uAC74 \uC870\uD68C\\n\uB300\uAE30\uC911", fg=MUTED_TEXT, bg="#f8fafc", highlightthickness=2, highlightbackground=BORDER_COLOR)
         self.set_tlb_status("dnc", "DNC 완료" if after_done else "대기중", True if after_done else None)
 
     def create_kcc_pkg_tab(self) -> None:
@@ -3904,14 +3972,16 @@ class JiinDncManager:
         common.grid(row=1, column=0, sticky="ew", padx=14, pady=(0, 8))
         common_widgets = [
             ("machine", ComboField(common, "설비 호기", ["트리밍 1호기", "트리밍 2호기", "트리밍 3호기"], initial=self.config.get("machine", "트리밍 1호기"), width=12)),
-            ("work_date", DateField(common, "작업일자", on_change=self.mark_common_manual_change)),
-            ("shift_group", SegmentedField(common, "조", ["A", "B", "C"], allow_empty=True, on_change=self.mark_common_manual_change)),
-            ("shift", SegmentedField(common, "근무", ["주간", "야간"], on_change=self.mark_common_manual_change)),
-            ("worker", LabeledEntry(common, "작업자", width=12, on_change=self.mark_common_manual_change)),
+            ("work_date", DateField(common, "작업일자", on_change=lambda key="work_date": self.handle_common_change(key, "kcc"))),
+            ("shift_group", SegmentedField(common, "조", ["A", "B", "C"], allow_empty=True, on_change=lambda key="shift_group": self.handle_common_change(key, "kcc"))),
+            ("shift", SegmentedField(common, "근무", ["주간", "야간"], on_change=lambda key="shift": self.handle_common_change(key, "kcc"))),
+            ("worker", LabeledEntry(common, "작업자", width=12, on_change=lambda key="worker": self.handle_common_change(key, "kcc"))),
         ]
         for index, (key, entry) in enumerate(common_widgets):
             entry.grid(row=1, column=index, sticky="ew", padx=8, pady=8)
             self.common_entries[key] = entry
+            if key == "machine":
+                entry.combo.bind("<<ComboboxSelected>>", lambda _event, field=key: self.handle_common_change(field, "kcc"))
         common.columnconfigure(0, weight=0, minsize=320)
         common.columnconfigure(1, weight=1, minsize=430)
         common.columnconfigure(2, weight=1, minsize=330)
@@ -4097,11 +4167,11 @@ class JiinDncManager:
         ttk.Label(panel, text="공정별 원본 DNC 폴더", background=PRIMARY_LIGHT, foreground=PRIMARY, anchor="center", font=("맑은 고딕", 10, "bold")).grid(
             row=3, column=0, columnspan=3, sticky="ew", padx=10, pady=(16, 6)
         )
-        process_bg = ["#eef6ff", "#ecfdf5", "#f5f3ff", "#f8fafc", "#ecfeff"]
         for index, process_name in enumerate(PROCESS_NAMES):
             row = 5 + index
-            label_bg = process_bg[index % len(process_bg)]
-            ttk.Label(panel, text=process_name, background=label_bg, foreground=TEXT_COLOR, width=settings_label_width, anchor="center").grid(row=row, column=0, sticky="ew", padx=10, pady=5)
+            process_theme = PROCESS_COLORS.get(process_name, PROCESS_COLORS["KCC PKG"])
+            label_bg = process_theme["light"]
+            ttk.Label(panel, text=process_name, background=label_bg, foreground=process_theme["primary"], width=settings_label_width, anchor="center").grid(row=row, column=0, sticky="ew", padx=10, pady=5)
             entry = ttk.Entry(panel, textvariable=self.source_vars[process_name], style="Wide.TEntry")
             entry.grid(row=row, column=1, sticky="ew", padx=8, pady=5)
             entry.bind("<FocusOut>", lambda _event: self.save_settings_from_ui_silent(show_error=False))
@@ -4169,15 +4239,15 @@ class JiinDncManager:
         manage_wrap.grid(row=manage_row + 1, column=0, columnspan=3, sticky="ew", padx=10, pady=5)
         for index, process_name in enumerate(PROCESS_NAMES):
             manage_wrap.columnconfigure(index, weight=1, uniform="process_manage")
-            process_box = tk.Frame(manage_wrap, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+            process_theme = PROCESS_COLORS.get(process_name, PROCESS_COLORS["KCC PKG"])
+            process_box = tk.Frame(manage_wrap, bg=SURFACE_BG, highlightthickness=1, highlightbackground=process_theme["border"], bd=0)
             process_box.grid(row=0, column=index, sticky="nsew", padx=5, pady=8)
             process_box.columnconfigure(0, weight=1)
-            header_bg = process_bg[index % len(process_bg)]
             tk.Label(
                 process_box,
                 text=process_name,
-                bg=header_bg,
-                fg=PRIMARY if process_name == "KCC PKG" else TEXT_COLOR,
+                bg=process_theme["light"],
+                fg=process_theme["primary"],
                 font=("맑은 고딕", 9, "bold"),
                 anchor="center",
                 pady=7,
@@ -4360,6 +4430,28 @@ class JiinDncManager:
     def get_common_data(self) -> dict:
         return {key: entry.get() for key, entry in self.common_entries.items()}
 
+    def handle_common_change(self, key: str, source: str) -> None:
+        self.sync_common_field(key, source)
+        self.mark_common_manual_change()
+
+    def sync_common_field(self, key: str, source: str) -> None:
+        source_entries = self.tlb_common_entries if source == "tlb" else self.common_entries
+        target_entries = self.common_entries if source == "tlb" else self.tlb_common_entries
+        if key not in source_entries:
+            return
+        value = source_entries[key].get()
+        if key in target_entries:
+            target_entries[key].set(value)
+        if key == "machine":
+            self.config["machine"] = value
+
+    def sync_common_defaults_to_tlb(self) -> None:
+        if not self.tlb_common_entries:
+            return
+        for key in ("machine", "work_date", "shift_group", "shift", "worker"):
+            if key in self.common_entries and key in self.tlb_common_entries:
+                self.tlb_common_entries[key].set(self.common_entries[key].get())
+
     def get_lot_data(self, entries: dict[str, LabeledEntry]) -> dict:
         return {key: entry.get() for key, entry in entries.items()}
 
@@ -4432,6 +4524,7 @@ class JiinDncManager:
             if not auto_group:
                 self.common_entries["shift_group"].clear()
             self.common_entries["worker"].clear()
+            self.sync_common_defaults_to_tlb()
             self.set_status("dnc", "근무 전환 확인 필요", False)
             if not initial:
                 show_operator_alert(
@@ -4441,6 +4534,7 @@ class JiinDncManager:
                 )
         elif period_changed and prepared_next_shift:
             self.set_status("dnc", "근무 전환 확인 완료", True)
+        self.sync_common_defaults_to_tlb()
         if schedule_next:
             self.root.after(60000, self.apply_work_time_defaults)
 
