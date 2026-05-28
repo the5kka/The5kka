@@ -3,7 +3,7 @@
   "excel_file": "C:/Users/오국진/Desktop/타사 DNC 작업일보.xlsm",
   "source_dnc_folder": "C:/Users/오국진/Desktop/KCC_PKG",
   "source_dnc_folders": {
-    "TLB": "C:\\Users\\오국진\\Desktop\\TLB",
+    "TLB": "C:/Users/오국진/Desktop/지그 일원화_1호기용",
     "심텍 SPS": "C:\\Users\\오국진\\Desktop\\SIMMTECH_SPS",
     "심텍 HDI": "C:\\Users\\오국진\\Desktop\\SIMMTECH_HDI",
     "KCC PKG": "C:/Users/오국진/Desktop/KCC_PKG",
@@ -25,6 +25,6 @@
   "clear_common_after_normal": false,
   "machine": "트리밍 3호기",
   "theme": "MES 블루",
-  "last_master_auto_backup_date": "2026-05-27",
+  "last_master_auto_backup_date": "2026-05-28",
   "tlb_condition_sheet": "C:/Users/오국진/Desktop/TLB_HDI/MLB 작업 조건 확인 Sheet_V5.xlsx"
 }

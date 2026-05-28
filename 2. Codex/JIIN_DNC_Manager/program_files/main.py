@@ -103,6 +103,8 @@ LOGO_FILE = DATA_DIR / "company_logo.png"
 BUNDLED_LOGO_FILE = Path(getattr(sys, "_MEIPASS", APP_DIR)) / "company_logo.png"
 KCC_LOGO_FILE = DATA_DIR / "korea_circuit_logo.png"
 BUNDLED_KCC_LOGO_FILE = Path(getattr(sys, "_MEIPASS", APP_DIR)) / "korea_circuit_logo.png"
+TLB_LOGO_FILE = DATA_DIR / "tlb_logo.png"
+BUNDLED_TLB_LOGO_FILE = Path(getattr(sys, "_MEIPASS", APP_DIR)) / "tlb_logo.png"
 LEGACY_CONFIG_FILE = APP_DIR / "config.json"
 KCC_PKG_DATA_DIR = DATA_DIR / "KCC_PKG"
 KCC_PKG_DB_FILE = KCC_PKG_DATA_DIR / "work_log.db"
@@ -1808,7 +1810,7 @@ def lookup_tlb_condition_record_from_sheet(config: dict, tool_no: str, round_no:
             row_tool = format_excel_cell_value(row[1] if len(row) > 1 else "").upper()
             row_round = normalize_round_key(row[2] if len(row) > 2 else "")
             if row_tool == target_tool and row_round == target_round:
-                trim_program = format_excel_cell_value(row[13] if len(row) > 13 else "")
+                trim_program = normalize_tlb_condition_name(format_excel_cell_value(row[13] if len(row) > 13 else ""))
                 jig_name = format_excel_cell_value(row[14] if len(row) > 14 else "")
                 jig_value = format_excel_cell_value(row[17] if len(row) > 17 else "")
                 jig = f"[{jig_name}] {jig_value}".strip() if jig_name else jig_value
@@ -1849,6 +1851,17 @@ def lookup_tlb_condition_record_from_sheet(config: dict, tool_no: str, round_no:
     return unique[0]
 
 
+def normalize_tlb_condition_name(value: str) -> str:
+    """TLB 조건시트의 '3차 : 조건명' 표시에서 실제 DNC 조건명만 분리합니다."""
+    text = str(value or "").strip()
+    for delimiter in (":", "："):
+        if delimiter in text:
+            prefix, suffix = text.split(delimiter, 1)
+            if "차" in prefix:
+                return suffix.strip()
+    return text
+
+
 def lookup_tlb_condition_from_sheet(config: dict, tool_no: str, round_no: str) -> tuple[str, str]:
     record = lookup_tlb_condition_record_from_sheet(config, tool_no, round_no)
     condition = record["condition"]
@@ -1862,12 +1875,12 @@ def calculate_tlb_result_value(qty_number: int) -> float | None:
     return round(qty_number * 3, 1)
 
 
-def insert_tlb_dnc_db(common: dict, lots: list[dict]) -> list[int]:
+def insert_tlb_dnc_db(common: dict, lots: list[dict], stack: str, model_change: bool) -> list[int]:
     now_text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     conn = get_kcc_pkg_connection()
     log_ids: list[int] = []
     try:
-        for lot in lots:
+        for index, lot in enumerate(lots):
             qty_number = int(lot["qty"])
             cursor = conn.execute(
                 """
@@ -1882,7 +1895,9 @@ def insert_tlb_dnc_db(common: dict, lots: list[dict]) -> list[int]:
                     "TLB", "일반", "DNC 진행", normalize_machine_name(common["machine"]),
                     common["work_date"], common["shift_group"], common["shift"], common["worker"],
                     "", lot["round"], lot["manage_no"], lot["lot_no"], lot["qty"], qty_number,
-                    calculate_tlb_result_value(qty_number), "", lot["condition"], lot["jig"], "", "", now_text,
+                    calculate_tlb_result_value(qty_number), "", lot["condition"], lot["jig"], stack,
+                    "기종교체" if model_change and index == 0 else "",
+                    now_text,
                 ),
             )
             log_ids.append(int(cursor.lastrowid))
@@ -3356,6 +3371,7 @@ class JiinDncManager:
         self.tlb_entries: dict[str, LabeledEntry] = {}
         self.tlb_lot2_entries: dict[str, LabeledEntry] = {}
         self.tlb_condition_records: dict[int, dict] = {}
+        self.tlb_cycle_state: dict | None = None
         self.tlb_status_labels: dict[str, tk.Label] = {}
         self.tlb_log_text: scrolledtext.ScrolledText | None = None
         self.tlb_preview_canvas: tk.Canvas | None = None
@@ -3365,6 +3381,7 @@ class JiinDncManager:
         self.lot_match_frame: tk.Frame | None = None
         self.lot_status_labels: dict[str, tk.Label] = {}
         self.log_text: scrolledtext.ScrolledText | None = None
+        self.tlb_logo_image: tk.PhotoImage | None = None
         self.logo_image: tk.PhotoImage | None = None
         self.kcc_logo_image: tk.PhotoImage | None = None
         self.frequent_check_values: list[str] = [""] * 12
@@ -3509,11 +3526,23 @@ class JiinDncManager:
         self.tlb_page.rowconfigure(3, weight=0)
         title_wrap = tk.Frame(self.tlb_page, bg=tlb_light)
         title_wrap.grid(row=0, column=0, sticky="ew", padx=14, pady=(14, 8))
-        title_wrap.columnconfigure(0, weight=1)
-        tk.Label(title_wrap, text="TLB 일반 DNC", bg=tlb_light, fg=tlb_primary, font=(font_name, 14, "bold"), height=2).grid(row=0, column=0, sticky="ew")
+        title_wrap.columnconfigure(1, weight=1)
+        logo_slot = tk.Frame(title_wrap, bg=tlb_light, width=220, height=1)
+        logo_slot.grid(row=0, column=0, sticky="w", padx=(14, 8))
+        logo_slot.grid_propagate(False)
+        tlb_logo_path = BUNDLED_TLB_LOGO_FILE if BUNDLED_TLB_LOGO_FILE.exists() else TLB_LOGO_FILE
+        if tlb_logo_path.exists():
+            try:
+                tlb_logo = tk.PhotoImage(file=str(tlb_logo_path))
+                scale = max(1, tlb_logo.height() // 32)
+                self.tlb_logo_image = tlb_logo.subsample(scale, scale)
+                tk.Label(logo_slot, image=self.tlb_logo_image, bg=tlb_light, bd=0).pack(side=tk.LEFT, anchor="w")
+            except tk.TclError:
+                self.tlb_logo_image = None
+        tk.Label(title_wrap, text="TLB HDI DNC", bg=tlb_light, fg=tlb_primary, font=(font_name, 14, "bold"), height=2).grid(row=0, column=1, sticky="ew")
         title_buttons = tk.Frame(title_wrap, bg=tlb_light)
-        title_buttons.grid(row=0, column=1, sticky="e", padx=(8, 10))
-        self.add_normal_button(title_buttons, "TLB DNC 실행", self.run_tlb_dnc, "Primary.TButton").grid(row=0, column=0, padx=4, pady=4)
+        title_buttons.grid(row=0, column=2, sticky="e", padx=(8, 10))
+        self.add_normal_button(title_buttons, "DNC 실행", self.run_tlb_dnc, "Primary.TButton").grid(row=0, column=0, padx=4, pady=4)
         self.add_normal_button(title_buttons, "입력 초기화", self.clear_tlb_inputs).grid(row=0, column=1, padx=4, pady=4)
 
         common = self.create_panel(self.tlb_page, "공통 입력")
@@ -3611,7 +3640,7 @@ class JiinDncManager:
         log_panel = tk.Frame(bottom, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
         log_panel.grid(row=1, column=0, sticky="ew", padx=(0, 10), pady=(8, 0))
         log_panel.columnconfigure(0, weight=1)
-        tk.Label(log_panel, text="TLB DNC 작업 로그", bg=tlb_light, fg=tlb_primary, font=(font_name, 10, "bold"), height=1).grid(row=0, column=0, sticky="ew")
+        tk.Label(log_panel, text="TLB HDI DNC 작업 로그", bg=tlb_light, fg=tlb_primary, font=(font_name, 10, "bold"), height=1).grid(row=0, column=0, sticky="ew")
         self.tlb_log_text = scrolledtext.ScrolledText(log_panel, height=5, wrap=tk.WORD, state="disabled", bg=SURFACE_BG, fg=TEXT_COLOR, font=(font_name, 10), relief=tk.FLAT, padx=10, pady=8)
         self.tlb_log_text.grid(row=1, column=0, sticky="ew")
         button_panel = tk.Frame(bottom, bg=tlb_bg)
@@ -3639,6 +3668,72 @@ class JiinDncManager:
         if self.is_tlb_lot_used(lot2):
             lots.append(lot2)
         return lots
+
+    def calculate_tlb_cycle_count(self, common: dict, lots: list[dict], stack: str) -> tuple[int, str]:
+        total_qty = sum(int(lot.get("qty", "0") or 0) for lot in lots)
+        axis_count = get_machine_axis_count(common.get("machine", ""))
+        stack_text = str(stack or "").strip()
+        ok, message = validate_positive_number(stack_text, "Stack", required=True)
+        if not ok:
+            raise ValueError(message)
+        stack_count = int(stack_text)
+        capacity = axis_count * stack_count
+        if capacity <= 0:
+            raise ValueError("설비 축 수 / Stack 확인 필요")
+        cycle_count = max(1, (total_qty + capacity - 1) // capacity)
+        detail = f"총 {cycle_count}사이클 / {total_qty}매 / {axis_count}축 x {stack_count}Stack"
+        return cycle_count, detail
+
+    def make_tlb_cycle_signature(self, common: dict, lots: list[dict]) -> tuple:
+        return (
+            common.get("machine", "").strip(),
+            common.get("work_date", "").strip(),
+            common.get("shift_group", "").strip(),
+            common.get("shift", "").strip(),
+            common.get("worker", "").strip(),
+            tuple(
+                (
+                    lot.get("manage_no", "").strip(),
+                    lot.get("round", "").strip(),
+                    lot.get("lot_no", "").strip(),
+                    lot.get("qty", "").strip(),
+                    lot.get("condition", "").strip(),
+                    lot.get("jig", "").strip(),
+                )
+                for lot in lots
+            ),
+        )
+
+    def update_tlb_cycle_status(self, cycle_count: int, remaining: int | None = None) -> None:
+        label = self.tlb_status_labels.get("cycle")
+        if label is None:
+            return
+        if remaining is None:
+            text = f"남은 사이클\n총 {cycle_count}회"
+        else:
+            text = f"남은 사이클\n{remaining} / {cycle_count}회"
+        label.configure(text=text, fg=OK_COLOR, bg="#dcfce7", highlightthickness=2, highlightbackground=OK_COLOR)
+
+    def refresh_tlb_cycle_preview(self) -> None:
+        # TLB 사이클은 작업자가 DNC 실행 시 입력하는 Stack 기준으로 계산합니다.
+        # 조건 조회 단계에서는 실제 Stack을 아직 모르므로 사이클을 미리 표시하지 않습니다.
+        return
+
+    def update_tlb_match_status(self, lots: list[dict]) -> None:
+        label = self.tlb_status_labels.get("match")
+        if label is None:
+            return
+        if len(lots) < 2:
+            label.configure(text="LOT 2 미사용", fg=MUTED_TEXT)
+            return
+        lot1, lot2 = lots[0], lots[1]
+        if lot1.get("condition", "").strip() != lot2.get("condition", "").strip():
+            label.configure(text="NG - 조건 불일치", fg=NG_COLOR)
+            return
+        if lot1.get("jig", "").strip() != lot2.get("jig", "").strip():
+            label.configure(text="NG - 지그 불일치", fg=NG_COLOR)
+            return
+        label.configure(text="OK - 2LOT 조건 일치", fg=OK_COLOR)
 
     def set_tlb_status(self, key: str, text: str, ok: bool | None = None) -> None:
         label = self.tlb_status_labels.get(key)
@@ -3801,11 +3896,14 @@ class JiinDncManager:
             jig = record["jig"]
         except Exception as exc:
             show_operator_alert(self.root, "조건 시트 조회", str(exc), "error")
-            self.tlb_status_labels[status_key].configure(text="\uC870\uAC74 \uC870\uD68C\\nNG", fg=NG_COLOR, bg="#fee2e2", highlightthickness=2, highlightbackground=NG_COLOR)
+            self.tlb_status_labels[status_key].configure(text="조건 조회\nNG", fg=NG_COLOR, bg="#fee2e2", highlightthickness=2, highlightbackground=NG_COLOR)
             return False
         entries["condition"].set(condition)
         entries["jig"].set(jig)
-        self.tlb_status_labels[status_key].configure(text="\uC870\uAC74 \uC870\uD68C\\nOK", fg=OK_COLOR, bg="#dcfce7", highlightthickness=2, highlightbackground=OK_COLOR)
+        self.tlb_condition_records[lot_no] = record
+        self.tlb_status_labels[status_key].configure(text="조건 조회\nOK", fg=OK_COLOR, bg="#dcfce7", highlightthickness=2, highlightbackground=OK_COLOR)
+        self.update_tlb_match_status(self.get_tlb_used_lots())
+        self.refresh_tlb_cycle_preview()
         self.set_tlb_status("dnc", f"LOT {lot_no} 조건 조회 완료", True)
         return True
 
@@ -3860,6 +3958,7 @@ class JiinDncManager:
             return
         common = self.get_tlb_common_data()
         lots = self.get_tlb_used_lots()
+        self.update_tlb_match_status(lots)
         ok, errors = self.validate_tlb_dnc(common, lots)
         if not ok:
             show_operator_alert(self.root, "입력값 확인", format_operator_errors(errors))
@@ -3869,20 +3968,169 @@ class JiinDncManager:
         if not condition_file:
             self.set_tlb_status("dnc", "조건 파일 NG", False)
             return
+        signature = self.make_tlb_cycle_signature(common, lots)
+        state = self.tlb_cycle_state
+        if state and state.get("remaining", 0) > 0:
+            if state.get("signature") != signature:
+                show_operator_alert(self.root, "사이클 확인", "진행 중인 LOT 정보와 다릅니다.\n입력값을 확인하세요.", "error")
+                self.set_tlb_status("dnc", "사이클 정보 불일치", False)
+                return
+            stack = state["stack"]
+            cycle_count = int(state["total"])
+            cycle_detail = f"남은 {state['remaining']}사이클 / 총 {cycle_count}사이클"
+        else:
+            model_change = ask_system_yes_no(self.root, "기종교체 확인", "기종교체 입니까?")
+            self.frequent_check_values = [""] * 12
+            self.work_axis_values = [""] * 6
+            machine_axes = get_machine_allowed_axes(common.get("machine", ""))
+            if model_change:
+                self.set_tlb_status("dnc", "하부 Pin 확인 대기중", None)
+                if not self.open_frequent_check_popup("jig", allowed_axes=machine_axes):
+                    self.set_tlb_status("dnc", "하부 Pin 확인 미완료", False)
+                    return
+            stack = ask_numeric_input(self.root, "Stack 수 입력", "Stack 수를 입력 하세요.")
+            ok, message = validate_positive_number(stack or "", "Stack 수", required=True)
+            if not ok:
+                show_operator_alert(self.root, "Stack 수 확인", message)
+                self.set_tlb_status("dnc", "Stack 수 확인 필요", False)
+                return
+            if model_change:
+                capacity_values = ["OK" if value == "OK" else "" for value in self.frequent_check_values[6:]] + [""] * 6
+                self.work_axis_values = capacity_values[:6]
+            else:
+                self.set_tlb_status("dnc", "작업 축 수 확인 대기중", None)
+                self.frequent_check_values = [""] * 12
+                if not self.open_frequent_check_popup("capacity", allowed_axes=machine_axes):
+                    self.set_tlb_status("dnc", "작업 축 수 확인 미완료", False)
+                    return
+                capacity_values = self.frequent_check_values[:]
+                self.work_axis_values = capacity_values[:6]
+            capacity_ok, capacity_message = validate_frequent_check_capacity(lots, stack, capacity_values)
+            if not capacity_ok:
+                show_operator_alert(self.root, "작업 수량 확인", capacity_message)
+                self.set_tlb_status("dnc", "수량/Stack NG", False)
+                return
+            try:
+                cycle_count, cycle_detail = self.calculate_tlb_cycle_count(common, lots, stack)
+            except Exception as exc:
+                show_operator_alert(self.root, "사이클 확인", str(exc), "error")
+                self.set_tlb_status("dnc", "사이클 확인 필요", False)
+                return
+            self.tlb_cycle_state = {
+                "signature": signature,
+                "stack": stack,
+                "total": cycle_count,
+                "remaining": cycle_count,
+                "log_ids": None,
+                "model_change": model_change,
+                "work_axis_values": self.work_axis_values[:],
+                "jig_axis_values": self.frequent_check_values[6:],
+            }
+        self.update_tlb_cycle_status(cycle_count, int(self.tlb_cycle_state["remaining"]))
+        self.set_tlb_status("dnc", cycle_detail, True)
         self.set_running(True)
-        threading.Thread(target=self.tlb_worker, args=(common, lots, condition_file), daemon=True).start()
+        threading.Thread(target=self.tlb_worker, args=(common, lots, stack, condition_file), daemon=True).start()
 
-    def tlb_worker(self, common: dict, lots: list[dict], condition_file: Path) -> None:
+    def tlb_worker(self, common: dict, lots: list[dict], stack: str, condition_file: Path) -> None:
         try:
-            self.root.after(0, lambda: self.set_tlb_status("dnc", "DB 저장중", None))
-            log_ids = insert_tlb_dnc_db(common, lots)
-            delete_existing_dnc_txt(Path(self.config["transfer_dnc_folder"]))
-            copied_file = copy_dnc_file(condition_file, Path(self.config["transfer_dnc_folder"]))
-            self.root.after(0, lambda: self.set_tlb_status("dnc", "DNC 파일 복사 완료", True))
-            delete_after_delay(copied_file, int(self.config["dnc_delete_seconds"]), lambda text: self.root.after(0, lambda t=text: self.set_tlb_status("dnc", t, None)))
-            self.root.after(0, lambda: self.finish_tlb_dnc(log_ids))
+            state = self.tlb_cycle_state or {}
+            total = int(state.get("total", 1))
+            remaining_before = int(state.get("remaining", total))
+            cycle_index = total - remaining_before + 1
+            if not state.get("log_ids"):
+                self.root.after(0, lambda: self.set_tlb_status("dnc", "DB 저장중", None))
+                log_ids = insert_tlb_dnc_db(common, lots, stack, bool(state.get("model_change")))
+                state["log_ids"] = log_ids
+                self.tlb_cycle_state = state
+            else:
+                log_ids = list(state["log_ids"])
+            transfer_folder = Path(self.config["transfer_dnc_folder"])
+            self.root.after(0, lambda i=cycle_index, c=total: self.set_tlb_status("dnc", f"DNC 사이클 {i}/{c} 진행중", None))
+            delete_existing_dnc_txt(transfer_folder)
+            copied_file = copy_dnc_file(condition_file, transfer_folder)
+            self.root.after(0, lambda i=cycle_index, c=total: self.set_tlb_status("dnc", f"DNC 파일 복사 완료 ({i}/{c})", True))
+            delete_thread = threading.Thread(
+                target=delete_after_delay,
+                args=(copied_file, int(self.config["dnc_delete_seconds"]), lambda text, i=cycle_index, c=total: self.root.after(0, lambda t=text: self.set_tlb_status("dnc", f"{t} / {i}/{c}", None))),
+                daemon=True,
+            )
+            delete_thread.start()
+            wait_seconds = int(self.config.get("first_article_wait_seconds", FIRST_ARTICLE_WAIT_SECONDS))
+            for remain in range(wait_seconds, 0, -1):
+                self.root.after(0, lambda r=remain: self.set_tlb_status("dnc", f"초품 확인 대기중 ({r}초)", None))
+                time.sleep(1)
+            self.root.after(0, lambda ids=log_ids, lt=lots, st=stack, dt=delete_thread: self.finish_tlb_cycle_dnc(ids, lt, st, dt))
         except Exception as exc:
             self.root.after(0, lambda error=exc: self.handle_run_error(error))
+
+    def finish_tlb_cycle_dnc(self, log_ids: list[int], lots: list[dict], stack: str, delete_thread: threading.Thread | None = None) -> None:
+        try:
+            state = self.tlb_cycle_state or {}
+            model_change = bool(state.get("model_change"))
+            while True:
+                if model_change:
+                    allowed_axes = [
+                        index
+                        for index, value in enumerate(state.get("jig_axis_values", []))
+                        if value == "OK"
+                    ]
+                    self.frequent_check_values = [""] * 6 + list(state.get("jig_axis_values", [""] * 6))
+                else:
+                    allowed_axes = [
+                        index
+                        for index, value in enumerate(state.get("work_axis_values", []))
+                        if value == "OK"
+                    ]
+                    self.frequent_check_values = [""] * 12
+                if not self.open_frequent_check_popup("first", allowed_axes=allowed_axes):
+                    self.set_tlb_status("dnc", "초품 확인 미완료", False)
+                    return
+                if model_change:
+                    first_axes = [
+                        index
+                        for index, value in enumerate(self.frequent_check_values[:6])
+                        if value == "OK"
+                    ]
+                    if first_axes != allowed_axes:
+                        show_operator_alert(self.root, "초품 4Point 확인", "하부 Pin 축과 초품 축 다름")
+                        self.set_tlb_status("dnc", "초품 축 확인 NG", False)
+                        continue
+                ok, message = validate_frequent_check_capacity(lots, stack, self.frequent_check_values)
+                if ok:
+                    self.set_tlb_status("dnc", message, True)
+                    break
+                show_operator_alert(self.root, "초품 수량 확인", message)
+                self.set_tlb_status("dnc", "초품 수량 NG", False)
+            update_normal_frequent_check_db(log_ids, model_change, self.frequent_check_values)
+            state["remaining"] = max(0, int(state.get("remaining", 1)) - 1)
+            self.tlb_cycle_state = state
+            self.update_tlb_cycle_status(int(state.get("total", 1)), int(state["remaining"]))
+            if state["remaining"] > 0:
+                if delete_thread and delete_thread.is_alive():
+                    self.set_tlb_status("dnc", "DNC 삭제 완료 대기중", None)
+
+                    def wait_and_release() -> None:
+                        delete_thread.join()
+                        self.root.after(0, lambda r=state["remaining"]: self.set_tlb_status("dnc", f"이번 사이클 완료 / 남은 {r}회", True))
+                        self.root.after(0, lambda: self.set_running(False))
+
+                    threading.Thread(target=wait_and_release, daemon=True).start()
+                    return
+                self.set_tlb_status("dnc", f"이번 사이클 완료 / 남은 {state['remaining']}회", True)
+                self.set_running(False)
+                return
+            if delete_thread and delete_thread.is_alive():
+                self.set_tlb_status("dnc", "DNC 완료 대기중", None)
+
+                def wait_and_finish() -> None:
+                    delete_thread.join()
+                    self.root.after(0, lambda: self.finish_tlb_dnc(log_ids))
+
+                threading.Thread(target=wait_and_finish, daemon=True).start()
+                return
+            self.finish_tlb_dnc(log_ids)
+        except Exception as exc:
+            self.handle_run_error(exc)
 
     def finish_tlb_dnc(self, log_ids: list[int]) -> None:
         try:
@@ -3892,6 +4140,7 @@ class JiinDncManager:
             self.set_tlb_status("dnc", "DNC 완료", True)
             self.set_tlb_status("excel", f"DB 저장 완료 / Excel 미반영 {pending}건", True)
             self.auto_export_tlb_to_excel(parent=self.root)
+            self.tlb_cycle_state = None
             self.clear_tlb_inputs(after_done=True)
         except Exception as exc:
             self.handle_run_error(exc)
@@ -3921,12 +4170,16 @@ class JiinDncManager:
         self.set_tlb_status("excel", f"Excel 미반영 {pending}건", True)
 
     def clear_tlb_inputs(self, after_done: bool = False) -> None:
+        self.tlb_cycle_state = None
+        self.tlb_condition_records.clear()
         for entries in (self.tlb_entries, self.tlb_lot2_entries):
             for entry in entries.values():
                 entry.clear()
         for key in ("condition1", "condition2"):
             if key in self.tlb_status_labels:
-                self.tlb_status_labels[key].configure(text="\uC870\uAC74 \uC870\uD68C\\n\uB300\uAE30\uC911", fg=MUTED_TEXT, bg="#f8fafc", highlightthickness=2, highlightbackground=BORDER_COLOR)
+                self.tlb_status_labels[key].configure(text="조건 조회\n대기중", fg=MUTED_TEXT, bg="#f8fafc", highlightthickness=2, highlightbackground=BORDER_COLOR)
+        if "cycle" in self.tlb_status_labels:
+            self.tlb_status_labels["cycle"].configure(text="남은 사이클\n대기중", fg=MUTED_TEXT, bg="#f8fafc", highlightthickness=2, highlightbackground=BORDER_COLOR)
         self.set_tlb_status("dnc", "DNC 완료" if after_done else "대기중", True if after_done else None)
 
     def create_kcc_pkg_tab(self) -> None:
@@ -3936,18 +4189,21 @@ class JiinDncManager:
         title_wrap = tk.Frame(self.kcc_pkg_page, bg=PRIMARY_LIGHT)
         title_wrap.grid(row=0, column=0, sticky="ew", padx=14, pady=(14, 8))
         title_wrap.columnconfigure(1, weight=1)
+        logo_slot = tk.Frame(title_wrap, bg=PRIMARY_LIGHT, width=220, height=1)
+        logo_slot.grid(row=0, column=0, sticky="w", padx=(14, 8))
+        logo_slot.grid_propagate(False)
         kcc_logo_path = BUNDLED_KCC_LOGO_FILE if BUNDLED_KCC_LOGO_FILE.exists() else KCC_LOGO_FILE
         if kcc_logo_path.exists():
             try:
                 kcc_logo = tk.PhotoImage(file=str(kcc_logo_path))
                 scale = max(1, kcc_logo.height() // 32)
                 self.kcc_logo_image = kcc_logo.subsample(scale, scale)
-                tk.Label(title_wrap, image=self.kcc_logo_image, bg=PRIMARY_LIGHT, bd=0).grid(row=0, column=0, sticky="w", padx=(14, 8))
+                tk.Label(logo_slot, image=self.kcc_logo_image, bg=PRIMARY_LIGHT, bd=0).pack(side=tk.LEFT, anchor="w")
             except tk.TclError:
                 self.kcc_logo_image = None
         title = tk.Label(
             title_wrap,
-            text="KCC PKG 일반 DNC",
+            text="KCC PKG DNC",
             bg=PRIMARY_LIGHT,
             fg=PRIMARY,
             font=("맑은 고딕", 14, "bold"),
@@ -3956,12 +4212,12 @@ class JiinDncManager:
         title.grid(row=0, column=1, sticky="ew")
         title_buttons = tk.Frame(title_wrap, bg=PRIMARY_LIGHT)
         title_buttons.grid(row=0, column=2, sticky="e", padx=(8, 10))
-        self.add_normal_button(title_buttons, "일반 DNC 실행", self.run_normal_dnc, "Primary.TButton").grid(row=0, column=0, padx=4, pady=4)
+        self.add_normal_button(title_buttons, "DNC 실행", self.run_normal_dnc, "Primary.TButton").grid(row=0, column=0, padx=4, pady=4)
         self.add_normal_button(title_buttons, "입력 초기화", self.clear_normal_inputs).grid(row=0, column=1, padx=4, pady=4)
 
         title_legacy = tk.Label(
             self.kcc_pkg_page,
-            text="KCC PKG 일반 DNC",
+            text="KCC PKG DNC",
             bg=PRIMARY_LIGHT,
             fg=PRIMARY,
             font=("맑은 고딕", 14, "bold"),
