@@ -3607,13 +3607,15 @@ class JiinDncManager:
             ).grid(row=4, column=0, columnspan=2, sticky="ew", padx=14, pady=(12, 8))
             status = tk.Frame(panel, bg=SURFACE_BG)
             status.grid(row=5, column=0, columnspan=2, sticky="ew", padx=14, pady=(0, 12))
-            status.columnconfigure(0, weight=1)
-            status.columnconfigure(1, weight=1)
+            status.columnconfigure(0, weight=1, uniform="tlb_lot_status")
+            status.columnconfigure(1, weight=1, uniform="tlb_lot_status")
             self.tlb_status_labels[status_key] = self.create_judgement_card(status, "조건 조회")
             self.tlb_status_labels[status_key].grid(row=0, column=0, sticky="ew", padx=(0, 6))
             if column == 0:
                 self.tlb_status_labels["cycle"] = self.create_judgement_card(status, "남은 사이클")
                 self.tlb_status_labels["cycle"].grid(row=0, column=1, sticky="ew", padx=(6, 0))
+            else:
+                tk.Frame(status, bg=SURFACE_BG).grid(row=0, column=1, sticky="ew", padx=(6, 0))
 
         build_tlb_lot_panel(body, "LOT 1 입력", self.tlb_entries, "condition1", 0)
         build_tlb_lot_panel(body, "LOT 2 입력 (선택)", self.tlb_lot2_entries, "condition2", 1)
