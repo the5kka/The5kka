@@ -1112,9 +1112,32 @@ def ask_incomplete_action(parent, count: int) -> str:
 # ==================================================
 # Excel 저장 함수
 # ==================================================
+def get_log_header_row(ws) -> int:
+    """작업일보 로그 헤더 행을 찾습니다.
+
+    KCC PKG는 상단 DNC 입력 영역 때문에 로그 헤더가 아래쪽에 있고,
+    TLB는 시트 상단에 로그 헤더가 있습니다. 그래서 고정 행 대신
+    작업일자/차수/관리번호/LOT/매수/작업P/G 헤더가 있는 행을 찾습니다.
+    """
+    required_headers = {"작업일자", "차수", "관리번호", "LOT", "매수"}
+    preferred_headers = {"작업P/G", "실적"}
+    best_row = 8
+    best_score = 0
+    for row in range(1, min(ws.max_row, 30) + 1):
+        row_values = {
+            str(ws.cell(row=row, column=col).value or "").strip()
+            for col in range(1, 20)
+        }
+        score = len(required_headers & row_values) * 10 + len(preferred_headers & row_values)
+        if score > best_score:
+            best_row = row
+            best_score = score
+    return best_row if best_score >= 40 else 8
+
+
 def get_next_empty_row(ws) -> int:
-    """A:Q 범위 기준으로 8행부터 첫 빈 행을 찾습니다."""
-    row = 8
+    """작업일보 로그 헤더 바로 아래부터 첫 빈 행을 찾습니다."""
+    row = get_log_header_row(ws) + 1
     while True:
         has_value = any(ws.cell(row=row, column=col).value not in (None, "") for col in range(1, 18))
         if not has_value:
@@ -1133,15 +1156,16 @@ def write_process_code_backup(ws, row: int, process_code: str) -> None:
 
 def write_export_id_backup(ws, row: int, log_id: int) -> None:
     """Excel 저장 직후 강제 종료되어도 중복 반영을 막기 위한 DB ID 백업 칸입니다."""
-    if not ws.cell(row=6, column=EXCEL_EXPORT_ID_COLUMN).value:
-        ws.cell(row=6, column=EXCEL_EXPORT_ID_COLUMN).value = "DNC_LOG_ID"
+    header_row = get_log_header_row(ws)
+    if not ws.cell(row=header_row, column=EXCEL_EXPORT_ID_COLUMN).value:
+        ws.cell(row=header_row, column=EXCEL_EXPORT_ID_COLUMN).value = "DNC_LOG_ID"
     ws.cell(row=row, column=EXCEL_EXPORT_ID_COLUMN).value = int(log_id)
 
 
 def get_excel_exported_log_ids(ws) -> set[int]:
     """작업일보에 이미 기록된 DB ID를 읽어 중복 반영을 방지합니다."""
     existing_ids: set[int] = set()
-    for row in range(8, ws.max_row + 1):
+    for row in range(get_log_header_row(ws) + 1, ws.max_row + 1):
         value = ws.cell(row=row, column=EXCEL_EXPORT_ID_COLUMN).value
         if value in (None, ""):
             continue
@@ -1175,8 +1199,8 @@ def ensure_log_sheet_machine_column(ws) -> None:
         ws.cell(row=2, column=1).value = "호기"
 
 
-def open_log_workbook(config: dict):
-    """작업일보 파일과 KCC PKG 시트를 열고 기본 오류를 메시지로 변환합니다."""
+def open_log_workbook(config: dict, sheet_name: str = LOG_SHEET_NAME):
+    """작업일보 파일과 지정 시트를 열고 기본 오류를 메시지로 변환합니다."""
     excel_file = config.get("excel_file", "")
     if not excel_file:
         raise FileNotFoundError("작업일보 파일 선택 필요")
@@ -1193,10 +1217,10 @@ def open_log_workbook(config: dict):
     except zipfile.BadZipFile:
         raise ValueError("작업일보 파일 오류")
 
-    if LOG_SHEET_NAME not in workbook.sheetnames:
+    if sheet_name not in workbook.sheetnames:
         workbook.close()
-        raise KeyError("KCC PKG 시트 없음")
-    ws = workbook[LOG_SHEET_NAME]
+        raise KeyError(f"{sheet_name} 시트 없음")
+    ws = workbook[sheet_name]
     ensure_log_sheet_machine_column(ws)
     return workbook, ws, path
 
@@ -1872,7 +1896,7 @@ def lookup_tlb_condition_from_sheet(config: dict, tool_no: str, round_no: str) -
 def calculate_tlb_result_value(qty_number: int) -> float | None:
     if qty_number <= 0:
         return None
-    return round(qty_number * 3, 1)
+    return round(qty_number * 0.3, 1)
 
 
 def insert_tlb_dnc_db(common: dict, lots: list[dict], stack: str, model_change: bool) -> list[int]:
@@ -3614,6 +3638,7 @@ class JiinDncManager:
             if column == 0:
                 self.tlb_status_labels["cycle"] = self.create_judgement_card(status, "남은 사이클")
                 self.tlb_status_labels["cycle"].grid(row=0, column=1, sticky="ew", padx=(6, 0))
+                self.tlb_status_labels["cycle"].grid_remove()
             else:
                 tk.Frame(status, bg=SURFACE_BG).grid(row=0, column=1, sticky="ew", padx=(6, 0))
 
@@ -3671,9 +3696,15 @@ class JiinDncManager:
             lots.append(lot2)
         return lots
 
-    def calculate_tlb_cycle_count(self, common: dict, lots: list[dict], stack: str) -> tuple[int, str]:
+    def calculate_tlb_cycle_count(
+        self,
+        common: dict,
+        lots: list[dict],
+        stack: str,
+        axis_values: list[str] | None = None,
+    ) -> tuple[int, str]:
         total_qty = sum(int(lot.get("qty", "0") or 0) for lot in lots)
-        axis_count = get_machine_axis_count(common.get("machine", ""))
+        axis_count = count_frequent_check_axes(axis_values) if axis_values is not None else get_machine_axis_count(common.get("machine", ""))
         stack_text = str(stack or "").strip()
         ok, message = validate_positive_number(stack_text, "Stack", required=True)
         if not ok:
@@ -3710,11 +3741,24 @@ class JiinDncManager:
         label = self.tlb_status_labels.get("cycle")
         if label is None:
             return
-        if remaining is None:
-            text = f"남은 사이클\n총 {cycle_count}회"
-        else:
-            text = f"남은 사이클\n{remaining} / {cycle_count}회"
-        label.configure(text=text, fg=OK_COLOR, bg="#dcfce7", highlightthickness=2, highlightbackground=OK_COLOR)
+        if remaining is None or remaining <= 0:
+            label.grid_remove()
+            return
+        label.grid()
+        text = f"남은 사이클\n{remaining} / {cycle_count}회"
+        label.configure(text=text, fg="#075985", bg="#e0f2fe", highlightthickness=2, highlightbackground="#38bdf8")
+
+    def set_tlb_last_cycle_running(self) -> None:
+        label = self.tlb_status_labels.get("cycle")
+        if label is None:
+            return
+        label.grid()
+        label.configure(text="마지막 Cycle\n진행 중", fg="#075985", bg="#e0f2fe", highlightthickness=2, highlightbackground="#38bdf8")
+
+    def hide_tlb_cycle_status(self) -> None:
+        label = self.tlb_status_labels.get("cycle")
+        if label is not None:
+            label.grid_remove()
 
     def refresh_tlb_cycle_preview(self) -> None:
         # TLB 사이클은 작업자가 DNC 실행 시 입력하는 Stack 기준으로 계산합니다.
@@ -3743,6 +3787,8 @@ class JiinDncManager:
             return
         fg = OK_COLOR if ok is True else NG_COLOR if ok is False else MUTED_TEXT
         label.configure(text=text, fg=fg)
+        if key == "dnc":
+            self.append_tlb_log(text)
 
     def draw_tlb_condition_preview(self, record: dict | None) -> None:
         canvas = self.tlb_preview_canvas
@@ -4007,13 +4053,8 @@ class JiinDncManager:
                     return
                 capacity_values = self.frequent_check_values[:]
                 self.work_axis_values = capacity_values[:6]
-            capacity_ok, capacity_message = validate_frequent_check_capacity(lots, stack, capacity_values)
-            if not capacity_ok:
-                show_operator_alert(self.root, "작업 수량 확인", capacity_message)
-                self.set_tlb_status("dnc", "수량/Stack NG", False)
-                return
             try:
-                cycle_count, cycle_detail = self.calculate_tlb_cycle_count(common, lots, stack)
+                cycle_count, cycle_detail = self.calculate_tlb_cycle_count(common, lots, stack, capacity_values)
             except Exception as exc:
                 show_operator_alert(self.root, "사이클 확인", str(exc), "error")
                 self.set_tlb_status("dnc", "사이클 확인 필요", False)
@@ -4027,6 +4068,8 @@ class JiinDncManager:
                 "model_change": model_change,
                 "work_axis_values": self.work_axis_values[:],
                 "jig_axis_values": self.frequent_check_values[6:],
+                "capacity_values": capacity_values[:],
+                "first_check_done": False,
             }
         self.update_tlb_cycle_status(cycle_count, int(self.tlb_cycle_state["remaining"]))
         self.set_tlb_status("dnc", cycle_detail, True)
@@ -4039,6 +4082,8 @@ class JiinDncManager:
             total = int(state.get("total", 1))
             remaining_before = int(state.get("remaining", total))
             cycle_index = total - remaining_before + 1
+            if total > 1 and remaining_before == 1:
+                self.root.after(0, self.set_tlb_last_cycle_running)
             if not state.get("log_ids"):
                 self.root.after(0, lambda: self.set_tlb_status("dnc", "DB 저장중", None))
                 log_ids = insert_tlb_dnc_db(common, lots, stack, bool(state.get("model_change")))
@@ -4057,10 +4102,11 @@ class JiinDncManager:
                 daemon=True,
             )
             delete_thread.start()
-            wait_seconds = int(self.config.get("first_article_wait_seconds", FIRST_ARTICLE_WAIT_SECONDS))
-            for remain in range(wait_seconds, 0, -1):
-                self.root.after(0, lambda r=remain: self.set_tlb_status("dnc", f"초품 확인 대기중 ({r}초)", None))
-                time.sleep(1)
+            if not state.get("first_check_done"):
+                wait_seconds = int(self.config.get("first_article_wait_seconds", FIRST_ARTICLE_WAIT_SECONDS))
+                for remain in range(wait_seconds, 0, -1):
+                    self.root.after(0, lambda r=remain: self.set_tlb_status("dnc", f"초품 확인 대기중 ({r}초)", None))
+                    time.sleep(1)
             self.root.after(0, lambda ids=log_ids, lt=lots, st=stack, dt=delete_thread: self.finish_tlb_cycle_dnc(ids, lt, st, dt))
         except Exception as exc:
             self.root.after(0, lambda error=exc: self.handle_run_error(error))
@@ -4069,41 +4115,42 @@ class JiinDncManager:
         try:
             state = self.tlb_cycle_state or {}
             model_change = bool(state.get("model_change"))
-            while True:
-                if model_change:
-                    allowed_axes = [
-                        index
-                        for index, value in enumerate(state.get("jig_axis_values", []))
-                        if value == "OK"
-                    ]
-                    self.frequent_check_values = [""] * 6 + list(state.get("jig_axis_values", [""] * 6))
-                else:
-                    allowed_axes = [
-                        index
-                        for index, value in enumerate(state.get("work_axis_values", []))
-                        if value == "OK"
-                    ]
-                    self.frequent_check_values = [""] * 12
-                if not self.open_frequent_check_popup("first", allowed_axes=allowed_axes):
-                    self.set_tlb_status("dnc", "초품 확인 미완료", False)
-                    return
-                if model_change:
-                    first_axes = [
-                        index
-                        for index, value in enumerate(self.frequent_check_values[:6])
-                        if value == "OK"
-                    ]
-                    if first_axes != allowed_axes:
-                        show_operator_alert(self.root, "초품 4Point 확인", "하부 Pin 축과 초품 축 다름")
-                        self.set_tlb_status("dnc", "초품 축 확인 NG", False)
-                        continue
-                ok, message = validate_frequent_check_capacity(lots, stack, self.frequent_check_values)
-                if ok:
-                    self.set_tlb_status("dnc", message, True)
-                    break
-                show_operator_alert(self.root, "초품 수량 확인", message)
-                self.set_tlb_status("dnc", "초품 수량 NG", False)
-            update_normal_frequent_check_db(log_ids, model_change, self.frequent_check_values)
+            if not state.get("first_check_done"):
+                while True:
+                    if model_change:
+                        allowed_axes = [
+                            index
+                            for index, value in enumerate(state.get("jig_axis_values", []))
+                            if value == "OK"
+                        ]
+                        self.frequent_check_values = [""] * 6 + list(state.get("jig_axis_values", [""] * 6))
+                    else:
+                        allowed_axes = [
+                            index
+                            for index, value in enumerate(state.get("work_axis_values", []))
+                            if value == "OK"
+                        ]
+                        self.frequent_check_values = [""] * 12
+                    if not self.open_frequent_check_popup("first", allowed_axes=allowed_axes):
+                        self.set_tlb_status("dnc", "초품 확인 미완료", False)
+                        return
+                    if model_change:
+                        first_axes = [
+                            index
+                            for index, value in enumerate(self.frequent_check_values[:6])
+                            if value == "OK"
+                        ]
+                        if first_axes != allowed_axes:
+                            show_operator_alert(self.root, "초품 4Point 확인", "하부 Pin 축과 초품 축 다름")
+                            self.set_tlb_status("dnc", "초품 축 확인 NG", False)
+                            continue
+                    if count_frequent_check_axes(self.frequent_check_values) > 0:
+                        self.set_tlb_status("dnc", "초품 확인 완료", True)
+                        break
+                    show_operator_alert(self.root, "초품 확인", "확인 축 선택 필요")
+                    self.set_tlb_status("dnc", "초품 확인 NG", False)
+                update_normal_frequent_check_db(log_ids, model_change, self.frequent_check_values)
+                state["first_check_done"] = True
             state["remaining"] = max(0, int(state.get("remaining", 1)) - 1)
             self.tlb_cycle_state = state
             self.update_tlb_cycle_status(int(state.get("total", 1)), int(state["remaining"]))
@@ -4136,6 +4183,7 @@ class JiinDncManager:
 
     def finish_tlb_dnc(self, log_ids: list[int]) -> None:
         try:
+            self.hide_tlb_cycle_status()
             burr_ok = ask_system_yes_no(self.root, "Burr 확인", "4면 Burr 이상 없습니까?")
             update_normal_burr_db(log_ids, burr_ok)
             pending = get_unexported_process_log_count("TLB")
@@ -4182,6 +4230,7 @@ class JiinDncManager:
                 self.tlb_status_labels[key].configure(text="조건 조회\n대기중", fg=MUTED_TEXT, bg="#f8fafc", highlightthickness=2, highlightbackground=BORDER_COLOR)
         if "cycle" in self.tlb_status_labels:
             self.tlb_status_labels["cycle"].configure(text="남은 사이클\n대기중", fg=MUTED_TEXT, bg="#f8fafc", highlightthickness=2, highlightbackground=BORDER_COLOR)
+            self.tlb_status_labels["cycle"].grid_remove()
         self.set_tlb_status("dnc", "DNC 완료" if after_done else "대기중", True if after_done else None)
 
     def create_kcc_pkg_tab(self) -> None:
@@ -5447,9 +5496,10 @@ class FrequentCheckPopup:
         self.mode = mode
         self.allowed_axes = set(allowed_axes) if allowed_axes is not None else None
         self.saved = False
-        self.values = app.frequent_check_values[:]
-        if self.mode == "jig":
-            self.values[:6] = [""] * 6
+        if self.mode in ("jig", "capacity"):
+            self.values = [""] * 12
+        else:
+            self.values = app.frequent_check_values[:]
         self.buttons: list[tk.Button] = []
         self.visible_axes = self.get_visible_axes()
         self.window = tk.Toplevel(app.root)
@@ -5564,6 +5614,15 @@ class FrequentCheckPopup:
             self.refresh_button(axis_index)
 
     def save(self) -> None:
+        if self.mode == "first":
+            checked_axes = [
+                axis_index
+                for axis_index in self.visible_axes
+                if self.values[self.get_value_index(axis_index)] == "OK"
+            ]
+            if len(checked_axes) != len(self.visible_axes):
+                show_operator_alert(self.window, self.get_title(), "표시된 축 모두 확인 필요")
+                return
         check_mode = "first" if self.mode == "capacity" else self.mode
         ok, message = validate_frequent_check_values(self.values, check_mode=check_mode)
         if not ok:
