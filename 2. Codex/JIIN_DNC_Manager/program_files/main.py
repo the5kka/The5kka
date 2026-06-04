@@ -1,4 +1,4 @@
-import json
+﻿import json
 import calendar
 import ctypes
 import os
@@ -3623,11 +3623,10 @@ class JiinDncManager:
                 entry.grid(row=row, column=col, sticky="ew", padx=14, pady=9)
                 panel.columnconfigure(col, weight=1)
                 entries[key] = entry
-            ttk.Button(
+            self.create_mes_lookup_button(
                 panel,
-                text="조건 시트 조회",
                 command=lambda lot_no=1 if column == 0 else 2: self.load_tlb_condition_jig(lot_no),
-                style="Primary.TButton",
+                scheme="tlb",
             ).grid(row=4, column=0, columnspan=2, sticky="ew", padx=14, pady=(12, 8))
             status = tk.Frame(panel, bg=SURFACE_BG)
             status.grid(row=5, column=0, columnspan=2, sticky="ew", padx=14, pady=(0, 12))
@@ -4393,11 +4392,10 @@ class JiinDncManager:
             entry.grid(row=row, column=col, sticky="ew", padx=10, pady=8)
             panel.columnconfigure(col, weight=1)
             target[key] = entry
-        load_button = ttk.Button(
+        load_button = self.create_mes_lookup_button(
             panel,
-            text="조건 / 지그 조회",
             command=lambda: self.load_condition_jig_for_lot(lot_number),
-            style="Primary.TButton",
+            scheme="kcc",
         )
         load_button.grid(row=5, column=0, columnspan=2, sticky="ew", padx=10, pady=(8, 6))
 
@@ -4438,6 +4436,128 @@ class JiinDncManager:
         self.normal_buttons.append(button)
         return button
 
+    def create_mes_lookup_button(self, parent, command, scheme: str = "kcc") -> tk.Canvas:
+        """입체형 DNC 조건 조회 버튼을 만듭니다."""
+        palette = {
+            "kcc": {
+                "surface": "#eaf3ff",
+                "surface_hover": "#dcecff",
+                "surface_active": "#c7ddff",
+                "shine": "#fbfdff",
+                "fg": "#0046b8",
+                "border": "#0057d9",
+                "shadow": "#063b8f",
+                "bottom": "#0045ad",
+            },
+            "tlb": {
+                "surface": "#e4fbf8",
+                "surface_hover": "#d1f7f1",
+                "surface_active": "#b6eee5",
+                "shine": "#f7fffd",
+                "fg": "#006b66",
+                "border": "#008078",
+                "shadow": "#00524e",
+                "bottom": "#006b66",
+            },
+        }.get(scheme, {})
+        surface = palette.get("surface", PRIMARY_LIGHT)
+        hover = palette.get("surface_hover", PRIMARY_LIGHT)
+        active = palette.get("surface_active", PRIMARY_LIGHT)
+        shine = palette.get("shine", "#ffffff")
+        fg = palette.get("fg", PRIMARY)
+        border = palette.get("border", PRIMARY)
+        shadow = palette.get("shadow", PRIMARY)
+        bottom = palette.get("bottom", PRIMARY)
+
+        canvas = tk.Canvas(
+            parent,
+            height=58,
+            bd=0,
+            highlightthickness=0,
+            bg=SURFACE_BG,
+            cursor="hand2",
+        )
+        canvas._lookup_state = "normal"
+        canvas._lookup_bg = surface
+
+        def draw(fill: str, pressed: bool = False) -> None:
+            canvas.delete("all")
+            width = max(canvas.winfo_width(), 280)
+            height = max(canvas.winfo_height(), 58)
+            offset = 3 if pressed else 0
+            x1, y1 = 8 + offset, 6 + offset
+            x2, y2 = width - 8 + offset, height - 8 + offset
+
+            if not pressed:
+                canvas.create_rectangle(11, 11, width - 5, height - 3, fill=shadow, outline="")
+                canvas.create_rectangle(8, height - 14, width - 8, height - 6, fill=bottom, outline="")
+
+            canvas.create_rectangle(x1, y1, x2, y2, fill=fill, outline=border, width=2)
+            canvas.create_rectangle(x1 + 4, y1 + 4, x2 - 4, y1 + 19, fill=shine, outline="")
+            canvas.create_line(x1 + 5, y1 + 5, x2 - 5, y1 + 5, fill="#ffffff", width=2)
+            canvas.create_line(x1 + 5, y1 + 21, x2 - 5, y1 + 21, fill="#d7e6ff" if scheme == "kcc" else "#bfeee8", width=1)
+            canvas.create_line(x1 + 5, y2 - 5, x2 - 5, y2 - 5, fill=bottom, width=2)
+
+            text_color = fg if canvas._lookup_state == "normal" else MUTED_TEXT
+            icon_x = width / 2 - 84
+            text_x = width / 2 + 18
+            canvas.create_text(
+                icon_x,
+                height / 2 + offset,
+                text="▶",
+                fill=text_color,
+                font=("맑은 고딕", 18, "bold"),
+            )
+            canvas.create_text(
+                text_x,
+                height / 2 + offset,
+                text="DNC 조건 조회",
+                fill=text_color,
+                font=("맑은 고딕", 18, "bold"),
+            )
+
+        def set_state(state: str) -> None:
+            canvas._lookup_state = state
+            canvas.configure(cursor="hand2" if state == "normal" else "arrow")
+            draw(surface)
+
+        original_configure = canvas.configure
+
+        def configure_proxy(*args, **kwargs):
+            if "state" in kwargs:
+                set_state(kwargs.pop("state"))
+            if kwargs:
+                return original_configure(*args, **kwargs)
+            if args:
+                return original_configure(*args)
+            return None
+
+        canvas.configure = configure_proxy
+
+        def on_enter(_event) -> None:
+            if canvas._lookup_state == "normal":
+                draw(hover)
+
+        def on_leave(_event) -> None:
+            if canvas._lookup_state == "normal":
+                draw(surface)
+
+        def on_press(_event) -> None:
+            if canvas._lookup_state == "normal":
+                draw(active, pressed=True)
+
+        def on_release(_event) -> None:
+            if canvas._lookup_state == "normal":
+                draw(hover)
+                command()
+
+        canvas.bind("<Configure>", lambda _event: draw(canvas._lookup_bg))
+        canvas.bind("<Enter>", on_enter)
+        canvas.bind("<Leave>", on_leave)
+        canvas.bind("<ButtonPress-1>", on_press)
+        canvas.bind("<ButtonRelease-1>", on_release)
+        self.normal_buttons.append(canvas)
+        return canvas
     def create_settings_tab(self) -> None:
         page = self.settings_page
         page.columnconfigure(0, weight=1)
@@ -6690,3 +6810,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+
