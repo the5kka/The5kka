@@ -19,6 +19,7 @@ from tkinter import filedialog, messagebox, scrolledtext, simpledialog, ttk
 
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
+from PIL import Image, ImageDraw, ImageTk
 
 from dnc_rules import (
     format_duplicate_condition_files,
@@ -918,6 +919,8 @@ def keep_modal_on_top(dialog: tk.Toplevel, parent=None, focus_widget=None) -> No
 def show_operator_alert(parent, title: str, message: str, kind: str = "warning") -> None:
     """작업자용 큰 글씨 알람입니다. 핵심 문장만 크게 보여줍니다."""
     dialog = tk.Toplevel(parent) if parent else tk.Toplevel()
+    # Keep the dialog hidden until its final centered geometry is ready.
+    dialog.withdraw()
     dialog.title(title)
     dialog.configure(bg=SURFACE_BG)
     dialog.resizable(False, False)
@@ -963,6 +966,7 @@ def show_operator_alert(parent, title: str, message: str, kind: str = "warning")
         x = (dialog.winfo_screenwidth() - width) // 2
         y = (dialog.winfo_screenheight() - height) // 2
     dialog.geometry(f"{width}x{height}+{x}+{y}")
+    dialog.deiconify()
     dialog.grab_set()
     keep_modal_on_top(dialog, parent)
     dialog.wait_window()
@@ -3132,7 +3136,7 @@ class SegmentedField(ttk.Frame):
         self.on_change = on_change
         self.buttons: list[tk.Button] = []
         ttk.Label(self, text=label, width=9, anchor="e").pack(side=tk.LEFT, padx=(0, 6))
-        wrap = tk.Frame(self, bg=APP_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        wrap = tk.Frame(self, bg=APP_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         wrap.pack(side=tk.LEFT, fill=tk.X, expand=True)
         for option in options:
             button = tk.Button(
@@ -3212,7 +3216,7 @@ class RoundField(ttk.Frame):
         self.buttons: list[tk.Button] = []
         self.readonly = False
         ttk.Label(self, text=label, width=9, anchor="e").pack(side=tk.LEFT, padx=(0, 6))
-        wrap = tk.Frame(self, bg=APP_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        wrap = tk.Frame(self, bg=APP_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         wrap.pack(side=tk.LEFT, fill=tk.X, expand=True)
         for option in self.OPTIONS:
             button = tk.Button(
@@ -3273,7 +3277,7 @@ class SimpleTabNotebook(ttk.Frame):
         self.labels: list[tk.Label] = []
         self.tab_bar = tk.Frame(self, bg=APP_BG)
         self.tab_bar.pack(fill=tk.X)
-        self.page_area = tk.Frame(self, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        self.page_area = tk.Frame(self, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         self.page_area.pack(fill=tk.BOTH, expand=True)
 
     def add(self, page: tk.Frame, text: str) -> None:
@@ -3290,7 +3294,7 @@ class SimpleTabNotebook(ttk.Frame):
             font=("맑은 고딕", 10),
             cursor="hand2",
             highlightthickness=1,
-            highlightbackground=BORDER_COLOR,
+            highlightbackground="#93c5fd",
             bd=0,
         )
         label.pack(side=tk.LEFT)
@@ -3478,10 +3482,13 @@ class JiinDncManager:
         style.configure("Hint.TLabel", background=APP_BG, foreground=MUTED_TEXT, font=("맑은 고딕", 10))
         style.configure("Panel.TLabel", background=SURFACE_BG, foreground=TEXT_COLOR, font=("맑은 고딕", 11, "bold"))
         style.configure("TButton", font=("맑은 고딕", 10), padding=(12, 8), background=SURFACE_BG, foreground=TEXT_COLOR)
-        style.map("TButton", background=[("active", PRIMARY_LIGHT)])
-        style.configure("Primary.TButton", font=("맑은 고딕", 11, "bold"), padding=(16, 10), background=PRIMARY_LIGHT, foreground=PRIMARY)
+        style.map("TButton", background=[("active", PRIMARY_LIGHT), ("pressed", "#dbeafe")])
+        style.configure("Primary.TButton", font=("맑은 고딕", 11, "bold"), padding=(16, 10), background=PRIMARY_LIGHT, foreground=PRIMARY, relief="solid", borderwidth=1)
+        style.map("Primary.TButton", background=[("active", "#dbeafe"), ("pressed", "#bfdbfe")], foreground=[("active", PRIMARY)])
         style.configure("Side.TButton", font=("맑은 고딕", 10), padding=(12, 8), background=SURFACE_BG, foreground=TEXT_COLOR)
-        style.configure("SidePrimary.TButton", font=("맑은 고딕", 10, "bold"), padding=(12, 8), background=PRIMARY_LIGHT, foreground=PRIMARY)
+        style.map("Side.TButton", background=[("active", "#f1f5f9"), ("pressed", "#e2e8f0")], foreground=[("active", TEXT_COLOR)])
+        style.configure("SidePrimary.TButton", font=("맑은 고딕", 10, "bold"), padding=(12, 8), background=PRIMARY_LIGHT, foreground=PRIMARY, relief="solid", borderwidth=1)
+        style.map("SidePrimary.TButton", background=[("active", "#dbeafe"), ("pressed", "#bfdbfe")], foreground=[("active", PRIMARY)])
         style.configure("SideDanger.TButton", font=("중복 조건", 10, "bold"), padding=(12, 8), background="#fee2e2", foreground=NG_COLOR)
         style.map("SideDanger.TButton", background=[("active", "#fecaca")], foreground=[("active", NG_COLOR)])
         style.configure("Wide.TEntry", padding=(8, 5), fieldbackground=SURFACE_BG)
@@ -3550,7 +3557,9 @@ class JiinDncManager:
         self.tlb_page.rowconfigure(3, weight=0)
         title_wrap = tk.Frame(self.tlb_page, bg=tlb_light)
         title_wrap.grid(row=0, column=0, sticky="ew", padx=14, pady=(14, 8))
+        title_wrap.columnconfigure(0, minsize=260)
         title_wrap.columnconfigure(1, weight=1)
+        title_wrap.columnconfigure(2, minsize=360)
         logo_slot = tk.Frame(title_wrap, bg=tlb_light, width=220, height=1)
         logo_slot.grid(row=0, column=0, sticky="w", padx=(14, 8))
         logo_slot.grid_propagate(False)
@@ -3623,10 +3632,12 @@ class JiinDncManager:
                 entry.grid(row=row, column=col, sticky="ew", padx=14, pady=9)
                 panel.columnconfigure(col, weight=1)
                 entries[key] = entry
+            lot_no = 1 if column == 0 else 2
             self.create_mes_lookup_button(
                 panel,
-                command=lambda lot_no=1 if column == 0 else 2: self.load_tlb_condition_jig(lot_no),
+                command=lambda lot_no=lot_no: self.load_tlb_condition_jig(lot_no),
                 scheme="tlb",
+                ready_check=lambda lot_no=lot_no: self.is_tlb_lookup_ready(lot_no),
             ).grid(row=4, column=0, columnspan=2, sticky="ew", padx=14, pady=(12, 8))
             status = tk.Frame(panel, bg=SURFACE_BG)
             status.grid(row=5, column=0, columnspan=2, sticky="ew", padx=14, pady=(0, 12))
@@ -3637,9 +3648,9 @@ class JiinDncManager:
             if column == 0:
                 self.tlb_status_labels["cycle"] = self.create_judgement_card(status, "남은 사이클")
                 self.tlb_status_labels["cycle"].grid(row=0, column=1, sticky="ew", padx=(6, 0))
-                self.tlb_status_labels["cycle"].grid_remove()
             else:
-                tk.Frame(status, bg=SURFACE_BG).grid(row=0, column=1, sticky="ew", padx=(6, 0))
+                placeholder = self.create_judgement_card(status, "남은 사이클")
+                placeholder.grid(row=0, column=1, sticky="ew", padx=(6, 0))
 
         build_tlb_lot_panel(body, "LOT 1 입력", self.tlb_entries, "condition1", 0)
         build_tlb_lot_panel(body, "LOT 2 입력 (선택)", self.tlb_lot2_entries, "condition2", 1)
@@ -3648,7 +3659,7 @@ class JiinDncManager:
         bottom = tk.Frame(self.tlb_page, bg=tlb_bg)
         bottom.grid(row=3, column=0, sticky="ew", padx=14, pady=(8, 14))
         bottom.columnconfigure(0, weight=1)
-        status_panel = tk.Frame(bottom, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        status_panel = tk.Frame(bottom, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         status_panel.grid(row=0, column=0, sticky="ew", padx=(0, 10))
         status_panel.columnconfigure(1, weight=1)
         tk.Label(status_panel, text="2LOT 조건 일치 확인", bg=tlb_light, fg=tlb_primary, font=(font_name, 11, "bold"), width=22, height=2).grid(row=0, column=0, sticky="nsw")
@@ -3663,7 +3674,7 @@ class JiinDncManager:
         excel_label = tk.Label(status_panel, text="대기중", bg=SURFACE_BG, fg=MUTED_TEXT, font=(font_name, 12, "bold"), anchor="w")
         excel_label.grid(row=2, column=1, sticky="ew", padx=14)
         self.tlb_status_labels["excel"] = excel_label
-        log_panel = tk.Frame(bottom, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        log_panel = tk.Frame(bottom, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         log_panel.grid(row=1, column=0, sticky="ew", padx=(0, 10), pady=(8, 0))
         log_panel.columnconfigure(0, weight=1)
         tk.Label(log_panel, text="TLB HDI DNC 작업 로그", bg=tlb_light, fg=tlb_primary, font=(font_name, 10, "bold"), height=1).grid(row=0, column=0, sticky="ew")
@@ -3684,6 +3695,11 @@ class JiinDncManager:
 
     def get_tlb_lot2_data(self) -> dict:
         return {key: entry.get() for key, entry in self.tlb_lot2_entries.items()}
+
+    def is_tlb_lookup_ready(self, lot_no: int) -> bool:
+        entries = self.tlb_entries if lot_no == 1 else self.tlb_lot2_entries
+        required_keys = ("manage_no", "round", "lot_no", "qty")
+        return all(entries[key].get().strip() for key in required_keys)
 
     def is_tlb_lot_used(self, lot: dict) -> bool:
         return any(str(lot.get(key, "")).strip() for key in ("manage_no", "round", "lot_no", "qty", "condition", "jig"))
@@ -3741,9 +3757,8 @@ class JiinDncManager:
         if label is None:
             return
         if remaining is None or remaining <= 0:
-            label.grid_remove()
+            label.configure(text="남은 사이클\n대기중", fg=MUTED_TEXT, bg="#f8fafc", highlightthickness=2, highlightbackground=BORDER_COLOR)
             return
-        label.grid()
         text = f"남은 사이클\n{remaining} / {cycle_count}회"
         label.configure(text=text, fg="#075985", bg="#e0f2fe", highlightthickness=2, highlightbackground="#38bdf8")
 
@@ -3751,13 +3766,12 @@ class JiinDncManager:
         label = self.tlb_status_labels.get("cycle")
         if label is None:
             return
-        label.grid()
         label.configure(text="마지막 Cycle\n진행 중", fg="#075985", bg="#e0f2fe", highlightthickness=2, highlightbackground="#38bdf8")
 
     def hide_tlb_cycle_status(self) -> None:
         label = self.tlb_status_labels.get("cycle")
         if label is not None:
-            label.grid_remove()
+            label.configure(text="남은 사이클\n대기중", fg=MUTED_TEXT, bg="#f8fafc", highlightthickness=2, highlightbackground=BORDER_COLOR)
 
     def refresh_tlb_cycle_preview(self) -> None:
         # TLB 사이클은 작업자가 DNC 실행 시 입력하는 Stack 기준으로 계산합니다.
@@ -4229,7 +4243,6 @@ class JiinDncManager:
                 self.tlb_status_labels[key].configure(text="조건 조회\n대기중", fg=MUTED_TEXT, bg="#f8fafc", highlightthickness=2, highlightbackground=BORDER_COLOR)
         if "cycle" in self.tlb_status_labels:
             self.tlb_status_labels["cycle"].configure(text="남은 사이클\n대기중", fg=MUTED_TEXT, bg="#f8fafc", highlightthickness=2, highlightbackground=BORDER_COLOR)
-            self.tlb_status_labels["cycle"].grid_remove()
         self.set_tlb_status("dnc", "DNC 완료" if after_done else "대기중", True if after_done else None)
 
     def create_kcc_pkg_tab(self) -> None:
@@ -4238,7 +4251,9 @@ class JiinDncManager:
 
         title_wrap = tk.Frame(self.kcc_pkg_page, bg=PRIMARY_LIGHT)
         title_wrap.grid(row=0, column=0, sticky="ew", padx=14, pady=(14, 8))
+        title_wrap.columnconfigure(0, minsize=260)
         title_wrap.columnconfigure(1, weight=1)
+        title_wrap.columnconfigure(2, minsize=360)
         logo_slot = tk.Frame(title_wrap, bg=PRIMARY_LIGHT, width=220, height=1)
         logo_slot.grid(row=0, column=0, sticky="w", padx=(14, 8))
         logo_slot.grid_propagate(False)
@@ -4308,7 +4323,7 @@ class JiinDncManager:
         bottom.grid(row=3, column=0, sticky="ew", padx=14, pady=(8, 14))
         bottom.columnconfigure(0, weight=1)
 
-        status_panel = tk.Frame(bottom, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        status_panel = tk.Frame(bottom, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         status_panel.grid(row=0, column=0, sticky="ew", padx=(0, 10))
         status_panel.columnconfigure(1, weight=1)
         status_panel.columnconfigure(2, weight=0)
@@ -4325,7 +4340,7 @@ class JiinDncManager:
         excel_label.grid(row=2, column=1, columnspan=2, sticky="ew", padx=14)
         self.status_labels["excel"] = excel_label
 
-        log_panel = tk.Frame(bottom, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        log_panel = tk.Frame(bottom, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         log_panel.grid(row=1, column=0, sticky="ew", padx=(0, 10), pady=(8, 0))
         log_panel.columnconfigure(0, weight=1)
         tk.Label(log_panel, text="DNC 작업 로그", bg=PRIMARY_LIGHT, fg=PRIMARY, font=("맑은 고딕", 10, "bold"), height=1).grid(row=0, column=0, sticky="ew")
@@ -4362,7 +4377,7 @@ class JiinDncManager:
                 entries[key].var.trace_add("write", lambda *_args, n=lot_number: self.handle_lot_key_change(n))
 
     def create_panel(self, parent, title: str) -> tk.Frame:
-        panel = tk.Frame(parent, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        panel = tk.Frame(parent, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         tk.Label(panel, text=title, bg=PRIMARY_LIGHT, fg=PRIMARY, font=("맑은 고딕", 10, "bold"), height=2).grid(row=0, column=0, columnspan=8, sticky="ew")
         return panel
 
@@ -4396,6 +4411,7 @@ class JiinDncManager:
             panel,
             command=lambda: self.load_condition_jig_for_lot(lot_number),
             scheme="kcc",
+            ready_check=lambda lot_number=lot_number: self.is_kcc_lookup_ready(lot_number),
         )
         load_button.grid(row=5, column=0, columnspan=2, sticky="ew", padx=10, pady=(8, 6))
 
@@ -4436,42 +4452,39 @@ class JiinDncManager:
         self.normal_buttons.append(button)
         return button
 
-    def create_mes_lookup_button(self, parent, command, scheme: str = "kcc") -> tk.Canvas:
-        """입체형 DNC 조건 조회 버튼을 만듭니다."""
+    def create_mes_lookup_button(self, parent, command, scheme: str = "kcc", ready_check=None) -> tk.Canvas:
+        """Smooth image-rendered lookup button."""
         palette = {
             "kcc": {
-                "surface": "#eaf3ff",
-                "surface_hover": "#dcecff",
-                "surface_active": "#c7ddff",
-                "shine": "#fbfdff",
-                "fg": "#0046b8",
-                "border": "#0057d9",
-                "shadow": "#063b8f",
-                "bottom": "#0045ad",
+                "surface": "#eef6ff",
+                "surface_hover": "#e2f0ff",
+                "surface_active": "#d3e7ff",
+                "fg": "#0057d9",
+                "border": "#2f7cff",
+                "glow": "#cbd5e1",
+                "shine": "#ffffff",
             },
             "tlb": {
-                "surface": "#e4fbf8",
-                "surface_hover": "#d1f7f1",
-                "surface_active": "#b6eee5",
-                "shine": "#f7fffd",
-                "fg": "#006b66",
-                "border": "#008078",
-                "shadow": "#00524e",
-                "bottom": "#006b66",
+                "surface": "#e9fbf8",
+                "surface_hover": "#dcf7f2",
+                "surface_active": "#c8eee8",
+                "fg": "#00796b",
+                "border": "#10a79b",
+                "glow": "#cbd5e1",
+                "shine": "#ffffff",
             },
         }.get(scheme, {})
         surface = palette.get("surface", PRIMARY_LIGHT)
         hover = palette.get("surface_hover", PRIMARY_LIGHT)
         active = palette.get("surface_active", PRIMARY_LIGHT)
-        shine = palette.get("shine", "#ffffff")
         fg = palette.get("fg", PRIMARY)
         border = palette.get("border", PRIMARY)
-        shadow = palette.get("shadow", PRIMARY)
-        bottom = palette.get("bottom", PRIMARY)
+        glow = palette.get("glow", BORDER_COLOR)
+        shine = palette.get("shine", "#ffffff")
 
         canvas = tk.Canvas(
             parent,
-            height=58,
+            height=62,
             bd=0,
             highlightthickness=0,
             bg=SURFACE_BG,
@@ -4479,41 +4492,92 @@ class JiinDncManager:
         )
         canvas._lookup_state = "normal"
         canvas._lookup_bg = surface
+        canvas._lookup_anim = 0
+        canvas._lookup_animating = False
+        canvas._lookup_photo = None
+
+        def hex_to_rgb(color: str) -> tuple[int, int, int]:
+            color = color.lstrip("#")
+            return int(color[0:2], 16), int(color[2:4], 16), int(color[4:6], 16)
+
+        def make_button_image(width: int, height: int, fill: str, pressed: bool) -> ImageTk.PhotoImage:
+            scale = 4
+            image = Image.new("RGBA", (width * scale, height * scale), (0, 0, 0, 0))
+            draw_img = ImageDraw.Draw(image)
+            inset = 34 * scale
+            y_pad = 6 * scale
+            offset = scale if pressed else 0
+            x1 = inset + offset
+            y1 = y_pad + offset
+            x2 = (width * scale) - inset + offset
+            y2 = (height * scale) - y_pad + offset
+            radius = (y2 - y1) // 2
+            fill_rgb = hex_to_rgb(fill)
+            border_rgb = hex_to_rgb(border)
+            glow_rgb = hex_to_rgb(glow)
+            shine_rgb = hex_to_rgb(shine)
+
+            draw_img.rounded_rectangle((x1 + 8, y1 + 12, x2 + 8, y2 + 12), radius=radius, fill=(120, 132, 150, 42))
+            draw_img.rounded_rectangle((x1, y1, x2, y2), radius=radius, fill=(*fill_rgb, 238), outline=(*border_rgb, 245), width=scale)
+            draw_img.line((x1 + radius, y1 + 7 * scale, x2 - radius, y1 + 7 * scale), fill=(*shine_rgb, 210), width=scale)
+            draw_img.line((x1 + radius, y2 - 7 * scale, x2 - radius, y2 - 7 * scale), fill=(*glow_rgb, 190), width=scale)
+
+            if canvas._lookup_animating and canvas._lookup_state == "normal":
+                math = __import__("math")
+                straight = max((x2 - x1) - (2 * radius), 1)
+                arc_len = math.pi * radius
+                perimeter = (straight * 2) + (arc_len * 2)
+                pos = (canvas._lookup_anim % 100) / 100 * perimeter
+
+                def point_at(distance: float) -> tuple[float, float]:
+                    d = distance % perimeter
+                    if d <= straight:
+                        return x1 + radius + d, y1
+                    d -= straight
+                    if d <= arc_len:
+                        angle = -90 + (d / arc_len) * 180
+                        rad = math.radians(angle)
+                        return x2 - radius + radius * math.cos(rad), y1 + radius + radius * math.sin(rad)
+                    d -= arc_len
+                    if d <= straight:
+                        return x2 - radius - d, y2
+                    d -= straight
+                    angle = 90 + (d / arc_len) * 180
+                    rad = math.radians(angle)
+                    return x1 + radius + radius * math.cos(rad), y1 + radius + radius * math.sin(rad)
+
+                def draw_runner(distance: float) -> None:
+                    for index, gap in enumerate((22, 15, 8)):
+                        tx, ty = point_at(distance - gap * scale)
+                        alpha = (80, 130, 185)[index]
+                        size = (1.2 + index * 0.35) * scale
+                        draw_img.ellipse((tx - size, ty - size, tx + size, ty + size), fill=(255, 255, 255, alpha))
+                    sx, sy = point_at(distance)
+                    size = 2.4 * scale
+                    draw_img.ellipse((sx - size, sy - size, sx + size, sy + size), fill=(255, 255, 255, 235), outline=(148, 163, 184, 210), width=scale)
+
+                draw_runner(pos)
+                draw_runner(pos + perimeter / 2)
+
+            try:
+                resample = Image.Resampling.LANCZOS
+            except AttributeError:
+                resample = Image.LANCZOS
+            return ImageTk.PhotoImage(image.resize((width, height), resample))
 
         def draw(fill: str, pressed: bool = False) -> None:
             canvas.delete("all")
-            width = max(canvas.winfo_width(), 280)
-            height = max(canvas.winfo_height(), 58)
-            offset = 3 if pressed else 0
-            x1, y1 = 8 + offset, 6 + offset
-            x2, y2 = width - 8 + offset, height - 8 + offset
-
-            if not pressed:
-                canvas.create_rectangle(11, 11, width - 5, height - 3, fill=shadow, outline="")
-                canvas.create_rectangle(8, height - 14, width - 8, height - 6, fill=bottom, outline="")
-
-            canvas.create_rectangle(x1, y1, x2, y2, fill=fill, outline=border, width=2)
-            canvas.create_rectangle(x1 + 4, y1 + 4, x2 - 4, y1 + 19, fill=shine, outline="")
-            canvas.create_line(x1 + 5, y1 + 5, x2 - 5, y1 + 5, fill="#ffffff", width=2)
-            canvas.create_line(x1 + 5, y1 + 21, x2 - 5, y1 + 21, fill="#d7e6ff" if scheme == "kcc" else "#bfeee8", width=1)
-            canvas.create_line(x1 + 5, y2 - 5, x2 - 5, y2 - 5, fill=bottom, width=2)
-
+            width = max(canvas.winfo_width(), 340)
+            height = max(canvas.winfo_height(), 62)
+            canvas._lookup_photo = make_button_image(width, height, fill, pressed)
+            canvas.create_image(0, 0, image=canvas._lookup_photo, anchor="nw")
             text_color = fg if canvas._lookup_state == "normal" else MUTED_TEXT
-            icon_x = width / 2 - 84
-            text_x = width / 2 + 18
             canvas.create_text(
-                icon_x,
-                height / 2 + offset,
-                text="▶",
-                fill=text_color,
-                font=("맑은 고딕", 18, "bold"),
-            )
-            canvas.create_text(
-                text_x,
-                height / 2 + offset,
+                width / 2,
+                height / 2 + (1 if pressed else 0),
                 text="DNC 조건 조회",
                 fill=text_color,
-                font=("맑은 고딕", 18, "bold"),
+                font=("맑은 고딕", 15, "bold"),
             )
 
         def set_state(state: str) -> None:
@@ -4534,12 +4598,35 @@ class JiinDncManager:
 
         canvas.configure = configure_proxy
 
+        def is_ready() -> bool:
+            if ready_check is None:
+                return True
+            try:
+                return bool(ready_check())
+            except Exception:
+                return False
+
+        def run_glow_cycle(step: int = 0) -> None:
+            if not canvas.winfo_exists():
+                return
+            if canvas._lookup_state != "normal" or not is_ready():
+                canvas._lookup_animating = False
+                draw(canvas._lookup_bg)
+                canvas.after(500, run_glow_cycle)
+                return
+            canvas._lookup_animating = True
+            canvas._lookup_anim = step
+            draw(canvas._lookup_bg)
+            canvas.after(250, lambda: run_glow_cycle((step + 4) % 100))
+
         def on_enter(_event) -> None:
             if canvas._lookup_state == "normal":
+                canvas._lookup_bg = hover
                 draw(hover)
 
         def on_leave(_event) -> None:
             if canvas._lookup_state == "normal":
+                canvas._lookup_bg = surface
                 draw(surface)
 
         def on_press(_event) -> None:
@@ -4548,14 +4635,20 @@ class JiinDncManager:
 
         def on_release(_event) -> None:
             if canvas._lookup_state == "normal":
+                if not is_ready():
+                    canvas._lookup_bg = surface
+                    draw(surface)
+                    return
+                canvas._lookup_bg = hover
                 draw(hover)
-                command()
+                canvas.after(80, command)
 
         canvas.bind("<Configure>", lambda _event: draw(canvas._lookup_bg))
         canvas.bind("<Enter>", on_enter)
         canvas.bind("<Leave>", on_leave)
         canvas.bind("<ButtonPress-1>", on_press)
         canvas.bind("<ButtonRelease-1>", on_release)
+        canvas.after(1200, run_glow_cycle)
         self.normal_buttons.append(canvas)
         return canvas
     def create_settings_tab(self) -> None:
@@ -4605,15 +4698,15 @@ class JiinDncManager:
             ttk.Button(panel, text="폴더 선택", command=lambda name=process_name: self.select_source_folder(name), width=20).grid(row=row, column=2, padx=8, pady=5)
 
         shift_row = 10
-        ttk.Label(panel, text="근무표 자동 조", background=PRIMARY_LIGHT, foreground=PRIMARY, anchor="center", font=("맑은 고딕", 10, "bold")).grid(
+        ttk.Label(panel, text="근무표 조 자동", background=PRIMARY_LIGHT, foreground=PRIMARY, anchor="center", font=("맑은 고딕", 10, "bold")).grid(
             row=shift_row, column=0, columnspan=3, sticky="ew", padx=10, pady=(16, 6)
         )
-        auto_wrap = tk.Frame(panel, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        auto_wrap = tk.Frame(panel, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         auto_wrap.grid(row=shift_row + 1, column=0, columnspan=3, sticky="ew", padx=10, pady=5)
         auto_wrap.columnconfigure(0, minsize=126)
         auto_wrap.columnconfigure(6, weight=1)
-        tk.Label(auto_wrap, text="조 자동 선택", bg=SURFACE_BG, fg=TEXT_COLOR, width=settings_label_width, anchor="center", font=("맑은 고딕", 10)).grid(row=0, column=0, sticky="ew", padx=10, pady=8)
-        toggle_wrap = tk.Frame(auto_wrap, bg=APP_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        tk.Label(auto_wrap, text="근무표 조 자동", bg=SURFACE_BG, fg=TEXT_COLOR, width=settings_label_width, anchor="center", font=("맑은 고딕", 10)).grid(row=0, column=0, sticky="ew", padx=10, pady=8)
+        toggle_wrap = tk.Frame(auto_wrap, bg=APP_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         toggle_wrap.grid(row=0, column=1, sticky="w", padx=8, pady=8)
         self.auto_shift_buttons = {}
         for value, text in ((True, "사용"), (False, "미사용")):
@@ -4628,13 +4721,38 @@ class JiinDncManager:
                 pady=5,
                 cursor="hand2",
                 font=("맑은 고딕", 10, "bold"),
+                activebackground="#dbeafe",
+                activeforeground=PRIMARY,
             )
             button.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            button.bind("<Enter>", lambda _event, selected=value: self.set_auto_shift_button_hover(selected, True))
+            button.bind("<Leave>", lambda _event, selected=value: self.set_auto_shift_button_hover(selected, False))
+            button.bind("<ButtonPress-1>", lambda _event, selected=value: self.set_auto_shift_button_hover(selected, True, pressed=True))
+            button.bind("<ButtonRelease-1>", lambda _event, selected=value: self.set_auto_shift_button_hover(selected, True))
             self.auto_shift_buttons[value] = button
         self.update_auto_shift_buttons()
         tk.Label(auto_wrap, text="A조 주간 시작 기준일", bg=PRIMARY_LIGHT, fg=TEXT_COLOR, width=18, anchor="center").grid(row=0, column=2, sticky="w", padx=(14, 6), pady=8)
-        a_entry = ttk.Entry(auto_wrap, textvariable=self.a_group_day_start_var, style="Wide.TEntry", width=14)
-        a_entry.grid(row=0, column=3, sticky="w", padx=(0, 6), pady=8)
+        date_pick_wrap = tk.Frame(auto_wrap, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0, cursor="hand2")
+        date_pick_wrap.grid(row=0, column=3, sticky="w", padx=(0, 6), pady=8)
+        a_entry = tk.Entry(
+            date_pick_wrap,
+            textvariable=self.a_group_day_start_var,
+            width=14,
+            justify="center",
+            relief=tk.FLAT,
+            bd=0,
+            bg=SURFACE_BG,
+            fg=TEXT_COLOR,
+            readonlybackground=SURFACE_BG,
+            cursor="hand2",
+            font=("맑은 고딕", 10),
+        )
+        a_entry.pack(ipadx=4, ipady=5)
+        a_entry.configure(state="readonly")
+        date_pick_wrap.bind("<Button-1>", lambda _event: self.open_a_group_day_start_picker())
+        a_entry.bind("<Button-1>", lambda _event: self.open_a_group_day_start_picker())
+        date_pick_wrap.bind("<Enter>", lambda _event: date_pick_wrap.configure(bg="#f8fbff"))
+        date_pick_wrap.bind("<Leave>", lambda _event: date_pick_wrap.configure(bg=SURFACE_BG))
         tk.Label(auto_wrap, text="예: 2026-05-17", bg=SURFACE_BG, fg=MUTED_TEXT).grid(row=0, column=4, sticky="w", padx=(0, 8), pady=8)
         apply_button = tk.Button(
             auto_wrap,
@@ -4648,11 +4766,18 @@ class JiinDncManager:
             cursor="hand2",
             bg=PRIMARY_LIGHT,
             fg=PRIMARY,
-            activebackground=PRIMARY_LIGHT,
+            activebackground="#dbeafe",
             activeforeground=PRIMARY,
             font=("맑은 고딕", 10, "bold"),
+            highlightthickness=1,
+            highlightbackground="#93c5fd",
+            highlightcolor="#60a5fa",
         )
         apply_button.grid(row=0, column=5, sticky="w", padx=(0, 10), pady=8)
+        apply_button.bind("<Enter>", lambda _event: apply_button.configure(bg="#dbeafe"))
+        apply_button.bind("<Leave>", lambda _event: apply_button.configure(bg=PRIMARY_LIGHT))
+        apply_button.bind("<ButtonPress-1>", lambda _event: apply_button.configure(bg="#bfdbfe"))
+        apply_button.bind("<ButtonRelease-1>", lambda _event: apply_button.configure(bg="#dbeafe"))
 
         ttk.Button(panel, text="마스터 설정", command=self.open_master_settings_popup, style="Primary.TButton", width=20).grid(
             row=shift_row + 1, column=2, sticky="e", padx=(8, 20), pady=5
@@ -4662,7 +4787,7 @@ class JiinDncManager:
         ttk.Label(panel, text="공정별 관리 도구", background=PRIMARY_LIGHT, foreground=PRIMARY, anchor="center", font=("맑은 고딕", 10, "bold")).grid(
             row=manage_row, column=0, columnspan=3, sticky="ew", padx=10, pady=(16, 6)
         )
-        manage_wrap = tk.Frame(panel, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        manage_wrap = tk.Frame(panel, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         manage_wrap.grid(row=manage_row + 1, column=0, columnspan=3, sticky="ew", padx=10, pady=5)
         for index, process_name in enumerate(PROCESS_NAMES):
             manage_wrap.columnconfigure(index, weight=1, uniform="process_manage")
@@ -4717,7 +4842,63 @@ class JiinDncManager:
     def apply_auto_shift_settings(self) -> None:
         if self.save_settings_from_ui_silent(show_error=True):
             self.apply_work_time_defaults(initial=False, schedule_next=False)
-            show_operator_alert(self.root, "근무표 자동 조", "설정 적용", "info")
+            show_operator_alert(self.root, "근무표 조 자동", "설정 적용", "info")
+
+    def open_a_group_day_start_picker(self) -> None:
+        picker = tk.Toplevel(self.root)
+        picker.title("A조 주간 시작 기준일")
+        picker.configure(bg=APP_BG)
+        picker.resizable(False, False)
+        picker.transient(self.root)
+        picker.grab_set()
+
+        today = datetime.now()
+        try:
+            selected = datetime.strptime(self.a_group_day_start_var.get().strip(), "%Y-%m-%d")
+        except ValueError:
+            selected = today
+
+        year_var = tk.IntVar(value=selected.year)
+        month_var = tk.IntVar(value=selected.month)
+
+        header = ttk.Frame(picker, padding=(12, 12, 12, 6))
+        header.pack(fill=tk.X)
+        ttk.Spinbox(header, from_=today.year - 5, to=today.year + 5, textvariable=year_var, width=8, justify="center").pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Spinbox(header, from_=1, to=12, textvariable=month_var, width=5, justify="center").pack(side=tk.LEFT, padx=(0, 6))
+
+        days_frame = ttk.Frame(picker, padding=(12, 6, 12, 12))
+        days_frame.pack()
+
+        def select_day(day: int) -> None:
+            self.a_group_day_start_var.set(f"{year_var.get():04d}-{month_var.get():02d}-{day:02d}")
+            picker.destroy()
+
+        def refresh_days() -> None:
+            for child in days_frame.winfo_children():
+                child.destroy()
+            last_day = calendar.monthrange(year_var.get(), month_var.get())[1]
+            for day in range(1, last_day + 1):
+                ttk.Button(days_frame, text=str(day), width=4, command=lambda value=day: select_day(value)).grid(
+                    row=(day - 1) // 7,
+                    column=(day - 1) % 7,
+                    padx=2,
+                    pady=2,
+                )
+
+        ttk.Button(header, text="변경", command=refresh_days, width=6).pack(side=tk.LEFT)
+        refresh_days()
+
+    def set_auto_shift_button_hover(self, value: bool, hover: bool, pressed: bool = False) -> None:
+        if not hasattr(self, "auto_shift_buttons") or value not in self.auto_shift_buttons:
+            return
+        selected = bool(self.auto_shift_group_var.get()) == value
+        if pressed:
+            bg = "#bfdbfe"
+        elif hover:
+            bg = "#dbeafe" if selected else "#f8fbff"
+        else:
+            bg = PRIMARY_LIGHT if selected else SURFACE_BG
+        self.auto_shift_buttons[value].configure(bg=bg)
 
     def update_auto_shift_buttons(self) -> None:
         if not hasattr(self, "auto_shift_buttons"):
@@ -4727,7 +4908,7 @@ class JiinDncManager:
             button.configure(
                 bg=PRIMARY_LIGHT if selected else SURFACE_BG,
                 fg=PRIMARY if selected else TEXT_COLOR,
-                activebackground=PRIMARY_LIGHT,
+                activebackground="#dbeafe",
                 activeforeground=PRIMARY,
             )
 
@@ -4881,6 +5062,11 @@ class JiinDncManager:
 
     def get_lot_data(self, entries: dict[str, LabeledEntry]) -> dict:
         return {key: entry.get() for key, entry in entries.items()}
+
+    def is_kcc_lookup_ready(self, lot_number: int) -> bool:
+        entries = self.lot1_entries if lot_number == 1 else self.lot2_entries
+        required_keys = ("step", "round", "manage_no", "lot_no", "qty", "process_code")
+        return all(entries[key].get().strip() for key in required_keys)
 
     def lot_has_any_value(self, lot: dict) -> bool:
         # LOT 2는 선택 입력이므로 차수 버튼만 눌린 상태는 사용으로 보지 않습니다.
@@ -5670,7 +5856,7 @@ class FrequentCheckPopup:
         )
         title.pack(fill=tk.X, padx=14, pady=(14, 8))
 
-        body = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        body = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         body.pack(fill=tk.BOTH, expand=True, padx=14, pady=8)
 
         tk.Label(body, text=self.get_title(), bg="#d99a9a", fg="#111827", font=("맑은 고딕", 10, "bold"), height=2).grid(row=0, column=0, columnspan=len(self.visible_axes), sticky="ew")
@@ -5924,7 +6110,7 @@ class MasterSettingsPopup:
         self.window.after_idle(self.window.focus_set)
 
     def create_ui(self) -> None:
-        panel = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        panel = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         panel.pack(fill=tk.BOTH, expand=True, padx=14, pady=14)
         panel.columnconfigure(1, weight=1)
         tk.Label(
@@ -6209,7 +6395,7 @@ class ConditionMasterPopup:
         scroll.grid(row=0, column=1, sticky="ns")
         self.tree.configure(yscrollcommand=scroll.set)
 
-        edit = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        edit = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         edit.pack(fill=tk.X, padx=12, pady=(0, 12))
         self.edit_vars = {
             "step": tk.StringVar(),
@@ -6412,7 +6598,7 @@ class NewModelPopup:
         title = tk.Label(self.window, text="KCC PKG 신규 모델 검증 DNC", bg=PRIMARY_LIGHT, fg=PRIMARY, font=("맑은 고딕", 14, "bold"), height=2)
         title.pack(fill=tk.X, padx=14, pady=(14, 8))
 
-        lot_select = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        lot_select = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         lot_select.pack(fill=tk.X, padx=14, pady=(0, 8))
         if len(self.target_lots) == 1:
             lot_name = "LOT 1" if self.target_lots[0] == "lot1" else "LOT 2"
@@ -6431,21 +6617,21 @@ class NewModelPopup:
         self.input_area = tk.Frame(self.window, bg=APP_BG)
         self.input_area.pack(fill=tk.BOTH, expand=True, padx=14, pady=8)
 
-        self.single_panel = tk.Frame(self.input_area, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        self.single_panel = tk.Frame(self.input_area, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         self.entries = self.create_lot_input_fields(self.single_panel, columns_per_row=2)
 
         self.both_panel = tk.Frame(self.input_area, bg=APP_BG)
         self.both_panel.columnconfigure(0, weight=1)
         self.both_panel.columnconfigure(1, weight=1)
         for column, (lot_key, title_text) in enumerate((("lot1", "LOT 1 신규 입력"), ("lot2", "LOT 2 신규 입력"))):
-            lot_panel = tk.Frame(self.both_panel, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+            lot_panel = tk.Frame(self.both_panel, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
             lot_panel.grid(row=0, column=column, sticky="nsew", padx=(0, 8) if column == 0 else (8, 0))
             tk.Label(lot_panel, text=title_text, bg=PRIMARY_LIGHT, fg=PRIMARY, font=("맑은 고딕", 11, "bold"), height=2).pack(fill=tk.X)
             fields_frame = tk.Frame(lot_panel, bg=SURFACE_BG)
             fields_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
             self.both_entries[lot_key] = self.create_lot_input_fields(fields_frame, columns_per_row=1)
 
-        status = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground=BORDER_COLOR, bd=0)
+        status = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground="#93c5fd", bd=0)
         status.pack(fill=tk.X, padx=14, pady=8)
         self.mes_label = tk.Label(status, text="MES Core 일치화: 대기중", bg=SURFACE_BG, fg=MUTED_TEXT, font=("맑은 고딕", 10, "bold"))
         self.mes_label.pack(side=tk.LEFT, padx=16, pady=10)
@@ -6810,6 +6996,28 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
