@@ -1,0 +1,31 @@
+{
+  "config_version": 1,
+  "excel_file": "C:\\Users\\QC\\Desktop\\타사 DNC 작업일보.xlsm",
+  "source_dnc_folder": "C:/Users/오국진/Desktop/KCC_PKG",
+  "source_dnc_folders": {
+    "TLB": "C:/Users/오국진/Desktop/지그 일원화_1호기용",
+    "심텍 SPS": "",
+    "심텍 HDI": "",
+    "KCC PKG": "C:/Users/오국진/Desktop/KCC_PKG",
+    "KCC HDI": "C:/Users/QC/Desktop/지그 일원화_1호기용"
+  },
+  "transfer_dnc_folder": "C:\\Users\\오국진\\Desktop\\DNC",
+  "dnc_delete_seconds": 15,
+  "first_article_wait_seconds": 5,
+  "auto_export_after_dnc": true,
+  "auto_shift_group_enabled": true,
+  "a_group_day_start_date": "2026-05-17",
+  "master_password": "1",
+  "condition_master_password": "1",
+  "license_password": "0160",
+  "license_master_pc_name": "KUKJIN",
+  "license_allowed_ip_prefixes": [
+    "121.155.196"
+  ],
+  "clear_common_after_normal": false,
+  "machine": "트리밍 3호기",
+  "theme": "MES 블루",
+  "last_master_auto_backup_date": "2026-06-17",
+  "kcc_hdi_condition_sheet": "C:/Users/QC/Desktop/NEW_MLB 작업 조건 확인 Sheet_V5_260611.xlsx",
+  "tlb_condition_sheet": "//121.155.196.24/작업조건 확인 Sheet/MLB/NEW_MLB 작업 조건 확인 Sheet_V5_260616-2.xlsx"
+}
