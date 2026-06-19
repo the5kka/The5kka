@@ -6,6 +6,6 @@ Auto upload folder for D:\QC\8. Codex.
 - 2. JIIN_DNC_Manager
 - 3. IATF 16949 Search
 - $shortcutName
-- 5. Codex
+- $(Split-Path -Leaf D:\QC\8. Codex\5. Codex_업무노트)
 
 This repository is synchronized from the working folders under D:\QC\8. Codex.

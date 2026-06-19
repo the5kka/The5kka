@@ -10,7 +10,7 @@ $QuickAccessDir = Join-Path $BasePath "1. Quick Access Searcher"
 $DncDir = Join-Path $BasePath "2. JIIN_DNC_Manager"
 $IatfDir = Join-Path $BasePath "3. IATF 16949 Search"
 $ShortcutDir = (Get-ChildItem -LiteralPath $BasePath -Directory | Where-Object { $_.Name -like "4. Window *" } | Select-Object -First 1).FullName
-$CodexDir = Join-Path $BasePath "5. Codex"
+$CodexDir = (Get-ChildItem -LiteralPath $BasePath -Directory | Where-Object { $_.Name -like "5. Codex*" } | Select-Object -First 1).FullName
 
 $SourceRepos = @($QuickAccessDir, $DncDir, $IatfDir, $ShortcutDir, $CodexDir) | Where-Object { $_ }
 
@@ -93,7 +93,7 @@ function Copy-SourcesToSyncRoot() {
     if ($ShortcutDir) {
         Copy-Project $ShortcutDir (Split-Path -Leaf $ShortcutDir)
     }
-    Copy-Project $CodexDir "5. Codex"
+    Copy-Project $CodexDir (Split-Path -Leaf $CodexDir)
 }
 
 function Write-Readme() {
@@ -107,7 +107,7 @@ Auto upload folder for D:\QC\8. Codex.
 - `2. JIIN_DNC_Manager`
 - `3. IATF 16949 Search`
 - `$shortcutName`
-- `5. Codex`
+- `$(Split-Path -Leaf $CodexDir)`
 
 This repository is synchronized from the working folders under D:\QC\8. Codex.
 "@
