@@ -1,0 +1,6449 @@
+{
+  "file": "D:\\QC\\8. Codex\\6. OJT 인증 시험\\OJT 시험 문제.xlsm",
+  "sheets": [
+    {
+      "index": 0,
+      "name": "Dualdetach Carrierdetach 전장용",
+      "name_escape": "Dualdetach Carrierdetach \\uc804\\uc7a5\\uc6a9",
+      "rows": 34,
+      "cols": 12
+    },
+    {
+      "index": 1,
+      "name": "시험 SETTING",
+      "name_escape": "\\uc2dc\\ud5d8 SETTING",
+      "rows": 28,
+      "cols": 17
+    },
+    {
+      "index": 2,
+      "name": "시험지",
+      "name_escape": "\\uc2dc\\ud5d8\\uc9c0",
+      "rows": 55,
+      "cols": 12
+    },
+    {
+      "index": 3,
+      "name": "답안지",
+      "name_escape": "\\ub2f5\\uc548\\uc9c0",
+      "rows": 27,
+      "cols": 6
+    },
+    {
+      "index": 4,
+      "name": "TRIM 전장용",
+      "name_escape": "TRIM \\uc804\\uc7a5\\uc6a9",
+      "rows": 40,
+      "cols": 15
+    },
+    {
+      "index": 5,
+      "name": "TRIM 일반용",
+      "name_escape": "TRIM \\uc77c\\ubc18\\uc6a9",
+      "rows": 38,
+      "cols": 15
+    },
+    {
+      "index": 6,
+      "name": "Dualdetach Carrierdetach 일반용",
+      "name_escape": "Dualdetach Carrierdetach \\uc77c\\ubc18\\uc6a9",
+      "rows": 34,
+      "cols": 15
+    },
+    {
+      "index": 7,
+      "name": "Dualdetach Carrierdetach 전장용 ",
+      "name_escape": "Dualdetach Carrierdetach \\uc804\\uc7a5\\uc6a9 ",
+      "rows": 34,
+      "cols": 15
+    },
+    {
+      "index": 8,
+      "name": "ITS 각인 일반용  ",
+      "name_escape": "ITS \\uac01\\uc778 \\uc77c\\ubc18\\uc6a9  ",
+      "rows": 35,
+      "cols": 15
+    },
+    {
+      "index": 9,
+      "name": "ITS 각인 전장용 ",
+      "name_escape": "ITS \\uac01\\uc778 \\uc804\\uc7a5\\uc6a9 ",
+      "rows": 32,
+      "cols": 15
+    },
+    {
+      "index": 10,
+      "name": "X-Ray 일반용 ",
+      "name_escape": "X-Ray \\uc77c\\ubc18\\uc6a9 ",
+      "rows": 36,
+      "cols": 15
+    },
+    {
+      "index": 11,
+      "name": "X-Ray 전장용 ",
+      "name_escape": "X-Ray \\uc804\\uc7a5\\uc6a9 ",
+      "rows": 32,
+      "cols": 15
+    },
+    {
+      "index": 12,
+      "name": "수입검사 일반용",
+      "name_escape": "\\uc218\\uc785\\uac80\\uc0ac \\uc77c\\ubc18\\uc6a9",
+      "rows": 35,
+      "cols": 15
+    },
+    {
+      "index": 13,
+      "name": "수입검사 전장용",
+      "name_escape": "\\uc218\\uc785\\uac80\\uc0ac \\uc804\\uc7a5\\uc6a9",
+      "rows": 32,
+      "cols": 15
+    },
+    {
+      "index": 14,
+      "name": "출하검사 일반용",
+      "name_escape": "\\ucd9c\\ud558\\uac80\\uc0ac \\uc77c\\ubc18\\uc6a9",
+      "rows": 35,
+      "cols": 15
+    },
+    {
+      "index": 15,
+      "name": "출하검사 전장용",
+      "name_escape": "\\ucd9c\\ud558\\uac80\\uc0ac \\uc804\\uc7a5\\uc6a9",
+      "rows": 39,
+      "cols": 15
+    },
+    {
+      "index": 16,
+      "name": "Bronw OXIDE 일반용",
+      "name_escape": "Bronw OXIDE \\uc77c\\ubc18\\uc6a9",
+      "rows": 37,
+      "cols": 15
+    },
+    {
+      "index": 17,
+      "name": "Bronw OXIDE 전장용",
+      "name_escape": "Bronw OXIDE \\uc804\\uc7a5\\uc6a9",
+      "rows": 33,
+      "cols": 15
+    },
+    {
+      "index": 18,
+      "name": "CZ 전처리 일반용 ",
+      "name_escape": "CZ \\uc804\\ucc98\\ub9ac \\uc77c\\ubc18\\uc6a9 ",
+      "rows": 50,
+      "cols": 15
+    },
+    {
+      "index": 19,
+      "name": "CZ 전처리 전장용",
+      "name_escape": "CZ \\uc804\\ucc98\\ub9ac \\uc804\\uc7a5\\uc6a9",
+      "rows": 50,
+      "cols": 15
+    },
+    {
+      "index": 20,
+      "name": "Lay-up 일반용",
+      "name_escape": "Lay-up \\uc77c\\ubc18\\uc6a9",
+      "rows": 50,
+      "cols": 15
+    },
+    {
+      "index": 21,
+      "name": "Lay-up 전장용",
+      "name_escape": "Lay-up \\uc804\\uc7a5\\uc6a9",
+      "rows": 50,
+      "cols": 15
+    },
+    {
+      "index": 22,
+      "name": "PRESS 일반용",
+      "name_escape": "PRESS \\uc77c\\ubc18\\uc6a9",
+      "rows": 44,
+      "cols": 15
+    },
+    {
+      "index": 23,
+      "name": "PRESS 전장용",
+      "name_escape": "PRESS \\uc804\\uc7a5\\uc6a9",
+      "rows": 31,
+      "cols": 15
+    },
+    {
+      "index": 24,
+      "name": "액분석 신입용 ",
+      "name_escape": "\\uc561\\ubd84\\uc11d \\uc2e0\\uc785\\uc6a9 ",
+      "rows": 32,
+      "cols": 15
+    },
+    {
+      "index": 25,
+      "name": "액분석 전장용",
+      "name_escape": "\\uc561\\ubd84\\uc11d \\uc804\\uc7a5\\uc6a9",
+      "rows": 31,
+      "cols": 15
+    },
+    {
+      "index": 26,
+      "name": "노바본드 일반용",
+      "name_escape": "\\ub178\\ubc14\\ubcf8\\ub4dc \\uc77c\\ubc18\\uc6a9",
+      "rows": 32,
+      "cols": 15
+    },
+    {
+      "index": 27,
+      "name": "노바본드 전장용",
+      "name_escape": "\\ub178\\ubc14\\ubcf8\\ub4dc \\uc804\\uc7a5\\uc6a9",
+      "rows": 32,
+      "cols": 15
+    },
+    {
+      "index": 28,
+      "name": "수직흑화 일반용",
+      "name_escape": "\\uc218\\uc9c1\\ud751\\ud654 \\uc77c\\ubc18\\uc6a9",
+      "rows": 32,
+      "cols": 15
+    },
+    {
+      "index": 29,
+      "name": "수직흑화 전장용",
+      "name_escape": "\\uc218\\uc9c1\\ud751\\ud654 \\uc804\\uc7a5\\uc6a9",
+      "rows": 32,
+      "cols": 15
+    },
+    {
+      "index": 30,
+      "name": "Dualdetach Carrierdetach 일반",
+      "name_escape": "Dualdetach Carrierdetach \\uc77c\\ubc18",
+      "rows": 43,
+      "cols": 11
+    },
+    {
+      "index": 31,
+      "name": "ITS 각인 일반용",
+      "name_escape": "ITS \\uac01\\uc778 \\uc77c\\ubc18\\uc6a9",
+      "rows": 36,
+      "cols": 11
+    },
+    {
+      "index": 32,
+      "name": "ITS 각인 전장용",
+      "name_escape": "ITS \\uac01\\uc778 \\uc804\\uc7a5\\uc6a9",
+      "rows": 28,
+      "cols": 11
+    },
+    {
+      "index": 33,
+      "name": "X-ray 일반용",
+      "name_escape": "X-ray \\uc77c\\ubc18\\uc6a9",
+      "rows": 8,
+      "cols": 11
+    },
+    {
+      "index": 34,
+      "name": "X-ray 전장용",
+      "name_escape": "X-ray \\uc804\\uc7a5\\uc6a9",
+      "rows": 27,
+      "cols": 11
+    }
+  ],
+  "templates": {
+    "시험 SETTING": {
+      "dimensions": "28x17",
+      "merged_ranges": [
+        "F2:F3"
+      ],
+      "row_heights": {
+        "2": 29.25,
+        "3": 29.25,
+        "4": 29.25,
+        "5": 29.25,
+        "6": 29.25,
+        "7": 29.25,
+        "8": 29.25,
+        "9": 29.25,
+        "10": 29.25,
+        "11": 29.25,
+        "12": 29.25,
+        "13": 29.25,
+        "14": 29.25,
+        "15": 29.25,
+        "16": 29.25,
+        "17": 29.25,
+        "18": 29.25,
+        "19": 29.25,
+        "20": 29.25,
+        "21": 29.25,
+        "22": 29.25,
+        "23": 29.25,
+        "24": 29.25,
+        "25": 29.25,
+        "26": 29.25,
+        "27": 29.25,
+        "28": 29.25
+      },
+      "col_widths": {
+        "A": 2.625,
+        "B": 34.25,
+        "C": 15.25,
+        "G": 9.125,
+        "H": 9.125,
+        "J": 4.25,
+        "K": 31.625,
+        "L": 14.875,
+        "N": 31.625,
+        "O": 11.125,
+        "P": 14.875,
+        "R": 9.125
+      },
+      "non_empty_rows": [
+        {
+          "row": 2,
+          "cells": [
+            {
+              "cell": "B2",
+              "value": "공정명",
+              "formula": false
+            },
+            {
+              "cell": "C2",
+              "value": "공통",
+              "formula": false
+            },
+            {
+              "cell": "D2",
+              "value": "객관식",
+              "formula": false
+            },
+            {
+              "cell": "E2",
+              "value": "주관식",
+              "formula": false
+            },
+            {
+              "cell": "F2",
+              "value": "문항",
+              "formula": false
+            },
+            {
+              "cell": "K2",
+              "value": "항목",
+              "formula": false
+            },
+            {
+              "cell": "L2",
+              "value": "부서명",
+              "formula": false
+            },
+            {
+              "cell": "M2",
+              "value": "평가자",
+              "formula": false
+            },
+            {
+              "cell": "N2",
+              "value": "직무명",
+              "formula": false
+            },
+            {
+              "cell": "O2",
+              "value": "개정 차수",
+              "formula": false
+            },
+            {
+              "cell": "P2",
+              "value": "제정일",
+              "formula": false
+            },
+            {
+              "cell": "Q2",
+              "value": "유형",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "cells": [
+            {
+              "cell": "B3",
+              "value": "점수",
+              "formula": false
+            },
+            {
+              "cell": "C3",
+              "value": "2.5",
+              "formula": false
+            },
+            {
+              "cell": "D3",
+              "value": "4",
+              "formula": false
+            },
+            {
+              "cell": "E3",
+              "value": "5",
+              "formula": false
+            },
+            {
+              "cell": "K3",
+              "value": "TRIM 전장용",
+              "formula": false
+            },
+            {
+              "cell": "L3",
+              "value": "후가공",
+              "formula": false
+            },
+            {
+              "cell": "M3",
+              "value": "김용준",
+              "formula": false
+            },
+            {
+              "cell": "N3",
+              "value": "TRIM",
+              "formula": false
+            },
+            {
+              "cell": "O3",
+              "value": "0",
+              "formula": false
+            },
+            {
+              "cell": "P3",
+              "value": "2024.12.09",
+              "formula": false
+            },
+            {
+              "cell": "Q3",
+              "value": "전장용",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "cells": [
+            {
+              "cell": "B4",
+              "value": "TRIM 전장용",
+              "formula": false
+            },
+            {
+              "cell": "C4",
+              "value": "2",
+              "formula": false
+            },
+            {
+              "cell": "D4",
+              "value": "20",
+              "formula": false
+            },
+            {
+              "cell": "E4",
+              "value": "3",
+              "formula": false
+            },
+            {
+              "cell": "F4",
+              "value": "=SUM(C4:E4)",
+              "formula": true
+            }
+          ]
+        },
+        {
+          "row": 5,
+          "cells": [
+            {
+              "cell": "B5",
+              "value": "점수 합계",
+              "formula": false
+            },
+            {
+              "cell": "C5",
+              "value": "=C4*C3",
+              "formula": true
+            },
+            {
+              "cell": "D5",
+              "value": "=D4*D3",
+              "formula": true
+            },
+            {
+              "cell": "E5",
+              "value": "=E4*E3",
+              "formula": true
+            },
+            {
+              "cell": "F5",
+              "value": "=SUM(C5:E5)",
+              "formula": true
+            }
+          ]
+        }
+      ],
+      "images": 0
+    },
+    "시험지": {
+      "dimensions": "55x12",
+      "merged_ranges": [
+        "C47:K47",
+        "C54:K54",
+        "C16:K16",
+        "C25:K25",
+        "C41:K41",
+        "C10:K10",
+        "B7:C7",
+        "C55:K55",
+        "C50:K50",
+        "C44:K44",
+        "C22:K22",
+        "C40:K40",
+        "C31:K31",
+        "C43:K43",
+        "C12:K12",
+        "C46:K46",
+        "C21:K21",
+        "C51:K51",
+        "C11:K11",
+        "C27:K27",
+        "H8:K8",
+        "C36:K36",
+        "C52:K52",
+        "C48:K48",
+        "C17:K17",
+        "C23:K23",
+        "C39:K39",
+        "B8:C8",
+        "C32:K32",
+        "C38:K38",
+        "D7:K7",
+        "C19:K19",
+        "C37:K37",
+        "C28:K28",
+        "C13:K13",
+        "C18:K18",
+        "C53:K53",
+        "H6:K6",
+        "C49:K49",
+        "D2:G4",
+        "C34:K34",
+        "C30:K30",
+        "C24:K24",
+        "B6:C6",
+        "C15:K15",
+        "C33:K33",
+        "C42:K42",
+        "C14:K14",
+        "C45:K45",
+        "C26:K26",
+        "C35:K35",
+        "D6:F6",
+        "C20:K20",
+        "C29:K29"
+      ],
+      "row_heights": {
+        "1": 17.25,
+        "2": 43.5,
+        "3": 87.0,
+        "4": 43.5,
+        "5": 24.95,
+        "6": 43.5,
+        "7": 43.5,
+        "8": 43.5,
+        "9": 57.0,
+        "10": 18.75,
+        "11": 207.0,
+        "12": 207.0,
+        "13": 207.0,
+        "14": 207.0,
+        "15": 207.0,
+        "16": 207.0,
+        "17": 207.0,
+        "18": 207.0,
+        "19": 207.0,
+        "20": 207.0,
+        "21": 207.0,
+        "22": 207.0,
+        "23": 207.0,
+        "24": 207.0,
+        "25": 207.0,
+        "26": 207.0,
+        "27": 207.0,
+        "28": 207.0,
+        "29": 207.0,
+        "30": 207.0,
+        "31": 207.0,
+        "32": 207.0,
+        "33": 207.0,
+        "34": 207.0,
+        "35": 207.0,
+        "36": 207.0,
+        "37": 207.0,
+        "38": 207.0,
+        "39": 207.0,
+        "40": 207.0,
+        "41": 207.0,
+        "42": 207.0,
+        "43": 207.0,
+        "44": 207.0,
+        "45": 207.0,
+        "46": 207.0,
+        "47": 207.0,
+        "48": 207.0,
+        "49": 207.0,
+        "50": 207.0,
+        "51": 207.0,
+        "52": 207.0,
+        "53": 207.0,
+        "54": 207.0,
+        "55": 207.0
+      },
+      "col_widths": {
+        "A": 5.0,
+        "B": 18.75,
+        "C": 32.5,
+        "D": 33.75,
+        "G": 25.25,
+        "H": 4.25,
+        "I": 17.625,
+        "L": 9.25,
+        "M": 9.0,
+        "V": 9.0,
+        "W": 9.0
+      },
+      "non_empty_rows": [
+        {
+          "row": 2,
+          "cells": [
+            {
+              "cell": "B2",
+              "value": "부서명",
+              "formula": false
+            },
+            {
+              "cell": "C2",
+              "value": "=IFERROR(INDEX('시험 SETTING'!L:L, MATCH('시험 SETTING'!B4, '시험 SETTING'!K:K, 0)), \"\")",
+              "formula": true
+            },
+            {
+              "cell": "D2",
+              "value": "교육 평가서",
+              "formula": false
+            },
+            {
+              "cell": "I2",
+              "value": "기 안",
+              "formula": false
+            },
+            {
+              "cell": "J2",
+              "value": "심의",
+              "formula": false
+            },
+            {
+              "cell": "K2",
+              "value": "결정",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "cells": [
+            {
+              "cell": "B3",
+              "value": "평가자",
+              "formula": false
+            },
+            {
+              "cell": "C3",
+              "value": "=IFERROR(INDEX('시험 SETTING'!M:M, MATCH('시험 SETTING'!B4, '시험 SETTING'!K:K, 0)), \"\")",
+              "formula": true
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "cells": [
+            {
+              "cell": "B4",
+              "value": "평가 일시",
+              "formula": false
+            },
+            {
+              "cell": "I4",
+              "value": "/",
+              "formula": false
+            },
+            {
+              "cell": "J4",
+              "value": "/",
+              "formula": false
+            },
+            {
+              "cell": "K4",
+              "value": "/",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 6,
+          "cells": [
+            {
+              "cell": "B6",
+              "value": "■ 직 무 명",
+              "formula": false
+            },
+            {
+              "cell": "D6",
+              "value": "=IFERROR(INDEX('시험 SETTING'!N:N, MATCH('시험 SETTING'!B4, '시험 SETTING'!K:K, 0)), \"\")",
+              "formula": true
+            },
+            {
+              "cell": "G6",
+              "value": "■ 성 명",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 7,
+          "cells": [
+            {
+              "cell": "B7",
+              "value": "평가 방법",
+              "formula": false
+            },
+            {
+              "cell": "D7",
+              "value": "시험 평가, 결과 보고서, 직무 평가, 기타 방법 (          )",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 8,
+          "cells": [
+            {
+              "cell": "B8",
+              "value": "개정 차수",
+              "formula": false
+            },
+            {
+              "cell": "D8",
+              "value": "=IFERROR(INDEX('시험 SETTING'!O:O, MATCH('시험 SETTING'!B4, '시험 SETTING'!K:K, 0)), \"\")",
+              "formula": true
+            },
+            {
+              "cell": "E8",
+              "value": "제정일",
+              "formula": false
+            },
+            {
+              "cell": "F8",
+              "value": "=IFERROR(INDEX('시험 SETTING'!P:P, MATCH('시험 SETTING'!B4, '시험 SETTING'!K:K, 0)), \"\")",
+              "formula": true
+            },
+            {
+              "cell": "G8",
+              "value": "유 형",
+              "formula": false
+            },
+            {
+              "cell": "H8",
+              "value": "=IFERROR(INDEX('시험 SETTING'!Q:Q, MATCH('시험 SETTING'!B4, '시험 SETTING'!K:K, 0)), \"\")",
+              "formula": true
+            }
+          ]
+        },
+        {
+          "row": 10,
+          "cells": [
+            {
+              "cell": "B10",
+              "value": "No",
+              "formula": false
+            },
+            {
+              "cell": "C10",
+              "value": "문제",
+              "formula": false
+            },
+            {
+              "cell": "L10",
+              "value": "답안",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 11,
+          "cells": [
+            {
+              "cell": "B11",
+              "value": "1",
+              "formula": false
+            },
+            {
+              "cell": "C11",
+              "value": "[VDA 6.3] 다음은 무엇을 정의한 것인지 (       ) 안에 적절한 용어를 쓰시오. |  |   (                ) 목적은 오류/취약점 및 실수의 잠재적 원인을 조기에 발견하는 것이다. 그 결과는 조직적인  |        리스크 분석에서 평가되어 예방 조치를 시작한다. (                ) 방법은 \"고객에 대한 중요성\"/\"발생 확률\" |        /\"탐지 확률\"의 기준에 따라서 잠재적 오류의 우선 순위를 정한다.",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 12,
+          "cells": [
+            {
+              "cell": "B12",
+              "value": "2",
+              "formula": false
+            },
+            {
+              "cell": "C12",
+              "value": "[VDA 6.3] PCB 취급 시 올바른 방법은 무엇인가? |  | ① 맨손으로 패턴 부분을 잡는다. | ② 장갑 없이 가장자리만 잡으면 된다. | ③ 정전기 방지 장갑을 착용하고 가장자리를 잡는다. | ④ 아무렇게나 잡아도 기능에는 영향 없다.",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 13,
+          "cells": [
+            {
+              "cell": "B13",
+              "value": "3",
+              "formula": false
+            },
+            {
+              "cell": "C13",
+              "value": "Trim 설비 임피드(절삭 속도) 기준으로 맞는 것은? |  |  ① 2.0 m/min 이하 |  ② 2.0 m/min 이상 |  ③ 3.0 m/min 이하  |  ④ 3.0 m/min 이상",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 14,
+          "cells": [
+            {
+              "cell": "B14",
+              "value": "4",
+              "formula": false
+            },
+            {
+              "cell": "C14",
+              "value": "Trim Bit의 ∮는? |  |  ① 1.8∮ |  ② 2.0∮ |  ③ 2.5∮ |  ④ 3.15∮",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 15,
+          "cells": [
+            {
+              "cell": "B15",
+              "value": "5",
+              "formula": false
+            },
+            {
+              "cell": "C15",
+              "value": "트리밍(고다층) 기준, 신공정 Code로 맞은 것은? |  |  ① F78 |  ② F72 |  ③ F88 |  ④ F84",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 16,
+          "cells": [
+            {
+              "cell": "B16",
+              "value": "6",
+              "formula": false
+            },
+            {
+              "cell": "C16",
+              "value": "Trim Bit 사용 거리 기준은? |  |  ① 16.5m |  ② 30m |  ③ 20m |  ④ 50m",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 17,
+          "cells": [
+            {
+              "cell": "B17",
+              "value": "7",
+              "formula": false
+            },
+            {
+              "cell": "C17",
+              "value": "RPM(회전속도)으로 일치하는 것은? |  |  ① 32.0 krpm |  ② 33.0 krpm |  ③ 31.0 krpm |  ④ 30.0 krpm",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 18,
+          "cells": [
+            {
+              "cell": "B18",
+              "value": "8",
+              "formula": false
+            },
+            {
+              "cell": "C18",
+              "value": "Collet 청소 주기로 알맞은 것은? |  |  ① 1회/일  |  ② 1회/조 |  ③ 1회/주 |  ④ 1회/1개월 ",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 19,
+          "cells": [
+            {
+              "cell": "B19",
+              "value": "9",
+              "formula": false
+            },
+            {
+              "cell": "C19",
+              "value": "[VDA 6.3] VDA 프로세스 심사 시 문항 평가를 위한 적절한 배점으로 판단하기 어려운 것은?  |  |    ① 고객 요구 사항(System적) 누락 및 미반영 : 0점 |    ② 변경점 고객 미합의 및 미통보 : 0점 |    ③ 개발 실행 PPAP 승인 누락 : 0점 |    ④ 부적합품 기록 관리 누락 : 0점",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 20,
+          "cells": [
+            {
+              "cell": "B20",
+              "value": "10",
+              "formula": false
+            },
+            {
+              "cell": "C20",
+              "value": "[VDA 6.3] 입고 자재가 적절하게 보관되어 있고, 입고 자재의 특별특성을 위하여 운송/포장 설비 수단의 내용으로  |               거리가 먼 것은?  |  |   ① CSR/CR에 따른 포장 사양은 반드시 검토 및 반영되어야 한다.  |   ② 보관 용기의 주기적 청소 및 모니터링을 실시해야 한다. |   ③ 유수명 자재 관리는 모니터링에서 제외가 가능하다.  |   ④ 보관 장소의 청결 및 상태가 적절히 관리되어야 한다.",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 21,
+          "cells": [
+            {
+              "cell": "B21",
+              "value": "11",
+              "formula": false
+            },
+            {
+              "cell": "C21",
+              "value": "제품 Pinning 방법으로 맞은 것은?  |  | ①                            ②                                   ③                                    ④ ",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 22,
+          "cells": [
+            {
+              "cell": "B22",
+              "value": "12",
+              "formula": false
+            },
+            {
+              "cell": "C22",
+              "value": "스핀들(Spindle) 교체 대상이 아닌 것은? |  |   ① 빡빡한 경우 |   ② 주기적으로 1회/주로 교체 |   ③ 느슨한 경우 |   ④ 내부 표면에 상처가 발생하거나 외부가 파손되었을 경우",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 23,
+          "cells": [
+            {
+              "cell": "B23",
+              "value": "13",
+              "formula": false
+            },
+            {
+              "cell": "C23",
+              "value": "Trim 가공 Miss를 방지하기 위해 가공 위치를 확인하는 방법으로 맞는 것은? |   ① DNC P/G은 전산으로 이루어지므로 확인 안 해도 됨 |   ② 가공 완료 후 줄자를 이용하여 치수를 측정하면 됨 |   ③ DNC P/G 로딩 후 가공 위치를 알 수 있는 위치 확인 홀의 위치를 2개소 이상 확인해야 함 |   ④ 위치 확인 홀 Burr 상태를 확인하여야 함 (홀 Burr 발생 시 Trim Size에 영향을 줄 수 있음)",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 24,
+          "cells": [
+            {
+              "cell": "B24",
+              "value": "14",
+              "formula": false
+            },
+            {
+              "cell": "C24",
+              "value": "Collet 청소 방법으로 틀린 것은? |  |  ① spray Nozzle를 chock 입구에 넣고 끝으로 향해 뿌린 후 clamp Iose을 10회 이상 반복한다.  |  ② 1항의 조작을 3회 반복한다. |  ③ chock Ioose 상태에서 깨끗이 닦은 3.18Ø의 핀을 회전하면서 5회정도 떨어 트려본다. |  ④ chock 입구를 가아제로 닦는다.",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 25,
+          "cells": [
+            {
+              "cell": "B25",
+              "value": "15",
+              "formula": false
+            },
+            {
+              "cell": "C25",
+              "value": "설비 원점 Off-set으로 맞은 것은? |  ① X0. Y-30 |  ② X30. Y0 |  ③ X0. Y30 |  ④ X-30. Y0",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 26,
+          "cells": [
+            {
+              "cell": "B26",
+              "value": "16",
+              "formula": false
+            },
+            {
+              "cell": "C26",
+              "value": "트리밍 축간편차 측정 주기는? |  |  ① 1회/일  |  ② 1회/조 |  ③ 1회/주 |  ④ 1회/1개월 ",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 27,
+          "cells": [
+            {
+              "cell": "B27",
+              "value": "17",
+              "formula": false
+            },
+            {
+              "cell": "C27",
+              "value": "EPP 제품(03FSP_R, 04FSP_R) 내층 Trim 작업 방법 중 틀린 것은? |  |   ① 고정 PIN jig 적용 제품으로 Backlite jig 변경해야 한다. |   ② 고정 PIN jig 적용 제품은 공 Cycle 검증 할 필요가 없다. |   ③ CCL 보다 크게 Trim 하는 제품으로 Burr 검사 必  확인한다. |   ④ Trim 진행 시 DN(Down Limit) 값이 12.5 → 15.5로 변경되는지 확인한다.",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 28,
+          "cells": [
+            {
+              "cell": "B28",
+              "value": "18",
+              "formula": false
+            },
+            {
+              "cell": "C28",
+              "value": "Burr 제거 시 알맞은 방법은? |  |  ① 트리밍 완료 제품 절삭면에 Burr 발생이 있을 경우 커터날을 사용하여 제거한다. |  ② 무리한 힘을 가하여 Burr를 제거한다. |  ③ 여러 LOT씩 진행한다. |  ④ Burr 제거 시 잔해물을 제거하지 않고 진행한다.",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 29,
+          "cells": [
+            {
+              "cell": "B29",
+              "value": "19",
+              "formula": false
+            },
+            {
+              "cell": "C29",
+              "value": "Jig 점검 주기로 맞는 것은? |  |   ① 1회/일  |   ② 1회/조 |   ③ 1회/주  |   ④ 1회/1개월",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 30,
+          "cells": [
+            {
+              "cell": "B30",
+              "value": "20",
+              "formula": false
+            },
+            {
+              "cell": "C30",
+              "value": "Trim시 Kraft 사용하는 이유는 무엇인가? |  |  ① Trim 오절삭을 예방  |  ② Burr 발생을 최소화 |  ③ Trim 작업의 비밀 보장 |  ④ 제품 Scratch 방지",
+              "formula": false
+            }
+          ]
+        }
+      ],
+      "images": 4
+    },
+    "답안지": {
+      "dimensions": "27x6",
+      "merged_ranges": [],
+      "row_heights": {
+        "1": 55.5,
+        "2": 30.0,
+        "3": 42.75,
+        "4": 42.75,
+        "5": 42.75,
+        "6": 42.75,
+        "7": 42.75,
+        "8": 42.75,
+        "9": 42.75,
+        "10": 42.75,
+        "11": 42.75,
+        "12": 42.75,
+        "13": 42.75,
+        "14": 42.75,
+        "15": 42.75,
+        "16": 42.75,
+        "17": 42.75,
+        "18": 42.75,
+        "19": 42.75,
+        "20": 42.75,
+        "21": 42.75,
+        "22": 42.75,
+        "23": 42.75,
+        "24": 42.75,
+        "25": 42.75,
+        "26": 42.75,
+        "27": 42.75
+      },
+      "col_widths": {
+        "A": 9.0,
+        "B": 17.625,
+        "C": 94.375,
+        "D": 9.0,
+        "E": 17.625,
+        "F": 94.375,
+        "G": 9.0
+      },
+      "non_empty_rows": [
+        {
+          "row": 1,
+          "cells": [
+            {
+              "cell": "B1",
+              "value": "='시험 SETTING'!B4",
+              "formula": true
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "cells": [
+            {
+              "cell": "B2",
+              "value": "NO",
+              "formula": false
+            },
+            {
+              "cell": "C2",
+              "value": "답안지",
+              "formula": false
+            },
+            {
+              "cell": "E2",
+              "value": "NO",
+              "formula": false
+            },
+            {
+              "cell": "F2",
+              "value": "답안지",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "cells": [
+            {
+              "cell": "B3",
+              "value": "1",
+              "formula": false
+            },
+            {
+              "cell": "C3",
+              "value": "FMEA",
+              "formula": false
+            },
+            {
+              "cell": "E3",
+              "value": "26",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "cells": [
+            {
+              "cell": "B4",
+              "value": "2",
+              "formula": false
+            },
+            {
+              "cell": "C4",
+              "value": "③ 정전기 방지 장갑을 착용하고 가장자리를 잡는다",
+              "formula": false
+            },
+            {
+              "cell": "E4",
+              "value": "27",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 5,
+          "cells": [
+            {
+              "cell": "B5",
+              "value": "3",
+              "formula": false
+            },
+            {
+              "cell": "C5",
+              "value": "① 2.0 m/min 이하",
+              "formula": false
+            },
+            {
+              "cell": "E5",
+              "value": "28",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 6,
+          "cells": [
+            {
+              "cell": "B6",
+              "value": "4",
+              "formula": false
+            },
+            {
+              "cell": "C6",
+              "value": "② 2.0∮",
+              "formula": false
+            },
+            {
+              "cell": "E6",
+              "value": "29",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 7,
+          "cells": [
+            {
+              "cell": "B7",
+              "value": "5",
+              "formula": false
+            },
+            {
+              "cell": "C7",
+              "value": "① F78 ",
+              "formula": false
+            },
+            {
+              "cell": "E7",
+              "value": "30",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 8,
+          "cells": [
+            {
+              "cell": "B8",
+              "value": "6",
+              "formula": false
+            },
+            {
+              "cell": "C8",
+              "value": "② 30m",
+              "formula": false
+            },
+            {
+              "cell": "E8",
+              "value": "31",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 9,
+          "cells": [
+            {
+              "cell": "B9",
+              "value": "7",
+              "formula": false
+            },
+            {
+              "cell": "C9",
+              "value": "② 33.0 krpm",
+              "formula": false
+            },
+            {
+              "cell": "E9",
+              "value": "32",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 10,
+          "cells": [
+            {
+              "cell": "B10",
+              "value": "8",
+              "formula": false
+            },
+            {
+              "cell": "C10",
+              "value": " ③ 1회/주",
+              "formula": false
+            },
+            {
+              "cell": "E10",
+              "value": "33",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 11,
+          "cells": [
+            {
+              "cell": "B11",
+              "value": "9",
+              "formula": false
+            },
+            {
+              "cell": "C11",
+              "value": "④ 부적합품 기록 관리 누락 : 0점",
+              "formula": false
+            },
+            {
+              "cell": "E11",
+              "value": "34",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 12,
+          "cells": [
+            {
+              "cell": "B12",
+              "value": "10",
+              "formula": false
+            },
+            {
+              "cell": "C12",
+              "value": "③ 유수명 자재 관리는 모니터링에서 제외가 가능하다. ",
+              "formula": false
+            },
+            {
+              "cell": "E12",
+              "value": "35",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 13,
+          "cells": [
+            {
+              "cell": "B13",
+              "value": "11",
+              "formula": false
+            },
+            {
+              "cell": "C13",
+              "value": "① ",
+              "formula": false
+            },
+            {
+              "cell": "E13",
+              "value": "36",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 14,
+          "cells": [
+            {
+              "cell": "B14",
+              "value": "12",
+              "formula": false
+            },
+            {
+              "cell": "C14",
+              "value": "② 주기적으로 1회/주로 교체",
+              "formula": false
+            },
+            {
+              "cell": "E14",
+              "value": "37",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 15,
+          "cells": [
+            {
+              "cell": "B15",
+              "value": "13",
+              "formula": false
+            },
+            {
+              "cell": "C15",
+              "value": "③ DNC P/G 로딩 후 가공 위치를 알 수 있는 위치 확인 홀의 위치를 2개소 이상 확인해야 함",
+              "formula": false
+            },
+            {
+              "cell": "E15",
+              "value": "38",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 16,
+          "cells": [
+            {
+              "cell": "B16",
+              "value": "14",
+              "formula": false
+            },
+            {
+              "cell": "C16",
+              "value": "③ chock Ioose 상태에서 깨끗이 닦은 3.18Ø의 핀을 회전하면서 5회정도 떨어 트려본다.",
+              "formula": false
+            },
+            {
+              "cell": "E16",
+              "value": "39",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 17,
+          "cells": [
+            {
+              "cell": "B17",
+              "value": "15",
+              "formula": false
+            },
+            {
+              "cell": "C17",
+              "value": "③ X0. Y30.",
+              "formula": false
+            },
+            {
+              "cell": "E17",
+              "value": "40",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 18,
+          "cells": [
+            {
+              "cell": "B18",
+              "value": "16",
+              "formula": false
+            },
+            {
+              "cell": "C18",
+              "value": "③ 1회/주",
+              "formula": false
+            },
+            {
+              "cell": "E18",
+              "value": "41",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 19,
+          "cells": [
+            {
+              "cell": "B19",
+              "value": "17",
+              "formula": false
+            },
+            {
+              "cell": "C19",
+              "value": "② 고정 PIN jig 적용 제품은 공 Cycle 검증 할 필요가 없다.",
+              "formula": false
+            },
+            {
+              "cell": "E19",
+              "value": "42",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 20,
+          "cells": [
+            {
+              "cell": "B20",
+              "value": "18",
+              "formula": false
+            },
+            {
+              "cell": "C20",
+              "value": "① 트리밍 완료 제품 절삭면에 Burr 발생이 있을 경우 커터날을 사용하여 제거한다.",
+              "formula": false
+            },
+            {
+              "cell": "E20",
+              "value": "43",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 21,
+          "cells": [
+            {
+              "cell": "B21",
+              "value": "19",
+              "formula": false
+            },
+            {
+              "cell": "C21",
+              "value": "② 1회/조 ",
+              "formula": false
+            },
+            {
+              "cell": "E21",
+              "value": "44",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 22,
+          "cells": [
+            {
+              "cell": "B22",
+              "value": "20",
+              "formula": false
+            },
+            {
+              "cell": "C22",
+              "value": "② Burr 발생을 최소화",
+              "formula": false
+            },
+            {
+              "cell": "E22",
+              "value": "45",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 23,
+          "cells": [
+            {
+              "cell": "B23",
+              "value": "21",
+              "formula": false
+            },
+            {
+              "cell": "C23",
+              "value": "② 두께/공법에 따라 8,10,15 Stack",
+              "formula": false
+            },
+            {
+              "cell": "E23",
+              "value": "46",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 24,
+          "cells": [
+            {
+              "cell": "B24",
+              "value": "22",
+              "formula": false
+            },
+            {
+              "cell": "C24",
+              "value": "② 불필요 Loss부를 절삭하는 공정",
+              "formula": false
+            },
+            {
+              "cell": "E24",
+              "value": "47",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 25,
+          "cells": [
+            {
+              "cell": "B25",
+              "value": "23",
+              "formula": false
+            },
+            {
+              "cell": "C25",
+              "value": "33.000 RPM",
+              "formula": false
+            },
+            {
+              "cell": "E25",
+              "value": "48",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 26,
+          "cells": [
+            {
+              "cell": "B26",
+              "value": "24",
+              "formula": false
+            },
+            {
+              "cell": "C26",
+              "value": "Dual Core 제품으로 Burr 제거 시 Core 벌어짐 Risk 있음",
+              "formula": false
+            },
+            {
+              "cell": "E26",
+              "value": "49",
+              "formula": false
+            }
+          ]
+        },
+        {
+          "row": 27,
+          "cells": [
+            {
+              "cell": "B27",
+              "value": "25",
+              "formula": false
+            },
+            {
+              "cell": "C27",
+              "value": "발생 시 즉시 교체",
+              "formula": false
+            },
+            {
+              "cell": "E27",
+              "value": "50",
+              "formula": false
+            }
+          ]
+        }
+      ],
+      "images": 0
+    }
+  },
+  "process_sheets": [
+    {
+      "name": "Dualdetach Carrierdetach 전장용",
+      "name_escape": "Dualdetach Carrierdetach \\uc804\\uc7a5\\uc6a9",
+      "dimensions": "34x12",
+      "header_row": 2,
+      "headers": [
+        null,
+        "No",
+        "유형",
+        "문제유형 ",
+        "문제",
+        "1",
+        "2",
+        "3",
+        "4",
+        "정답",
+        "랜덤",
+        null
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "유형",
+        "문제유형",
+        "문제",
+        "1",
+        "2",
+        "3",
+        "4",
+        "정답",
+        "랜덤",
+        ""
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 생산 프로세스 반복 릴리즈에서 고려해야 할 사항이 아닌 것은?",
+          " 승인은 승인 기준에 따라 권한을 부여 받은 직원이 수행해야 한다.",
+          "일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다.",
+          "검사 항목이 한도 견본으로 확인 가능하다.",
+          "불가피하게 승인 시간이 지연된다면, 샘플을 승인할 때까지 제품을 분리하고 진행한다.",
+          "일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다.",
+          null,
+          null
+        ],
+        [
+          null,
+          "2",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 입고 자재가 적절하게 보관되어 있고, 입고 자재의 특별특성을 위하여 운송/포장 설비 수단의 내용으로 거리가 먼 것은?",
+          "CSR/CR에 따른 포장 사양은 반드시 검토 및 반영되어야 한다. ",
+          "보관 용기의 주기적 청소 및 모니터링을 실시해야 한다.",
+          "유수명 자재 관리는 모니터링에서 제외가 가능하다. ",
+          "보관 장소의 청결 및 상태가 적절히 관리되어야 한다",
+          "유수명 자재 관리는 모니터링에서 제외가 가능하다. ",
+          null,
+          null
+        ],
+        [
+          null,
+          "3",
+          "전장",
+          "객관식",
+          "[VDA 6.3] VDA 프로세스 심사 시 문항 평가를 위한 적절한 배점으로 판단하기 어려운 것은?",
+          "고객 요구 사항(System적) 누락 및 미반영 : 0점",
+          "변경점 고객 미합의 및 미통보 : 0점",
+          "개발 실행 PPAP 승인 누락 : 0점",
+          "부적합품 기록 관리 누락 : 0점",
+          "부적합품 기록 관리 누락 : 0점",
+          null,
+          null
+        ],
+        [
+          null,
+          "4",
+          "전장",
+          "객관식",
+          "Dual Detach 공정에서 나올 수 없는 불량은?",
+          "구김 불량 : 제품 취급 과정에서의 구김 발생",
+          "파손 불량 : 취급성 또는 레진붙음, 액침투에 의한 파손 발생",
+          "휨 불량 : 분리 방법 미 준수에 의한 휨 발생",
+          "적층 이물 : 제품 취급 중 이물이 제품에 전이되어 불량 발생",
+          "적층 이물 : 제품 취급 중 이물이 제품에 전이되어 불량 발생",
+          null,
+          null
+        ],
+        [
+          null,
+          "5",
+          "전장",
+          "객관식",
+          "Dual Detach Cutting시 Plat Bar 관리 기준은?",
+          "마모 없을 것    ",
+          "3mm 이하일 것  ",
+          "2mm 이하일 것  ",
+          "1mm 이하일 것",
+          "마모 없을 것    ",
+          null,
+          null
+        ],
+        [
+          null,
+          "6",
+          "전장",
+          "객관식",
+          "Dual Detach 분리기에서 블레이드 속도 기준으로 맞는것은? ",
+          "8~9m/min",
+          "8.2~9mi/mn",
+          "8~9.2m/min",
+          "8.2~9.2m/min",
+          "8~9.2m/min",
+          null,
+          null
+        ]
+      ],
+      "image_count": 10,
+      "image_anchors": [
+        {
+          "row": 18,
+          "col": 6,
+          "width": 120,
+          "height": 144
+        },
+        {
+          "row": 18,
+          "col": 7,
+          "width": 113,
+          "height": 136
+        },
+        {
+          "row": 18,
+          "col": 8,
+          "width": 134,
+          "height": 151
+        },
+        {
+          "row": 18,
+          "col": 9,
+          "width": 119,
+          "height": 144
+        },
+        {
+          "row": 18,
+          "col": 10,
+          "width": 122,
+          "height": 134
+        },
+        {
+          "row": 19,
+          "col": 7,
+          "width": 121,
+          "height": 68
+        },
+        {
+          "row": 19,
+          "col": 8,
+          "width": 123,
+          "height": 70
+        },
+        {
+          "row": 19,
+          "col": 9,
+          "width": 130,
+          "height": 70
+        },
+        {
+          "row": 19,
+          "col": 10,
+          "width": 186,
+          "height": 103
+        },
+        {
+          "row": 19,
+          "col": 6,
+          "width": 121,
+          "height": 66
+        }
+      ]
+    },
+    {
+      "name": "TRIM 전장용",
+      "name_escape": "TRIM \\uc804\\uc7a5\\uc6a9",
+      "dimensions": "40x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "제품 Pinning 방법으로 맞은 것은?  |  | ①                            ②                                   ③                                    ④ ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① "
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "전장",
+          "주관식",
+          " Trim 설비의 Run out이란, 스핀들 (           )시 흔들림의 정도이며, 관리 범위는 (           )이내 이다. ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "회전, 30㎛"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 입고 자재가 적절하게 보관되어 있고, 입고 자재의 특별특성을 위하여 운송/포장 설비 수단의 내용으로  |               거리가 먼 것은?  |  |   ① CSR/CR에 따른 포장 사양은 반드시 검토 및 반영되어야 한다.  |   ② 보관 용기의 주기적 청소 및 모니터링을 실시해야 한다. |   ③ 유수명 자재 관리는 모니터링에서 제외가 가능하다.  |   ④ 보관 장소의 청결 및 상태가 적절히 관리되어야 한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 유수명 자재 관리는 모니터링에서 제외가 가능하다. "
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 생산 프로세스 반복 릴리즈에서 고려해야 할 사항이 아닌 것은?  |  |   ① 승인은 승인 기준에 따라 권한을 부여 받은 직원이 수행해야 한다. |   ② 일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다. |   ③ 검사 항목이 한도 견본으로 확인 가능하다. |   ④ 불가피하게 승인 시간이 지연된다면, 샘플을 승인할 때까지 제품을 분리하고 진행한다.  ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다."
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] VDA 프로세스 심사 시 문항 평가를 위한 적절한 배점으로 판단하기 어려운 것은?  |  |    ① 고객 요구 사항(System적) 누락 및 미반영 : 0점 |    ② 변경점 고객 미합의 및 미통보 : 0점 |    ③ 개발 실행 PPAP 승인 누락 : 0점 |    ④ 부적합품 기록 관리 누락 : 0점",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 부적합품 기록 관리 누락 : 0점"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "Trim 공정의 목적으로 맞은 것은? |  |   ① 불필요 Target부를 절삭하는 공정 |   ② 불필요 Loss부를 절삭하는 공정 |   ③ Strip 단위 Routing 하는 공정  |   ④ PCS 단위 Routing 하는 공정",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 불필요 Loss부를 절삭하는 공정"
+        ]
+      ],
+      "image_count": 4,
+      "image_anchors": [
+        {
+          "row": 6,
+          "col": 6,
+          "width": 59,
+          "height": 67
+        },
+        {
+          "row": 6,
+          "col": 7,
+          "width": 57,
+          "height": 67
+        },
+        {
+          "row": 6,
+          "col": 10,
+          "width": 51,
+          "height": 68
+        },
+        {
+          "row": 6,
+          "col": 8,
+          "width": 53,
+          "height": 68
+        }
+      ]
+    },
+    {
+      "name": "TRIM 일반용",
+      "name_escape": "TRIM \\uc77c\\ubc18\\uc6a9",
+      "dimensions": "38x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "일반",
+          "공통",
+          "Trim 공정의 목적으로 맞은 것은?  |  |   ① 불필요 Target부를 절삭하는 공정 |   ② 불필요 Loss부를 절삭하는 공정 |   ③ Strip 단위 Routing 하는 공정  |   ④ PCS 단위 Routing 하는 공정",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 불필요 Loss부를 절삭하는 공정"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "일반",
+          "공통",
+          "Jig 점검 주기로 맞는 것은?  |  |  ① 1회/일  |  ② 1회/조 |  ③ 1회/주 |  ④ 1회/1개월 ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 1회/조"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "일반",
+          "공통",
+          "스핀들(Spindle) 교체 대상이 아닌 것은? |  |  ① 빡빡한 경우 |  ② 주기적으로 1회/주로 교체 |  ③ 느슨한 경우  |  ④ 내부 표면에 상처가 발생하거나 외부가 파손되었을 경우",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 주기적으로 1회/주로 교체"
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "일반",
+          "공통",
+          "Trim 설비 공통 Air 압력 관리 범위는?  |  |  ① 0.4~0.6㎫ |  ② 0.55~0.75㎫ |  ③ 0.5~0.7㎫ |  ④ 0.6±0.8㎫ ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          " ③ 0.5~0.7㎫"
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "Trim 설비 집진 압력 관리 범위는?  |  |  ① 300mmaq 이상  |  ② 400mmaq 이상 |  ③ 400~600mmaq |  ④ 1000mmaq 이상",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 1000mmaq 이상"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "Trim 설비 임피드(절삭 속도) 기준으로 맞는 것은? |  |  ① 2.0 m/min 이하 |  ② 2.0 m/min 이상  |  ③ 3.0 m/min 이하 |  ④ 3.0 m/min 이상",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① 2.0 m/min 이하"
+        ]
+      ],
+      "image_count": 5,
+      "image_anchors": [
+        {
+          "row": 20,
+          "col": 6,
+          "width": 59,
+          "height": 67
+        },
+        {
+          "row": 20,
+          "col": 7,
+          "width": 57,
+          "height": 67
+        },
+        {
+          "row": 20,
+          "col": 10,
+          "width": 51,
+          "height": 68
+        },
+        {
+          "row": 20,
+          "col": 8,
+          "width": 53,
+          "height": 68
+        },
+        {
+          "row": 20,
+          "col": 15,
+          "width": 59,
+          "height": 67
+        }
+      ]
+    },
+    {
+      "name": "Dualdetach Carrierdetach 일반용",
+      "name_escape": "Dualdetach Carrierdetach \\uc77c\\ubc18\\uc6a9",
+      "dimensions": "34x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "Dual Detach Cutting 후 PLP 제품 자주검사 주기는? |  |  ① 초품/Lot |  ② 초품,말품/조 |  ③ 말품/Lot |  ④ 초품,말품/Lot |  | ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 초품,말품/Lot"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "제품의 수량 단위가 아닌 것은? |  |  ① Lot |  ② Strip |  ③ Pcs |  ④ mm | ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ mm"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "Dual Detach Cutting 시 PLP 제품 커팅 Spec 은? |  |  ① 3mm 이하 |  ② 4mm 이하 |  ③ 5mm 이하 |  ④ 6mm 이하",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 5mm 이하   "
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "혼입 방지 및 예방을 위한 내용 중 옳지 않은것은?  |  |  ① 제조지시서와 제품의 일치성을 확인해야 한다. |  ② 제조지시서와 이전공정에서 제품에 기록한 Lot No의 일치성을 확인해야 한다. |  ③ 전산 MES와 실수량 및 제조지시서의 수량 일치성을 확인해야 한다. |  ④ 전산 MES와 제조지시서만 일치하면 된다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "  ④ 전산 MES와 제조지시서만 일치하면 된다."
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "Dual Detach 분리기에서 블레이드 속도 기준으로 맞는것은? |  |  ①  8~9m/min |  ② 8.2~9m/min |  ③ 8~9.2m/min |  ④ 8.2~9.2m/min",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 8~9.2m/min "
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "Dual Detach 공정에서 나올 수 없는 불량은? |  |  ① 구김 불량 : 제품 취급 과정에서의 구김 발생 |  ② 파손 불량 : 취급성 또는 레진붙음, 액침투에 의한 파손 발생 |  ③ 휨 불량 : 분리 방법 미 준수에 의한 휨 발생 |  ④ 적층 이물 : 제품 취급 중 이물이 제품에 전이되어 불량 발생 | ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 적층 이물 : 제품 취급 중 이물이 제품에 전이되어 불량 발생 | "
+        ]
+      ],
+      "image_count": 4,
+      "image_anchors": [
+        {
+          "row": 24,
+          "col": 6,
+          "width": 120,
+          "height": 144
+        },
+        {
+          "row": 24,
+          "col": 7,
+          "width": 113,
+          "height": 136
+        },
+        {
+          "row": 24,
+          "col": 8,
+          "width": 134,
+          "height": 151
+        },
+        {
+          "row": 24,
+          "col": 9,
+          "width": 119,
+          "height": 144
+        }
+      ]
+    },
+    {
+      "name": "Dualdetach Carrierdetach 전장용 ",
+      "name_escape": "Dualdetach Carrierdetach \\uc804\\uc7a5\\uc6a9 ",
+      "dimensions": "34x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 생산 프로세스 반복 릴리즈에서 고려해야 할 사항이 아닌 것은? |  |   ① 승인은 승인 기준에 따라 권한을 부여 받은 직원이 수행해야 한다. |   ② 일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다. |   ③ 검사 항목이 한도 견본으로 확인 가능하다. |   ④ 불가피하게 승인 시간이 지연된다면, 샘플을 승인할 때까지 제품을 분리하고 진행한다. | ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다. | "
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 입고 자재가 적절하게 보관되어 있고, 입고 자재의 특별특성을 위하여 운송/포장 설비 수단의 내용으로  |     거리가 먼 것은? |  |   ① CSR/CR에 따른 포장 사양은 반드시 검토 및 반영되어야 한다.  |   ② 보관 용기의 주기적 청소 및 모니터링을 실시해야 한다. |   ③ 유수명 자재 관리는 모니터링에서 제외가 가능하다.  |   ④ 보관 장소의 청결 및 상태가 적절히 관리되어야 한다.  | ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 유수명 자재 관리는 모니터링에서 제외가 가능하다. "
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] VDA 프로세스 심사 시 문항 평가를 위한 적절한 배점으로 판단하기 어려운 것은? |  |   ① 고객 요구 사항(System적) 누락 및 미반영 : 0점 |   ② 변경점 고객 미합의 및 미통보 : 0점 |   ③ 개발 실행 PPAP 승인 누락 : 0점 |   ④ 부적합품 기록 관리 누락 : 0점 | ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          " ④ 부적합품 기록 관리 누락 : 0점"
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "Dual Detach 공정에서 나올 수 없는 불량은? |  |    ① 구김 불량 : 제품 취급 과정에서의 구김 발생 |   ② 파손 불량 : 취급성 또는 레진붙음, 액침투에 의한 파손 발생 |   ③ 휨 불량 : 분리 방법 미 준수에 의한 휨 발생 |   ④ 적층 이물 : 제품 취급 중 이물이 제품에 전이되어 불량 발생 | ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 적층 이물 : 제품 취급 중 이물이 제품에 전이되어 불량 발생"
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "Dual Detach Cutting시 Plat Bar 관리 기준은? |  |  ①  마모 없을 것 |  ② 3mm 이하일 것 |  ③ 2mm 이하일 것 |  ④ 1mm 이하일 것 | ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "①  마모 없을 것    "
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "Dual Detach 분리기에서 블레이드 속도 기준으로 맞는것은?  |  |  ① 8~9m/min |  ② 8.2~9m/min  |  ③ 8~9.2m/min  |  ④ 8.2~9.2m/min ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 8~9.2m/min "
+        ]
+      ],
+      "image_count": 5,
+      "image_anchors": [
+        {
+          "row": 22,
+          "col": 6,
+          "width": 120,
+          "height": 144
+        },
+        {
+          "row": 22,
+          "col": 7,
+          "width": 113,
+          "height": 136
+        },
+        {
+          "row": 22,
+          "col": 9,
+          "width": 134,
+          "height": 151
+        },
+        {
+          "row": 22,
+          "col": 10,
+          "width": 119,
+          "height": 144
+        },
+        {
+          "row": 22,
+          "col": 15,
+          "width": 122,
+          "height": 134
+        }
+      ]
+    },
+    {
+      "name": "ITS 각인 일반용  ",
+      "name_escape": "ITS \\uac01\\uc778 \\uc77c\\ubc18\\uc6a9  ",
+      "dimensions": "35x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "[VDA 6.3] 생산 프로세스 반복 릴리즈에서 고려해야 할 사항이 아닌 것은? |  |   ① 승인은 승인 기준에 따라 권한을 부여 받은 직원이 수행해야 한다. |   ② 일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다. |   ③ 검사 항목이 한도 견본으로 확인 가능하다. |   ④ 불가피하게 승인 시간이 지연된다면, 샘플을 승인할 때까지 제품을 분리하고 진행한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다."
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "[VDA 6.3] 입고 자재가 적절하게 보관되어 있고, 입고 자재의 특별특성을 위하여 운송/포장 설비 수단의 내용으로  |     거리가 먼 것은?① CSR/CR에 따른 포장 사양은 반드시 검토 및 반영되어야 한다.  |  |   ① CSR/CR에 따른 포장 사양은 반드시 검토 및 반영되어야 한다.  |   ② 보관 용기의 주기적 청소 및 모니터링을 실시해야 한다. |   ③ 유수명 자재 관리는 모니터링에서 제외가 가능하다.  |   ④ 보관 장소의 청결 및 상태가 적절히 관리되어야 한다. ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 유수명 자재 관리는 모니터링에서 제외가 가능하다. "
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "[VDA 6.3] VDA 프로세스 심사 시 문항 평가를 위한 적절한 배점으로 판단하기 어려운 것은? |  |   ① 고객 요구 사항(System적) 누락 및 미반영 : 0점 |   ② 변경점 고객 미합의 및 미통보 : 0점 |   ③ 개발 실행 PPAP 승인 누락 : 0점 |   ④ 부적합품 기록 관리 누락 : 0점",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 부적합품 기록 관리 누락 : 0점"
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "ITS 각인 좌표(PNL 상 각인 위치, 4L 외층 기준)가 알맞은 것은? |  |   ① 4L - 장축 3.5mm / 단축 272mm |   ② 4L - 장축 272mm / 단축 3.5mm |   ③ 4L - 장축 8mm / 단축 282mm |   ④ 4L - 장축 282mm / 단축 8mm",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 4L - 장축 272mm / 단축 3.5mm "
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "ITS 각인기 Setting 방법(외층 기준)이 올바른 순서대로 나열된 것은? |  |  ⓐLot card 층 정보 확인  ⓑ작업 조건 외층 선택  ⓒLot 기록 창 Click  ⓓLot 정보 및 두께 P/G 기록  ⓔAuto/Start |   |  ① ⓐ-ⓒ-ⓑ-ⓓ-ⓔ     ② ⓐ-ⓑ-ⓒ-ⓓ-ⓔ     ③ ⓑ-ⓐ-ⓒ-ⓓ-ⓔ     ④ ⓐ-ⓓ-ⓑ-ⓒ-ⓔ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② ⓐ-ⓑ-ⓒ-ⓓ-ⓔ "
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "ITS 각인기 Power 측정 시 관리 범위를 벗어났을 때 조치 방법으로 알맞은 것은? |  |   ① 설비 초기화 후 재측정 |   ② Attenuator 미세 조정 후 재측정 |   ③ Laser Power On/Off 후 재측정 |   ④ 작업 중지",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② Attenuator 미세 조정 후 재측정 "
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "ITS 각인 전장용 ",
+      "name_escape": "ITS \\uac01\\uc778 \\uc804\\uc7a5\\uc6a9 ",
+      "dimensions": "32x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          " [VDA 6.3] 생산 프로세스 반복 릴리즈에서 고려해야 할 사항이 아닌 것은? |  |   ① 승인은 승인 기준에 따라 권한을 부여 받은 직원이 수행해야 한다. |   ② 일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다. |   ③ 검사 항목이 한도 견본으로 확인 가능하다. |   ④ 불가피하게 승인 시간이 지연된다면, 샘플을 승인할 때까지 제품을 분리하고 진행한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다."
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 입고 자재가 적절하게 보관되어 있고, 입고 자재의 특별특성을 위하여 운송/포장 설비 수단의 내용으로  |     거리가 먼 것은? |  |   ① CSR/CR에 따른 포장 사양은 반드시 검토 및 반영되어야 한다. |   ② 보관 용기의 주기적 청소 및 모니터링을 실시해야 한다. |   ③ 유수명 자재 관리는 모니터링에서 제외가 가능하다. |   ④ 보관 장소의 청결 및 상태가 적절히 관리되어야 한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 유수명 자재 관리는 모니터링에서 제외가 가능하다."
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] VDA 프로세스 심사 시 문항 평가를 위한 적절한 배점으로 판단하기 어려운 것은? |  |   ① 고객 요구 사항(System적) 누락 및 미반영 : 0점 |   ② 변경점 고객 미합의 및 미통보 : 0점 |   ③ 개발 실행 PPAP 승인 누락 : 0점 |   ④ 부적합품 기록 관리 누락 : 0점",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 부적합품 기록 관리 누락 : 0점"
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "ITS 각인 좌표(PNL 상 각인 위치, 4L 외층 기준)가 알맞은 것은? |  |   ① 4L - 장축 3.5mm / 단축 272mm |   ② 4L - 장축 272mm / 단축 3.5mm  |   ③ 4L - 장축 8mm / 단축 282mm |   ④ 4L - 장축 282mm / 단축 8mm",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 4L - 장축 272mm / 단축 3.5mm"
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "ITS 각인 목적으로 알맞은 것은? |  |   ① 제품 혼입 방지를 위함   ② 제품에 Numbering을 위함   ③ Via Hole의 재현을 위함   ④ 관통 Hole의 재현을 위함",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① 제품 혼입 방지를 위함"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "ITS 각인기 Setting 방법(외층 기준)이 올바른 순서대로 나열된 것은? |  |  ⓐLot card 층 정보 확인  ⓑ작업 조건 외층 선택  ⓒLot 기록 창 Click  ⓓLot 정보 및 두께 P/G 기록  ⓔAuto/Start |   |  ① ⓐ-ⓒ-ⓑ-ⓓ-ⓔ     ② ⓐ-ⓑ-ⓒ-ⓓ-ⓔ     ③ ⓑ-ⓐ-ⓒ-ⓓ-ⓔ     ④ ⓐ-ⓓ-ⓑ-ⓒ-ⓔ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② ⓐ-ⓑ-ⓒ-ⓓ-ⓔ "
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "X-Ray 일반용 ",
+      "name_escape": "X-Ray \\uc77c\\ubc18\\uc6a9 ",
+      "dimensions": "36x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "제품의 수량 단위가 아닌 것은? |    |   ① Lot     ② Sheet     ③ Pcs     ④ mm",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ mm "
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "PIN 교환 시 펀치가 스트리퍼 안쪽으로 몇 mm 안으로 들어가게 설정하는가? |  |   ① 0.1mm     ② 0.2mm     ③ 0.3mm     ④ 0.4mm",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 0.2mm"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "X-ray 펀칭기에서 중점 관리 항목 2가지를 고르시오. |  |   ① Punch Pin     ② Loader부     ③ Unloader부     ④ Punch Die     ⑤ Unloader PAD",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① Punch Pin, ④ Punch Die "
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "X-ray 펀칭기 Setting 방법이 올바른 순서대로 나열된 것은? |  | ⓐ Lot card 층 정보 확인  ⓑ Program Loading  ⓒ Mark confirmation  ⓓ Lot No 입력  ⓔ Zero set  ⓕ 정상 작업 |  | ① ⓐ-ⓒ-ⓕ-ⓑ-ⓓ-ⓔ     ② ⓐ-ⓑ-ⓓ-ⓔ-ⓒ-ⓕ     ③ ⓑ-ⓐ-ⓒ-ⓓ-ⓔ-ⓕ     ④ ⓐ-ⓓ-ⓑ-ⓒ-ⓔ-ⓕ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② ⓐ-ⓑ-ⓓ-ⓔ-ⓒ-ⓕ"
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "X-ray 홀 펀치 Air 압력 관리 범위는? |  |   ① 0.5±0.1㎫     ② 0.6±0.1㎫     ③ 0.7±0.1㎫     ④ 0.5±0.2㎫",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 0.6±0.1㎫"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "X-ray 홀 펀칭(MXP-908) 관리 Hit 수는? |  |   ① 10000회     ② 1000회     ③ 100회     ④ 100000회",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 100000회"
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "X-Ray 전장용 ",
+      "name_escape": "X-Ray \\uc804\\uc7a5\\uc6a9 ",
+      "dimensions": "32x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "X-ray Hole 가공 후 자주검사 항목으로 알맞은 것은? |  |   ① 홀 경 검사, Hole Burr, 홀 축소 |   ② 기판 Size, 홀 편심 검사, 홀 경 검사 |   ③ 홀 편심 검사, 홀 경 검사, 홀 Burr 검사  |   ④ 홀 경 검사, 기판 Size 검사, 홀 편심 검사",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          " ③ 홀 편심 검사, 홀 경 검사, 홀 Burr 검사"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "X-ray 홀 가공의 ∮는? |  |   ① 3.14∮     ② 3.15∮     ③ 3.165∮     ④ 3.175∮",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 3.15∮"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "X-ray Drill 설비 Air 압력 관리 범위는? |  |   ① 0.5±0.1㎫     ② 0.5±0.2㎫     ③ 0.6±0.1㎫     ③ 0.7±0.1㎫ ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 0.6±0.1㎫ "
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "X-ray Drill 한송(2호기) 설비의 집진 주파수 압력 관리 범위는? |  |   ① 50㎐±20㎐     ② 60㎐±20㎐     ③ 70㎐±20㎐     ④ 80㎐±20㎐",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 70㎐±20㎐"
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "MXP-908 설비의 설명으로 맞는 것은? |  | ① Laser Hole 가공 설비     ② Router 가공 설비     ③ Bit Type 가공 설비     ④ Punch Type 가공 설비 | ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ Punch Type 가공 설비"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "홀 3.15Ø를 기준으로 홀 경 측정 시 사용하는 Pin Gauge의 종류로 맞지 않는 것은?  |    |   ① 3.130     ② 3.150     ③ 3.165     ④ 3.175",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 3.150"
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "수입검사 일반용",
+      "name_escape": "\\uc218\\uc785\\uac80\\uc0ac \\uc77c\\ubc18\\uc6a9",
+      "dimensions": "35x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "수입 검사 시 필요로 하는 보호구는?  |  |   ① 장갑     ② 보안경     ③ 안전화     ④ 귀마개",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① 장갑"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "작업 표준서의 내용을 작성 시 4M을 기준으로 작성한다. 4M이 아닌 것은? |  |   ① 사람(MAN)     ② 자금(MONEY)     ③ 방법(METHOD)     ④ 설비(MACHINE)",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 자금(MONEY)"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "SUS PLATE 외관 검사 항목이 아닌 것은? |  |   ① 표면 고정성 이물이 없을 것 |   ② 굴곡 및 표면 파임이 없을 것 |   ③ 표면 SCRATCH, 홈이 없을 것 |   ④ 표면에 물이 묻어 있는 경우",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 표면에 물이 묻어 있는 경우"
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "Dry Film 검사 시 확인사항이 아닌 것은? |  |   ① 고체성 이물이 있어도 상관없다. |   ② 제품 자재의 유효 기간은 제조일로부터 6개월로 한다. |   ③ 수입 검사 시 유효 기간으로부터 3개월 이전 제품만 허용한다. |   ④ 성적서 검사",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① 고체성 이물이 있어도 상관없다."
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "MLB용 내층 CCL 외관 확인사항이 아닌 것은? |  |   ① 회로 형성 후 동박 면에 산화가 없을 것 |   ② 수량 확인 |   ③ CCL 외곽에 꺾임이 없을 것 |   ④ CCL 외곽에 파손된 부분이 없을 것",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 수량 확인"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "UKP 입고 검사 시 검사 항목이 아닌 것은? |  |   ① Size     ② 두께     ③ 외관     ④ 생산 일자",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 생산 일자"
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "수입검사 전장용",
+      "name_escape": "\\uc218\\uc785\\uac80\\uc0ac \\uc804\\uc7a5\\uc6a9",
+      "dimensions": "32x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 생산 프로세스 반복 릴리즈에서 고려해야 할 사항이 아닌 것은? |  |   ① 승인은 승인 기준에 따라 권한을 부여 받은 직원이 수행해야 한다. |   ② 일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다. |   ③ 검사 항목이 한도 견본으로 확인 가능하다. |   ④ 불가피하게 승인 시간이 지연된다면, 샘플을 승인할 때까지 제품을 분리하고 진행한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다."
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 특별 적성에 필요한 제조 요구사항을 틀린 것은? |  |   ① 공정 능력이 결정되어야 하고 그 성과가 검증되어야 한다. |   ② 고객 사양을 충족시킨다는 증거를 제시해야 한다. |   ③ 공정 능력 Cpk＞=1.67 보여줄 수 없다면 100% 전수 검사 필요함. |   ④ 공정 능력 Cpk＞=1.33 보여줄 수 없다면 100% 전수 검사 필요함.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 공정 능력 Cpk＞=1.67 보여줄 수 없다면 100% 전수 검사 필요함."
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 입고 자재의 보관에 대한 요구사항으로 틀린 것은? |  |   ① 의심 되는/격리된 제품은 권한이 없는 직원은 접근 할 수가 없다. |   ② 손상 및 오염으로부터 부품을 보호하는 운송 수단이 사용되어야 한다. |   ③ 추가로 가공될 경우 재고 자재의 수치는 실제 보관 수량과 불일치 할 수 있다. |   ④ 최종 제품의 품질에 영향을 줄 수 있는 자재의 경우 운송 및 보관 조건을 정하고 승인해야 한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 추가로 가공될 경우 재고 자재의 수치는 실제 보관 수량과 불일치 할 수 있다."
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "제품의 수량 단위가 아닌 것은? |  |   ① Lot     ② Sheet     ③ Pcs     ④ mm",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ mm"
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "SUS PLATE 외관 검사 항목이 아닌 것은? |  |   ① 표면 고정성 이물이 없을 것         ② 굴곡 및 표면 파임이 없을 것    |   ③ 표면 SCRATCH, 홈이 없을 것       ④ 표면에 물이 묻어 있는 경우",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 표면에 물이 묻어 있는 경우"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "MLB용 내층 CCL 외관 확인사항이 아닌 것은? |  |   ① 회로 형성 후 동박 면에 산화 없을 것       ② 수량 확인     |   ③ CCL 외곽에 꺾임이 없을 것                ④ CCL 외곽에 파손된 부분이 없을 것",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 수량 확인"
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "출하검사 일반용",
+      "name_escape": "\\ucd9c\\ud558\\uac80\\uc0ac \\uc77c\\ubc18\\uc6a9",
+      "dimensions": "35x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "BGA 두께 측정 시 12Point를 측정하는 PNL 수는? |  |   ① 4     ② 5     ③ 6     ④ 7",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 6"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "검사 시 표면 산화 방지를 위해 착용하는 보호구는? |  |   ① 장갑     ② 보안경     ③ 안전화     ④ 귀마개",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① 장갑"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "출하 검사 시 혼입 방지를 위한 행동이 아닌 것은? |  |   ① 가접 제품의 자동 두께 측정 시 동일 관리 번호만 투입 진행한다. |   ② 두께 측정 전 제품 더미에 Lot No기록 유,무와 제조지시서 일치 여부 확인 후 이상이 없을 시 Lot No를 다시 기록한다. |   ③ 자동 두께 측정 후 배출단 제품 회수 시 Lot by Lot로 취출하며 제조지시서와 일치하게 놓는다. |   ④ 자동 두께 측정 후 배출단 제품 회수 시 통째로 배출하여 표면검사 시 제조지시서와 일치하게 놓는다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 자동 두께 측정 후 배출단 제품 회수 시 통째로 배출하여 표면검사 시 제조지시서와 일치하게 놓는다."
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "출하 검사에서 제조지시서 바뀜에 대한 예방 활동으로 옳지 않은 것은? |  |   ① 자동 두께 측정 시 동일 관리 번호 위주로 제품을 투입한다.  |   ② 이전 공정에서 제품 모서리에 기록된 Lot No와 제조지시서의 일치성을 확인한다. |   ③ 가접 제품 자재별 홀가공수로 제품과 제조 시서 바뀜을 확인한다. |   ④ MPQA로 2④각인이 되어있는 가접 제품에 대해 제조지시서와 일치성을 Barco④e로 찍어서 확인한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 가접 제품 자재별 홀가공수로 제품과 제조 시서 바뀜을 확인한다."
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "출하 검사의 두께 측정 시 필수사항으로 옳지 않은 것은? |  |   ① 표준 시편 검증은 모든 측정기가 2회/조 실행되어야 한다.  |   ② 측정기 0점 확인은 매 Lot별 진행되어야 한다. |   ③ 표준 시편 검증 시 게이지 블럭 기준 공차는 ±5um이다.   |   ④ IS④+ 자동 게더링 시 저장 경로는 반드시 설정해줘야 한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① 표준 시편 검증은 모든 측정기가 2회/조 실행되어야 한다. "
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "두께 측정 시 주의사항 및 조치사항이 아닌 것은? |  |   ① 테이블에 이물로 인하여 상처 불량이 발생하지 않도록 한다.    |   ② 두께 이상 발생 시 관리자에게 통보한다. |   ③ 제품에 Scratch가 생기지 않도록 한다. |   ④ 제품의 두께 Spec은 자체적으로 정한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 제품의 두께 Spec은 자체적으로 정한다."
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "출하검사 전장용",
+      "name_escape": "\\ucd9c\\ud558\\uac80\\uc0ac \\uc804\\uc7a5\\uc6a9",
+      "dimensions": "39x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "두께 측정기 측정 전 측정기의 측정 편차를 확인하는 시편은? |  |   ① 블럭 게이지     ② 필름자     ③ 버니어 켈리퍼스     ④ 마이크로 미터",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① 블럭 게이지"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "출하 검사의 두께 측정 시 필수사항으로 옳지 않은 것은? |  |   ① 표준 시편 검증은 모든 측정기가 2회/조 실행되어야 한다.  |   ② 측정기 0점 확인은 매 Lot별 진행되어야 한다. |   ③ 표준 시편 검증 시 게이지 블럭 기준 공차는 ±5um이다.  |   ④ ISD+ 자동 게더링 시 저장 경로는 반드시 설정해줘야 한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① 표준 시편 검증은 모든 측정기가 2회/조 실행되어야 한다."
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "두께 측정 시 주의사항 및 조치사항이 아닌 것은? |  |   ① 테이블에 이물로 인하여 상처 불량이 발생하지 않도록 한다.    |   ② 두께 이상 발생 시 관리자에게 통보한다. |   ③ 제품에 Scratch가 생기지 않도록 한다. |   ④ 제품의 두께 Spec은 자체적으로 정한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 제품의 두께 Spec은 자체적으로 정한다."
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "자동 두께 측정기 운용 중 옳지 않은 것은? |  |   ① 자동 두께 측정 후 이상 판넬 검출 시 RFC에 의거 재측정 한다. |   ② 자동 두께 측정기 0점은 매 Lot 측정 후 수동으로 잡아줘야 한다. |   ③ 자동 두께 측정 후 ISD는 자동 게더링을 한다. |   ④ 자동 두께 측정 완료 후 ISD 자동 게더링 후 OOC, OOS가 발생되었는지 확인한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 자동 두께 측정기 0점은 매 Lot 측정 후 수동으로 잡아줘야 한다."
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "출하 검사에서 제조지시서 바뀜에 대한 예방 활동으로 옳지 않은 것은?  |  |   ① 자동 두께 측정 시 동일 관리 번호 위주로 제품을 투입한다.  |   ② 이전 공정에서 제품 모서리에 기록된 Lot No와 제조지시서의 일치성을 확인한다. |   ③ 가접 제품 자재별 홀가공수로 제품과 제조지시서 바뀜을 확인한다. |   ④ MPQA로 2D각인이 되어있는 가접 제품에 대해 제조지시서와 일치성을 Barcode로 찍어서 확인한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 가접 제품 자재별 홀가공수로 제품과 제조지시서 바뀜을 확인한다."
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "출하 검사 시 혼입 방지를 위한 행동이 아닌 것은? |  |   ① 가접 제품의 자동 두께 측정 시 동일 관리 번호만 투입 진행한다. |   ② 두께 측정 전 제품 더미에 Lot No기록 유,무와 제조지시서 일치 여부 확인 후 이상이 없을 시 LOT NO 다시 기록한다. |   ③ 자동 두께 측정 후 배출단 제품 회수 시 Lot by Lot로 취출하며 제조지시서와 일치하게 놓는다. |   ④ 자동 두께 측정 후 배출단 제품 회수 시 통째로 배출하여 표면검사 시 제조지시서와 일치하게 놓는다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 자동 두께 측정 후 배출단 제품 회수 시 통째로 배출하여 표면검사 시 제조지시서와 일치하게 놓는다."
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "Bronw OXIDE 일반용",
+      "name_escape": "Bronw OXIDE \\uc77c\\ubc18\\uc6a9",
+      "dimensions": "37x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "옥사이드 크리너 약품으로 맞는 것은? |  |  ① 황산   ② 염산   ③ 과산화수소   ④ H④ 250",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ H④ 250"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "프리딥단 온도 스펙으로 맞는 것은? |  |  ① LSL 27 USL 33     ② LSL 20 USL 31     ③ LSL 25 USL 36     ④ LSL 26 USL 34",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① LSL 27 USL 33"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "옥사이드 건조단 온도로 맞는 것은? |  |  ① LSL 55 USL 60     ② LSL 60 USL 65     ③ LSL 50 USL 55     ④ LSL 65 USL 75",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ LSL 65 USL 75"
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "옥사이드 후 수세단 압력 범위로 맞는 것은? |  |  ①LSL 3.5 USL 4.2     ② LSL 3.0 USL 3.5     ③ LSL 1.8 USL 2.2     ④ LSL 3.5 USL 4.2",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ LSL 1.8 USL 2.2"
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "브라운 옥사이드 시편 측정 사이즈로 적당한 것은? |  |  ① 0.2T (10*10) 시편     ② 0.2T (15*15) 시편     ③ 0.2T (20*20) 시편     ④ 0.2T (5*5) 시편 ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① 0.2T (10*10) 시편"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "브라운 옥사이드에서 발생할 수 있는 불량이 아닌 것은? |  |  ① 기판파손     ② 스크러치     ③ 동박 오적용     ④ 롤 자국 ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 동박 오적용"
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "Bronw OXIDE 전장용",
+      "name_escape": "Bronw OXIDE \\uc804\\uc7a5\\uc6a9",
+      "dimensions": "33x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "옥사이드 크리너 약품으로 맞는 것은? |  |  ① 황산   ② 염산   ③ 과산화수소   ④ HD 250",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ HD 250"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "프리딥단 온도 스펙으로 맞는 것은? |  |  ① LSL 27 USL 33     ② LSL 20 USL 31     ③ LSL 25 USL 36     ④ LSL 26 USL 34",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① LSL 27 USL 33 "
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "옥사이드 건조단 온도로 맞는 것은? |  |  ① LSL 55 USL 60     ② LSL 60 USL 65     ③ LSL 50 USL 55     ④ LSL 65 USL 75",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ LSL 65 USL 75"
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "옥사이드 후 수세단 압력 범위로 맞는 것은? |  |  ①LSL 3.5 USL 4.2     ② LSL 3.0 USL 3.5     ③ LSL 1.8 USL 2.2     ④ LSL 3.5 USL 4.2",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ LSL 1.8 USL 2.2 "
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "브라운 옥사이드 시편 측정 사이즈로 적당한 것은? |  |  ① 0.2T (10*10) 시편     ② 0.2T (15*15) 시편     ③ 0.2T (20*20) 시편     ④ 0.2T (5*5) 시편 ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① 0.2T (10*10) 시편"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "브라운 옥사이드에서 발생할 수 있는 불량이 아닌 것은? |  |  ① 기판파손     ② 스크러치     ③ 동박 오적용     ④ 롤 자국 ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 동박 오적용"
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "CZ 전처리 일반용 ",
+      "name_escape": "CZ \\uc804\\ucc98\\ub9ac \\uc77c\\ubc18\\uc6a9 ",
+      "dimensions": "50x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "CZ 전처리 공정 설비 확인사항의 내용 중 월간 점검의 항목으로 맞지 않는 것은? |     |   ① 에칭액 건욕 주기 확인 후 액건욕/본조 내부 청소  |   ② 방청액 건욕 주기 확인 후 액건욕/본조 내부 청소  |   ③ 각 본조의 액, 물의 양 확인      |   ④ 설비 콘베이어 롤라/노즐 청소",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 각 본조의 액, 물의 양 확인"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "CZ 전처리에서 발생할 수 있는 불량이 아닌 것은? |  |   ① 롤 자국     ② 기판파손     ③ 스크러치     ④ 실리콘 링자국",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 실리콘 링자국"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "현장 작업 중 계란 썩는 냄새 또는 화장실 냄새가 느껴진다. 최우선 어떤 행동을 해야 하는가?   |  |   ① 조,반장 통보하고 작업 진행     ② 조,반장 즉시 통보     ③ 라인 투입 중지     ④ 제품 변색 확인",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 라인 투입 중지"
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "가동 중 반송 알람이 울린다. 작업자는 우선적으로 어떤 조치를 취해야 하나?  |  |   ① Alarm을 리셋한다.  |   ② 이상 구간을 확인한다.  |   ③ 조,반장 보고 후 조치를 받는다.  |   ④ Alarm 리셋 후 이상 구간 확인",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 이상 구간을 확인한다."
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "3정 5S 항목에서 3정이 아닌 것은? |  |   ① 정품     ② 정량     ③ 정위치     ④ 정리",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 정리"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "일반",
+          "주관식",
+          "실리콘 매트 세정 주기는 (   )회 이며 결과는 C/S에 기록 한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "3"
+        ]
+      ],
+      "image_count": 1,
+      "image_anchors": [
+        {
+          "row": 33,
+          "col": 6,
+          "width": 452,
+          "height": 131
+        }
+      ]
+    },
+    {
+      "name": "CZ 전처리 전장용",
+      "name_escape": "CZ \\uc804\\ucc98\\ub9ac \\uc804\\uc7a5\\uc6a9",
+      "dimensions": "50x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "CZ 전처리에서 발생할 수 있는 불량이 아닌 것은? |  |   ① 롤 자국     ② 기판파손     ③ 스크러치     ④ 실리콘 링자국",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 실리콘 링자국"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "UV 살균기 필터 교체 주기는? |  |   ① 1회/1일     ② 1회/1주     ③ 1회/2주     ④ 1회/1개월",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 1회/2주"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "현장 작업 중 계란 썩는 냄새 또는 화장실 냄새가 느껴진다. 최우선 어떤 행동을 해야 하는가? |  |   ① 조,반장 통보하고 작업 진행     ② 조,반장 즉시 통보     ③ 라인 투입 중지     ④ 제품 변색 확인",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 라인 투입 중지"
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "약품조별 사용되는 약품이 틀린 것은? |  |   ① 탈지 : CA5340, 황산, 과수     ② 에칭 : CZ-8101     ③ 염산 : 가성소다     ④ 방청 : CL8300",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 염산 : 가성소다"
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "도징량 점검 주기는?  |  |   ① 1일     ② 1주     ③ 1개월     ④ 1년  ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 1주"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "고어 케이블 청소 및 상태 확인 주기는? |  |   ① 1회/조     ② 2회/조     ③ 1회/일     ④ 2회/일",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 1회/일"
+        ]
+      ],
+      "image_count": 1,
+      "image_anchors": [
+        {
+          "row": 33,
+          "col": 6,
+          "width": 452,
+          "height": 131
+        }
+      ]
+    },
+    {
+      "name": "Lay-up 일반용",
+      "name_escape": "Lay-up \\uc77c\\ubc18\\uc6a9",
+      "dimensions": "50x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "3정 5S 항목에서 3정이 아닌 것은? |  |   ① 정품     ② 정량     ③ 정위치     ④ 정리",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          " ④ 정리"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "작업 표준서의 내용을 작성 시 4M을 기준으로 작성한다. 4M이 아닌 것은? |  |   ① 사람(Man)     ② 자금(Money)     ③ 방법(Method)     ④ 설비(Machine) ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 자금(Money) "
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "Lay-up Room 온도 Spec은 얼마인가?  |    |   ① 18±2℃     ② 18±5℃     ③ 20±2℃     ④ 20±5℃",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 20±2℃ "
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "PPG 접힘 확인 방법이 올바른 순서대로 나열된 것은? |  |    ⓐ 제품 취급 시 ⅓의 위치에 취급한다.  |    ⓑ 제품 Edg'e부 취급 센터 정렬을 실시한다. |    ⓒ Copper Foil 상부에 제품을 안착한다. |    ⓓ 하부 PPG 접힘 유무를 확인한다.  |    ⓔ 작업자 상부 530 방향 Edg'e부를 살짝 들추어 자재 접힘 유무를 확인한다.  |  | ① ⓐ-ⓒ-ⓑ-ⓓ-ⓔ     ② ⓐ-ⓑ-ⓓ-ⓔ-ⓒ     ③ ⓑ-ⓐ-ⓒ-ⓓ-ⓔ     ④ ⓐ-ⓓ-ⓑ-ⓒ-ⓔ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ ⓑ-ⓐ-ⓒ-ⓓ-ⓔ "
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "예비 LAY-UP 된 내층 기재에 Copper foil와 치공구를 구성하여 Press 작업을 준비하는 공정은 무엇인가? |  |   ① LAY-UP     ② Press     ③ Trim     ④ 예비 LAY-UP",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① LAY-UP "
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "예비 LAY-UP 중 PPG 종류/두께/Size/Lot No 확인 미준수 시 발생할 수 있는 불량명은 무엇인가? |  |   ① 동박 오적용     ② P/G 오적용     ③ 폭탄성 타흔     ④ PPG 오적용",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ PPG 오적용"
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "Lay-up 전장용",
+      "name_escape": "Lay-up \\uc804\\uc7a5\\uc6a9",
+      "dimensions": "50x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "Lay-up Room 온도와 습도 SPEC으로 맞는 것은? |  |   ① 18±2℃ / 40±5℃       ② 18±5℃ / 40±10℃    ③ 20±2℃ / 50±5℃    ④ 20±2℃ / 50±10℃",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 20±2℃ / 50±10℃"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "예비 LAY-UP 된 내층 기재에 Copper foil와 치공구를 구성하여 Press 작업을 준비하는 공정은 무엇인가? |  |   ① LAY-UP     ② Press     ③ Trim     ④ 예비 LAY-UP",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① LAY-UP"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 입고 자재가 적절하게 보관되어 있고, 입고 자재의 특별특성을 위하여 운송/포장 설비 수단의 내용으로  |     거리가 먼 것은? |  |   ① CSR/CR에 따른 포장 사양은 반드시 검토 및 반영되어야 한다.  |   ② 보관 용기의 주기적 청소 및 모니터링을 실시해야 한다. |   ③ 유수명 자재 관리는 모니터링에서 제외가 가능하다.  |   ④ 보관 장소의 청결 및 상태가 적절히 관리되어야 한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 유수명 자재 관리는 모니터링에서 제외가 가능하다. "
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "PPG 접힘 확인 방법이 올바른 순서대로 나열된 것은? |  |     ⓐ 제품 취급 시 ⅓의 위치에 취급한다.  |     ⓑ 제품 Edg'e부 취급 센터 정렬을 실시한다. |     ⓒ Copper Foil 상부에 제품을 안착한다. |     ⓓ 하부 PPG 접힘 유무를 확인한다.  |     ⓔ 작업자 상부 530 방향 Edg'e부를 살짝 들추어 자재 접힘 유무를 확인한다.  | ① ⓐ-ⓒ-ⓑ-ⓓ-ⓔ     ② ⓐ-ⓑ-ⓓ-ⓔ-ⓒ     ③ ⓑ-ⓐ-ⓒ-ⓓ-ⓔ     ④ ⓐ-ⓓ-ⓑ-ⓒ-ⓔ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          " ③ ⓑ-ⓐ-ⓒ-ⓓ-ⓔ"
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 생산 프로세스 반복 릴리즈에서 고려해야 할 사항이 아닌 것은? |  |   ① 승인은 승인 기준에 따라 권한을 부여 받은 직원이 수행해야 한다. |   ② 일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다. |   ③ 검사 항목이 한도 견본으로 확인 가능하다. |   ④ 불가피하게 승인 시간이 지연된다면, 샘플을 승인할 때까지 제품을 분리하고 진행한다.  ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다."
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "동박 적용(작업대 적치, 반자동 설비 적치)시 확인 방법 중 옳은 것은? |  |   ① 동박은 동으로 앞,뒤 구분 없음                ② 반자동 적재 시 같은 면끼리 적재해야 함 |   ③ S,M면 구분은 해야 하나 순서는 상관 없음     ④ 적치대 상,하부면 기준에 의거 한도견본을 보고 정확히 적재해야 함",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 적치대 상,하부면 기준에 의거 한도견본을 보고 정확히 적재해야 함"
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "PRESS 일반용",
+      "name_escape": "PRESS \\uc77c\\ubc18\\uc6a9",
+      "dimensions": "44x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "PRESS에 제품 투입 후 5분간 확인하는 항목이 아닌 것은? |  |   ① 진공은 40Torr 이하인가?     |   ② 온도는 설정값에 따라 승온하는가?  |   ③ 냉각수 온도는 이상없는가?  |   ④ 압력은 설정값에 따라 상승하는가?",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 냉각수 온도는 이상없는가?"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "정전에 의한 PRESS Off 발생 시 제품 폐기가 아닌 경우는? |  |   ① 승온 구간 5분 이상 정전 발생 시      |   ② 최종 유지 구간 진입 후 50분 경과 10분 이내 발생 시 |   ③ 최종 유지 구간 진입 후 50분 이후 10분 이상 발생 시  |   ④ 냉각 구간 10분 이내 발생 시",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 냉각 구간 10분 이내 발생 시"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "FUSEI PRESS 정전에 의한 Program Holding 발생 시 조치 방법은? |  |   ① Program Reset 진행한다.   |   ② Start 버튼을 3초간 누른다.  |   ③ 수동 전환 후 자동으로 전환한다.     |   ④ 설비를 껐다가 다시 켠다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② Start 버튼을 3초간 누른다."
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "3정 5S 항목에서 3정이 아닌 것은? |  |   ① 정품     ② 정량     ③ 정위치     ④ 정리",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 정리"
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "PRESS 레코더의 온도는 눈금 1당 몇 ℃인가? |  |   ① 1℃     ② 2℃     ③ 3℃     ④ 4℃",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 3℃"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "PRESS 레코더의 압력은 눈금 1당 몇 ㎏·f/㎠인가? |  |   ① 1㎏·f/㎠     ② 2㎏·f/㎠     ③ 3㎏·f/㎠     ④ 4㎏·f/㎠",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 2㎏·f/㎠"
+        ]
+      ],
+      "image_count": 5,
+      "image_anchors": [
+        {
+          "row": 38,
+          "col": 7,
+          "width": 212,
+          "height": 260
+        },
+        {
+          "row": 38,
+          "col": 6,
+          "width": 210,
+          "height": 265
+        },
+        {
+          "row": 38,
+          "col": 8,
+          "width": 213,
+          "height": 261
+        },
+        {
+          "row": 38,
+          "col": 9,
+          "width": 203,
+          "height": 273
+        },
+        {
+          "row": 38,
+          "col": 15,
+          "width": 212,
+          "height": 260
+        }
+      ]
+    },
+    {
+      "name": "PRESS 전장용",
+      "name_escape": "PRESS \\uc804\\uc7a5\\uc6a9",
+      "dimensions": "31x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "PRESS 해체 시 1단에 2Lot가 분할 적용되어 있을 경우 어떻게 해야 할까? |  |   ① 조,반장 통보 후 대기           |   ② 1단에 분할은 없음으로 1Lo로 취합 진행한다. |   ③ 단순 유실에 의한 분할 적용이 가능하며, 분할 Lot 임시 보관용 적치대에 보관 후 Lot 확인 후 취합한다. |   ④ 2Lot를 모아서 후공정에 인계하여 분리하도록 한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 단순 유실에 의한 분할 적용이 가능하며, 분할 Lot 임시 보관용 적치대에 보관 후 Lot 확인 후 취합한다."
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "Top Plate 평탄도 측정 결과 관리 기준 Over 발생 시 조치 사항은? |  |   ① 결과만 기록 후 진행한다.    |   ② Top Plate를 뒤집는다.    |   ③ Top Plate를 폐기한다.    |   ④ 몰래 수치를 수정 후 진행한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② Top Plate를 뒤집는다."
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          " 제품 해체 시 자주 검사 항목이 아닌 것은? |  |   ① 타흔     ② 적층이물     ③ 내부 Void     ④ SUS Plate Type",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          " ③ 내부 Void  "
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "제품 해체 전 Top Plate 평탄도 측정 관리 기준은 얼마인가? |  |   ① 200㎛     ② 400㎛     ③ 600㎛     ④ 800㎛",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          " ③ 600㎛  "
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "PRESS에 제품 투입 후 5분간 확인하는 항목이 아닌 것은? |  |   ① 진공은 40Torr 이하인가?     |   ② 온도는 설정값에 따라 승온하는가?  |   ③ 냉각수 온도는 이상없는가?  |   ④ 압력은 설정값에 따라 상승하는가?",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 냉각수 온도는 이상없는가? "
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "FUSEI PRESS 정전에 의한 Program Holding 발생 시 조치 방법은? |  |   ① Program Reset 진행한다.   |   ② Start 버튼을 3초간 누른다.  |   ③ 수동 전환 후 자동으로 전환한다.     |   ④ 설비를 껐다가 다시 켠다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② Start 버튼을 3초간 누른다. "
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "액분석 신입용 ",
+      "name_escape": "\\uc561\\ubd84\\uc11d \\uc2e0\\uc785\\uc6a9 ",
+      "dimensions": "32x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "신입",
+          "객관식",
+          "수직 흑화 약품조 중 내층 동박과 수지 사이의 밀착력을 강화 목적으로 제품 표면에 깎여진 동에 산화 후, |     흑화막을 형성하는 약품조는 무엇인가? |  |   ① CZ 전처리     ② 수직 흑화     ③ 노바본드     ④ Black Oxide",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ Black Oxide"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "신입",
+          "객관식",
+          "다음 중 액 분석을 하는 공정이 아닌 것은? |  |   ① CZ 전처리     ② 수직 흑화     ③ 노바본드     ④ X-Ray Hole 가공",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ X-Ray Hole 가공"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "신입",
+          "객관식",
+          "액 분석 DATA를 입력하는 System은 무엇인가? |        |   ① ISD Plus     ② MES     ③ G-DIX     ④ Excel",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② MES"
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "신입",
+          "객관식",
+          "CZ 전처리 액 분석 항목이 아닌 것은? |  |   ① CU농도     ② HCL 농도     ③ H2O2 농도     ④ UC168",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ UC168"
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "신입",
+          "객관식",
+          "약품 분석 시 착용해야 할 보호구가 아닌 것은? |  |   ① 마스크     ② 장갑     ③ 보안경     ④ 핑거 골무",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 핑거 골무"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "신입",
+          "객관식",
+          "작업 표준서의 내용을 작성 시 4M을 기준으로 작성한다. 4M이 아닌 것은? |  |   ① 사람(Man)     ② 자금(Money)     ③ 방법(Method)     ④ 설비(Machine) ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 자금(Money)"
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "액분석 전장용",
+      "name_escape": "\\uc561\\ubd84\\uc11d \\uc804\\uc7a5\\uc6a9",
+      "dimensions": "31x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 특별 적성에 필요한 제조 요구사항으로 틀린 것은? |  |   ① 공정 능력이 결정되어야 하고 그 성과가 검증되어야 한다.  |   ② 고객 사양을 충족시킨다는 증거를 제시해야 한다.  |   ③ 공정 능력 Cpk＞= 1.67 보여 줄 수 없다면 100% 전수 검사 필요함. |   ④ 공정 능력 Cpk＞= 1.33 보여 줄 수 없다면 100% 전수 검사 필요함.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 공정 능력 Cpk＞= 1.67 보여 줄 수 없다면 100% 전수 검사 필요함."
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 입고 자재의 보관에 대한 요구사항으로 틀린 것은? |  |   ① 의심 되는/격리된 제품은 권한이 없는 직원은 접근 할 수가 없다. |   ② 손상 및 오염으로부터 부품을 보호하는 운송 수단이 사용되어야 한다.  |   ③ 추가 가공 될 경우 재고 자재의 수치는 실제 보관 수량과 불일치 할 수 있다. |   ④ 최종 제품의 품질에 영향을 줄 수 있는 자재의 경우 운송 및 보관 조건을 정하고 승인해야 한다. ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 추가 가공 될 경우 재고 자재의 수치는 실제 보관 수량과 불일치 할 수 있다."
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 생산 프로세스 반복 릴리즈에서 고려해야 할 사항이 아닌 것은? |  |   ① 승인은 승인 기준에 따라 권한을 부여 받은 직원이 수행해야 한다. |   ② 일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다. |   ③ 검사 항목이 한도 견본으로 확인 가능하다. |   ④ 불가피하게 승인 시간이 지연된다면, 샘플을 승인할 때까지 제품을 분리하고 진행한다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다."
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "수직 흑화 약품조 중 내층 동박과 수지 사이의 밀착력을 강화 목적으로 제품 표면에 깎여진 동에 산화 후, |     흑화막을 형성하는 약품조는 무엇인가? |  |   ① CZ 전처리     ② 수직 흑화     ③ 노바본드     ④ Black Oxide",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ Black Oxide"
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "노바본드 pH 측정 항목을 제외한 나머지 액 분석 항목의 분석 주기는 무엇인가? |     |   ① 1회/일     ② 2회/일     ③ 3회/일     ④ 4회/일",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 2회/일"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "노바본드 UC168 관리 기준은 무엇인가? |  |   ① 150g/ℓ~190g/ℓ     ② 160g/ℓ~200g/ℓ     ③ 170g/ℓ~210g/ℓ     ④ 180g/ℓ~220g/ℓ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 160g/ℓ~200g/ℓ"
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "노바본드 일반용",
+      "name_escape": "\\ub178\\ubc14\\ubcf8\\ub4dc \\uc77c\\ubc18\\uc6a9",
+      "dimensions": "32x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "CZ 전처리 공정 설비 확인사항의 내용 중 월간 점검의 항목으로 맞지 않는 것은? |       |   ① 에칭액 건욕 주기 확인 후 액건욕/본조 내부 청소  |   ② 방청액 건욕 주기 확인 후 액건욕/본조 내부 청소  |   ③ 각 본조의 액, 물의 양 확인      |   ④ 설비 콘베이어 롤라/노즐 청소",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 각 본조의 액, 물의 양 확인"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "CZ 전처리에서 발생할 수 있는 불량이 아닌 것은? |  |   ① 롤 자국     ② 기판파손     ③ 스크러치     ④ 실리콘 링자국 ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 실리콘 링자국"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "현장 작업 중 계란 썩는 냄새 또는 화장실 냄새가 느껴진다. 최우선 어떤 행동을 해야 하는가? |  |   ① 조,반장 통보하고 작업 진행     ② 조,반장 즉시 통보     ③ 라인 투입 중지     ④ 제품 변색 확인",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 라인 투입 중지"
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "가동 중 반송 알람이 울린다. 작업자는 우선적으로 어떤 조치를 취해야 하나? |   |   ① Alarm을 리셋한다.  |   ② 이상 구간을 확인한다.  |   ③ 조,반장 보고 후 조치를 받는다.  |   ④ Alarm 리셋 후 이상 구간 확인",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 이상 구간을 확인한다."
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "3정 5S 항목에서 3정이 아닌 것은? |  |   ① 정품     ② 정량     ③ 정위치     ④ 정리",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 정리"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "UV 살균기 필터 교체 주기는? |  |   ① 1회/1일     ② 1회/1주     ③ 1회/2주     ④ 1회/1개월",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 1회/2주"
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "노바본드 전장용",
+      "name_escape": "\\ub178\\ubc14\\ubcf8\\ub4dc \\uc804\\uc7a5\\uc6a9",
+      "dimensions": "32x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 입고 자재가 적절하게 보관되어 있고, 입고 자재의 특별특성을 위하여 운송/포장 설비 수단의 내용으로  |     거리가 먼 것은? |  |  ① CSR/CR에 따른 포장 사양은 반드시 검토 및 반영되어야 한다.  |  ② 보관 용기의 주기적 청소 및 모니터링을 실시해야 한다. |  ③ 유수명 자재 관리는 모니터링에서 제외가 가능하다.  |  ④ 보관 장소의 청결 및 상태가 적절히 관리되어야 한다. ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 유수명 자재 관리는 모니터링에서 제외가 가능하다."
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "노바본드에서 발생 할 수 있는 불량이 아닌 것은? |  |   ① 롤 자국     ② 미흑화     ③ 스크라치     ④ 기판 붙음",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① 롤 자국"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "Soft Clean 조의 역할이 아닌 것은? |  |   ① 지문 제거     ② 드라이 필름 찌꺼기 제거     ③ 회로 형성     ④ 일부 미세 산화막 제거",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 회로 형성"
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "Soft Clean 조에 대한 설명으로 올바른 것은? |  |   ① 표면에 조도를 형성한다.    |   ② 주성분은 황산, 과수이다.    |   ③ 액분석 시 KI 용액을 사용한다.    |   ④ 흑화 후 진행 공정이다.",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 주성분은 황산, 과수이다."
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "제품 Racking 시 LOT No. 각인의 위치는? |  |   ① 좌측 상단     ② 좌측 하단     ③ 우측 상단     ④ 우측 하단   ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 좌측 하단"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "환원 조의 역할은? |  |   ① Pink Ring 발생 방지     ② 흑화조 오염 방지     ③ 적층 밀착력 증가     ④ 제품 표면의 산성분 제거",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① Pink Ring 발생 방지"
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "수직흑화 일반용",
+      "name_escape": "\\uc218\\uc9c1\\ud751\\ud654 \\uc77c\\ubc18\\uc6a9",
+      "dimensions": "32x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "다음 중 공정 및 용어 설명으로 틀린 것은? |  |   ① Cleaner : 내층 동박과 수지 사이의 밀착력을 강화 목적으로 제품 표면의 깎여진 동에 산화 후 흑화막을 형성한다.  |   ② Soft Etching : 동 표면의 일부를 용해시켜서 산화 피막이나 불순물을 제거한다. |   ③ Pre-Dip : 제품에 흡수되어 있는 산 성분을 중화한다. |   ④ Post-Dip : Black Oxide 공정에서 형성된 흑화막의 일부를 제거하고 내산성을 부여한다. ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          " ① Cleaner : 내층 동박과 수지 사이의 밀착력을 강화 목적으로 제품 표면의 깎여진 동에 산화 후 흑화막을 형성한다. "
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "흑화 진행 후 다음 공정은 어디인가? (Window 흑화 제외)   |  |   ① PRESS     ② Dual Detach     ③ Lay-up     ④ 예비 Lay-up",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 예비 Lay-up"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "흑화 처리 후 불량 유형이 아닌 것은? |  |   ① 핑크링     ② 흑화 얼룩     ③ 주름     ④ 미흑화 ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 주름"
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "흑화 처리 후 후처리(환원, Postdip)가 잘못되었을 때, 나타날 수 있는 불량은?  |  |   ① 타흔     ② 핑크링     ③ 미에칭     ④ VOID",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 핑크링"
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "수직 흑화에서 발생할 수 있는 불량이 아닌 것은? |  |   ① 롤 자국     ② 미흑화     ③ 스크러치     ④ 기판 붙음",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① 롤 자국"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "일반",
+          "객관식",
+          "수직 흑화 흑화조 약품의 대표 명칭은? |  |   ① OMNI Bond     ② ULTRA Bond     ③ SIGMA Bond     ④ RTU-65",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① OMNI Bond"
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "수직흑화 전장용",
+      "name_escape": "\\uc218\\uc9c1\\ud751\\ud654 \\uc804\\uc7a5\\uc6a9",
+      "dimensions": "32x15",
+      "header_row": 5,
+      "headers": [
+        null,
+        "No",
+        "점수",
+        "유형",
+        "문제 유형",
+        "문제",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "답안"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "점수",
+        "유형",
+        "문제유형",
+        "문제",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "답안"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "=IF(E6=\"공통\",2.5,IF(E6=\"객관식\",4,IF(E6=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "흑화 처리 후 불량 유형이 아닌 것은? |  |   ① 핑크링     ② 흑화 얼룩     ③ 주름     ④ 미흑",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "③ 주름"
+        ],
+        [
+          null,
+          "2",
+          "=IF(E7=\"공통\",2.5,IF(E7=\"객관식\",4,IF(E7=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "흑화 처리 후 후처리(환원, Postdip)가 잘못되었을 때, 나타날 수 있는 불량은?  |   ① 타흔     ② 핑크링     ③ 미에칭     ④ VOID",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② 핑크링"
+        ],
+        [
+          null,
+          "3",
+          "=IF(E8=\"공통\",2.5,IF(E8=\"객관식\",4,IF(E8=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "수직 Window 흑화 진행 시 사용하지 않는 조는?   |   ① 크리너     ② 소프트에칭     ③ 흑화     ④ 포스트딥",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "④ 포스트딥"
+        ],
+        [
+          null,
+          "4",
+          "=IF(E9=\"공통\",2.5,IF(E9=\"객관식\",4,IF(E9=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "수직 흑화 흑화조 약품의 대표 명칭은? |  |   ① OMNI Bond     ② ULTRA Bond     ③ SIGMA Bond     ④ RTU-65",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "① OMNI Bond"
+        ],
+        [
+          null,
+          "5",
+          "=IF(E10=\"공통\",2.5,IF(E10=\"객관식\",4,IF(E10=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "흑화 약품조의 필터 교체 주기는? |  |   ① 1회/주     ② 1회/2주     ③ 1회/월     ④ 1회/2월 ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          " ① 1회/주"
+        ],
+        [
+          null,
+          "6",
+          "=IF(E11=\"공통\",2.5,IF(E11=\"객관식\",4,IF(E11=\"주관식\",5,\"\")))",
+          "전장",
+          "객관식",
+          "수직 흑화 PM 주기가 아닌 것은? |  |   ① 크리너 : 1회/4주     ② OXIDE : 2회/8주     ③ Soft Etching : 1회/4주     ④ 수세단 : 1회/2주 ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "② OXIDE : 2회/8주"
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "Dualdetach Carrierdetach 일반",
+      "name_escape": "Dualdetach Carrierdetach \\uc77c\\ubc18",
+      "dimensions": "43x11",
+      "header_row": 2,
+      "headers": [
+        null,
+        "No",
+        "유형",
+        "문제유형 ",
+        "문제",
+        "1",
+        "2",
+        "3",
+        "4",
+        "정답",
+        "랜덤"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "유형",
+        "문제유형",
+        "문제",
+        "1",
+        "2",
+        "3",
+        "4",
+        "정답",
+        "랜덤"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "일반",
+          "객관식",
+          "Dual Detach Cutting 후 PLP 제품 자주검사 주기는?  ",
+          "초품/Lot",
+          "초품, 말품/조  ",
+          "말품/Lot  ",
+          "초품, 말품/Lot",
+          "초품,말품/Lot",
+          null
+        ],
+        [
+          null,
+          "2",
+          "일반",
+          "객관식",
+          "제품의 수량 단위가 아닌 것은?",
+          "Lot ",
+          "Strip",
+          "Pcs",
+          "mm",
+          "mm",
+          null
+        ],
+        [
+          null,
+          "3",
+          "일반",
+          "객관식",
+          "Dual Detach Cutting 시 PLP 제품 커팅 Spec 은? ",
+          "3mm 이하",
+          "4mm 이하    ",
+          "5mm 이하   ",
+          "6mm 이하",
+          "5mm 이하   ",
+          null
+        ],
+        [
+          null,
+          "4",
+          "일반",
+          "객관식",
+          "혼입 방지 및 예방을 위한 내용 중 옳지 않은것은?",
+          "제조지시서와 제품의 일치성을 확인해야 한다.",
+          "제조지시서와 이전공정에서 제품에 기록한 Lot No의 일치성을 확인해야 한다.",
+          "전산 MES와 실수량 및 제조지시서의 수량 일치성을 확인해야 한다.",
+          "전산 MES와 제조지시서만 일치하면 된다.",
+          "전산 MES와 제조지시서만 일치하면 된다.",
+          null
+        ],
+        [
+          null,
+          "5",
+          "일반",
+          "객관식",
+          "Dual Detach 분리기에서 블레이드 속도 기준으로 맞는것은? ",
+          "8~9m/min",
+          "8.2~9m/min",
+          "8~9.2m/min",
+          "8.2~9.2m/min",
+          "8~9.2m/min",
+          null
+        ],
+        [
+          null,
+          "6",
+          "일반",
+          "객관식",
+          "Dual Detach 공정에서 나올 수 없는 불량은?",
+          "구김 불량 : 제품 취급 과정에서의 구김 발생",
+          "파손 불량 : 취급성 또는 레진붙음, 액침투에 의한 파손 발생",
+          "휨 불량 : 분리 방법 미 준수에 의한 휨 발생",
+          "적층 이물 : 제품 취급 중 이물이 제품에 전이되어 불량 발생",
+          "적층 이물 : 제품 취급 중 이물이 제품에 전이되어 불량 발생",
+          null
+        ]
+      ],
+      "image_count": 10,
+      "image_anchors": [
+        {
+          "row": 16,
+          "col": 6,
+          "width": 120,
+          "height": 144
+        },
+        {
+          "row": 16,
+          "col": 7,
+          "width": 113,
+          "height": 136
+        },
+        {
+          "row": 16,
+          "col": 8,
+          "width": 134,
+          "height": 151
+        },
+        {
+          "row": 16,
+          "col": 9,
+          "width": 119,
+          "height": 144
+        },
+        {
+          "row": 16,
+          "col": 10,
+          "width": 122,
+          "height": 134
+        },
+        {
+          "row": 21,
+          "col": 7,
+          "width": 121,
+          "height": 68
+        },
+        {
+          "row": 21,
+          "col": 8,
+          "width": 123,
+          "height": 70
+        },
+        {
+          "row": 21,
+          "col": 9,
+          "width": 130,
+          "height": 70
+        },
+        {
+          "row": 21,
+          "col": 10,
+          "width": 186,
+          "height": 103
+        },
+        {
+          "row": 21,
+          "col": 6,
+          "width": 121,
+          "height": 66
+        }
+      ]
+    },
+    {
+      "name": "ITS 각인 일반용",
+      "name_escape": "ITS \\uac01\\uc778 \\uc77c\\ubc18\\uc6a9",
+      "dimensions": "36x11",
+      "header_row": 2,
+      "headers": [
+        null,
+        "No",
+        "유형",
+        "문제유형 ",
+        "문제",
+        "1",
+        "2",
+        "3",
+        "4",
+        "정답",
+        "랜덤"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "유형",
+        "문제유형",
+        "문제",
+        "1",
+        "2",
+        "3",
+        "4",
+        "정답",
+        "랜덤"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "일반",
+          "객관식",
+          "ITS 각인 목적으로 알맞은 것은?",
+          "제품 혼입 방지를 위함",
+          "제품에 Numbering을 위함 ",
+          "Via Hole의 재현을 위함",
+          "관통 Hole의 재현을 위함",
+          "제품 혼입 방지를 위함",
+          null
+        ],
+        [
+          null,
+          "2",
+          "일반",
+          "객관식",
+          "ITS 각인기 내부 Table 청소 점검 주기로 알맞은 것은? ",
+          "1회/2주",
+          "1회/1개월",
+          "2회/일",
+          "1회/일",
+          "1회/일",
+          null
+        ],
+        [
+          null,
+          "3",
+          "일반",
+          "객관식",
+          "ITS 각인기 Setting 방법(외층 기준)이 올바른 순서대로 나열된 것은?",
+          "ⓐLot card 층 정보 확인  ⓑ작업 조건 외층 선택  ⓒLot 기록 창 Click  ⓓLot 정보 및 두께 P/G 기록  ⓔAuto/Start ",
+          null,
+          null,
+          "ⓐ-ⓒ-ⓑ-ⓓ-ⓔ ,ⓐ-ⓑ-ⓒ-ⓓ-ⓔ,ⓑ-ⓐ-ⓒ-ⓓ-ⓔ,ⓐ-ⓓ-ⓑ-ⓒ-ⓔ",
+          "ⓐ-ⓑ-ⓒ-ⓓ-ⓔ ",
+          null
+        ],
+        [
+          null,
+          "4",
+          "일반",
+          "객관식",
+          "X-RAY 인식기 Setting 방법(외층 기준)이 올바른 순서대로 나열된 것은?",
+          "ⓐLot card 층 정보 확인  ⓑProgram Loading  ⓒ1Cycle 실행  ⓓX-RAY 인식 정도 교정  ⓔLoad 취출  ⓕ정상 작업",
+          null,
+          null,
+          "ⓐ-ⓒ-ⓕ-ⓑ-ⓓ-ⓔ, ⓐ-ⓑ-ⓒ-ⓓ-ⓔ-ⓕ, ⓑ-ⓐ-ⓒ-ⓓ-ⓔ-ⓕ,ⓐ-ⓓ-ⓑ-ⓒ-ⓔ-ⓕ",
+          "ⓐ-ⓑ-ⓒ-ⓓ-ⓔ-ⓕ ",
+          null
+        ],
+        [
+          null,
+          "5",
+          "일반",
+          "객관식",
+          "ITS 각인기 Power 측정 시 관리 범위를 벗어났을 때 조치 방법으로 알맞은 것은?",
+          "설비 초기화 후 재측정",
+          "Attenuator 미세 조정 후 재측정",
+          "Laser Power On/Off 후 재측정",
+          "작업 중지",
+          "Attenuator 미세 조정 후 재측정",
+          null
+        ],
+        [
+          null,
+          "6",
+          "일반",
+          "객관식",
+          "ITS 각인기에서 설비 중점 관리 항목 2가지를 고르시오.",
+          "냉각 칠러",
+          "Loader부",
+          "Unloader부",
+          "Laser 발진기",
+          "냉각 칠러,Laser 발진기",
+          null
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "ITS 각인 전장용",
+      "name_escape": "ITS \\uac01\\uc778 \\uc804\\uc7a5\\uc6a9",
+      "dimensions": "28x11",
+      "header_row": 2,
+      "headers": [
+        null,
+        "No",
+        "유형",
+        "문제유형 ",
+        "문제",
+        "1",
+        "2",
+        "3",
+        "4",
+        "정답",
+        "랜덤"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "유형",
+        "문제유형",
+        "문제",
+        "1",
+        "2",
+        "3",
+        "4",
+        "정답",
+        "랜덤"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 생산 프로세스 반복 릴리즈에서 고려해야 할 사항이 아닌 것은?",
+          "승인은 승인 기준에 따라 권한을 부여 받은 직원이 수행해야 한다.",
+          "일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다.",
+          "검사 항목이 한도 견본으로 확인 가능하다.",
+          "불가피하게 승인 시간이 지연된다면, 샘플을 승인할 때까지 제품을 분리하고 진행한다.",
+          "일상적인 생산 시 생산 가동 승인, 계획된 정지에 대한 생산 가동 승인은 꼭 필요한 것은 아니다.",
+          null
+        ],
+        [
+          null,
+          "2",
+          "전장",
+          "객관식",
+          "[VDA 6.3] 입고 자재가 적절하게 보관되어 있고, 입고 자재의 특별특성을 위하여 운송/포장 설비 수단의 내용으로 거리가 먼 것은?",
+          "CSR/CR에 따른 포장 사양은 반드시 검토 및 반영되어야 한다.",
+          "보관 용기의 주기적 청소 및 모니터링을 실시해야 한다.",
+          "유수명 자재 관리는 모니터링에서 제외가 가능하다.",
+          "보관 장소의 청결 및 상태가 적절히 관리되어야 한다.",
+          "유수명 자재 관리는 모니터링에서 제외가 가능하다.",
+          null
+        ],
+        [
+          null,
+          "3",
+          "전장",
+          "객관식",
+          "VDA 프로세스 심사 시 문항 평가를 위한 적절한 배점으로 판단하기 어려운 것은?",
+          "고객 요구 사항(System적) 누락 및 미반영 : 0점",
+          "변경점 고객 미합의 및 미통보 : 0점",
+          "개발 실행 PPAP 승인 누락 : 0점",
+          "부적합품 기록 관리 누락 : 0점",
+          "부적합품 기록 관리 누락 : 0점",
+          null
+        ],
+        [
+          null,
+          "4",
+          "전장",
+          "객관식",
+          "ITS 각인 좌표(PNL 상 각인 위치, 4L 외층 기준)가 알맞은 것은?",
+          "4L - 장축 3.5mm / 단축 272mm",
+          "4L - 장축 272mm / 단축 3.5mm",
+          "4L - 장축 8mm / 단축 282mm",
+          "4L - 장축 282mm / 단축 8mm",
+          "4L - 장축 272mm / 단축 3.5mm",
+          null
+        ],
+        [
+          null,
+          "5",
+          "전장",
+          "객관식",
+          "ITS 각인 목적으로 알맞은 것은?  ",
+          "제품 혼입 방지를 위함",
+          "제품에 Numbering을 위함",
+          "Via Hole의 재현을 위함 ",
+          "관통 Hole의 재현을 위함",
+          "제품 혼입 방지를 위함",
+          null
+        ],
+        [
+          null,
+          "6",
+          "전장",
+          "객관식",
+          "ITS 각인기 Setting 방법(외층 기준)이 올바른 순서대로 나열된 것은?",
+          "ⓐLot card 층 정보 확인  ⓑ작업 조건 외층 선택  ⓒLot 기록 창 Click  ⓓLot 정보 및 두께 P/G 기록  ⓔAuto/Start",
+          null,
+          null,
+          "ⓐ-ⓒ-ⓑ-ⓓ-ⓔ, ⓐ-ⓑ-ⓒ-ⓓ-ⓔ,ⓑ-ⓐ-ⓒ-ⓓ-ⓔ,ⓐ-ⓓ-ⓑ-ⓒ-ⓔ",
+          "② ⓐ-ⓑ-ⓒ-ⓓ-ⓔ",
+          null
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "X-ray 일반용",
+      "name_escape": "X-ray \\uc77c\\ubc18\\uc6a9",
+      "dimensions": "8x11",
+      "header_row": 2,
+      "headers": [
+        null,
+        "No",
+        "유형",
+        "문제유형 ",
+        "문제",
+        "1",
+        "2",
+        "3",
+        "4",
+        "정답",
+        "랜덤"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "유형",
+        "문제유형",
+        "문제",
+        "1",
+        "2",
+        "3",
+        "4",
+        "정답",
+        "랜덤"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "일반",
+          "객관식",
+          "제품의 수량 단위가 아닌 것은? ",
+          "Lot ",
+          "Sheet ",
+          "Pcs",
+          "mm ",
+          "mm ",
+          null
+        ],
+        [
+          null,
+          "2",
+          "일반",
+          "객관식",
+          "PIN 교환 시 펀치가 스트리퍼 안쪽으로 몇 mm 안으로 들어가게 설정하는가?  ",
+          "0.1mm ",
+          "0.2mm",
+          "0.3mm ",
+          "0.4mm",
+          "0.2mm",
+          null
+        ],
+        [
+          null,
+          "3",
+          "일반",
+          "객관식",
+          "X-ray 펀칭기에서 중점 관리 항목 2가지를 고르시오.",
+          "Punch Pin",
+          "Loader부",
+          "Unloader부",
+          "Punch Die",
+          "Punch Pin,Punch Die",
+          null
+        ],
+        [
+          null,
+          "4",
+          "일반",
+          "객관식",
+          "X-ray 펀칭기 Setting 방법이 올바른 순서대로 나열된 것은? | ⓐ Lot card 층 정보 확인  ⓑ Program Loading  ⓒ Mark confirmation  ⓓ Lot No 입력  ⓔ Zero set  ⓕ 정상 작업",
+          "ⓐ-ⓒ-ⓕ-ⓑ-ⓓ-",
+          " ⓐ-ⓑ-ⓓ-ⓔ-ⓒ-ⓕ",
+          "ⓑ-ⓐ-ⓒ-ⓓ-ⓔ-ⓕ",
+          "ⓐ-ⓓ-ⓑ-ⓒ-ⓔ-ⓕ",
+          "ⓐ-ⓑ-ⓓ-ⓔ-ⓒ-ⓕ  ",
+          null
+        ],
+        [
+          null,
+          "5",
+          "일반",
+          "객관식",
+          " X-ray 홀 펀치 Air 압력 관리 범위는? ",
+          "0.5±0.1㎫ ",
+          "0.6±0.1㎫",
+          "0.7±0.1㎫ ",
+          "0.5±0.2㎫",
+          "0.6±0.1㎫",
+          null
+        ],
+        [
+          null,
+          "6",
+          "일반",
+          "객관식",
+          "X-ray 홀 펀칭(MXP-908) 관리 Hit 수는? ",
+          "10000회",
+          "1000회",
+          "100회",
+          "100000회",
+          "100000회",
+          null
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    },
+    {
+      "name": "X-ray 전장용",
+      "name_escape": "X-ray \\uc804\\uc7a5\\uc6a9",
+      "dimensions": "27x11",
+      "header_row": 2,
+      "headers": [
+        null,
+        "No",
+        "유형",
+        "문제유형 ",
+        "문제",
+        "1",
+        "2",
+        "3",
+        "4",
+        "정답",
+        "랜덤"
+      ],
+      "norm_headers": [
+        "",
+        "no",
+        "유형",
+        "문제유형",
+        "문제",
+        "1",
+        "2",
+        "3",
+        "4",
+        "정답",
+        "랜덤"
+      ],
+      "sample_rows": [
+        [
+          null,
+          "1",
+          "일반",
+          "객관식",
+          "X-ray Hole 가공 후 자주검사 항목으로 알맞은 것은?",
+          "홀 경 검사, Hole Burr, 홀 축소 ",
+          "기판 Size, 홀 편심 검사, 홀 경 검사  ",
+          "홀 편심 검사, 홀 경 검사, 홀 Burr 검사",
+          "홀 경 검사, 기판 Size 검사, 홀 편심 검사",
+          "홀 편심 검사, 홀 경 검사, 홀 Burr 검사",
+          null
+        ],
+        [
+          null,
+          "2",
+          "일반",
+          "객관식",
+          "X-ray 홀 가공의 ∮는?",
+          "3.14∮",
+          "3.15∮ ",
+          "3.165∮",
+          "3.175∮",
+          "3.15∮ ",
+          null
+        ],
+        [
+          null,
+          "3",
+          "일반",
+          "객관식",
+          "X-ray Drill 설비 Air 압력 관리 범위는? ",
+          "0.5±0.1㎫ ",
+          "0.5±0.2㎫",
+          ".6±0.1㎫ ",
+          "0.7±0.1㎫ ",
+          ".6±0.1㎫ ",
+          null
+        ],
+        [
+          null,
+          "4",
+          "일반",
+          "객관식",
+          "X-ray Drill 한송(2호기) 설비의 집진 주파수 압력 관리 범위는? ",
+          "50㎐±20㎐ ",
+          "60㎐±20㎐",
+          "70㎐±20㎐",
+          "80㎐±20㎐",
+          "70㎐±20㎐",
+          null
+        ],
+        [
+          null,
+          "5",
+          "일반",
+          "객관식",
+          "MXP-908 설비의 설명으로 맞는 것은? ",
+          "Laser Hole 가공 설비 ",
+          "Router 가공 설비",
+          "Bit Type 가공 설비",
+          "Punch Type 가공 설비",
+          "Punch Type 가공 설비",
+          null
+        ],
+        [
+          null,
+          "6",
+          "일반",
+          "객관식",
+          "홀 3.15Ø를 기준으로 홀 경 측정 시 사용하는 Pin Gauge의 종류로 맞지 않는 것은?",
+          "3.13",
+          "3.15",
+          "3.165",
+          "3.175",
+          "3.15",
+          null
+        ]
+      ],
+      "image_count": 0,
+      "image_anchors": []
+    }
+  ],
+  "header_patterns": [
+    {
+      "count": 26,
+      "pattern": "|no|점수|유형|문제유형|문제|||||||||답안"
+    },
+    {
+      "count": 5,
+      "pattern": "|no|유형|문제유형|문제|1|2|3|4|정답|랜덤"
+    },
+    {
+      "count": 1,
+      "pattern": "|no|유형|문제유형|문제|1|2|3|4|정답|랜덤|"
+    }
+  ]
+}
