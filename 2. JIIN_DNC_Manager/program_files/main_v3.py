@@ -1205,9 +1205,8 @@ def ask_incomplete_action(parent, count: int) -> str:
 def get_log_header_row(ws) -> int:
     """작업일보 로그 헤더 행을 찾습니다.
 
-    KCC PKG는 상단 DNC 입력 영역 때문에 로그 헤더가 아래쪽에 있고,
-    TLB는 시트 상단에 로그 헤더가 있습니다. 그래서 고정 행 대신
-    작업일자/차수/관리번호/LOT/매수/작업P/G 헤더가 있는 행을 찾습니다.
+    공정/양식에 따라 로그 헤더가 2행 또는 6행에 있을 수 있으므로
+    고정 행 대신 작업일자/차수/관리번호/LOT/매수/작업P/G 헤더가 있는 행을 찾습니다.
     """
     required_headers = {"작업일자", "차수", "관리번호", "LOT", "매수"}
     preferred_headers = {"작업P/G", "실적"}
@@ -1239,8 +1238,9 @@ def write_process_code_backup(ws, row: int, process_code: str) -> None:
     """조건 마스터 복구용으로 작업일보 AD열에 공정코드를 백업합니다."""
     # A열에 호기가 추가되어 기존 A:AC 양식이 한 칸씩 밀렸습니다.
     # AD열만 프로그램 복구용 공정코드 백업 칸으로 사용합니다.
-    if not ws.cell(row=6, column=EXCEL_PROCESS_CODE_COLUMN).value:
-        ws.cell(row=6, column=EXCEL_PROCESS_CODE_COLUMN).value = "공정코드"
+    header_row = get_log_header_row(ws)
+    if not ws.cell(row=header_row, column=EXCEL_PROCESS_CODE_COLUMN).value:
+        ws.cell(row=header_row, column=EXCEL_PROCESS_CODE_COLUMN).value = "공정코드"
     ws.cell(row=row, column=EXCEL_PROCESS_CODE_COLUMN).value = excel_upper_value(process_code)
 
 

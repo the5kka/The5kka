@@ -672,7 +672,7 @@ namespace OjtExamPatch
         void DrawAnswerPage(Graphics g, Rectangle bounds)
         {
             if (Doc == null) return;
-            MainForm.DrawAnswerTable(g, bounds, Doc.Bank.Name, Doc.Questions, true);
+            MainForm.DrawAnswerTable(g, bounds, Doc.Bank.Name, Doc.UserName, Doc.EvalDate, Doc.Questions, true);
         }
         static void CenterText(Graphics g, string text, Font font, Brush brush, Rectangle rect)
         {
@@ -913,17 +913,15 @@ namespace OjtExamPatch
             root.Controls.Add(title, 0, 0); root.SetColumnSpan(title, 3);
             status = new Label { Text = "", Visible = false, Width = 1, Height = 1 };
             root.Controls.Add(status, 2, 0);
-            var file = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, BackColor = Color.FromArgb(18, 28, 46), Padding = new Padding(8) };
+            var file = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, BackColor = Color.FromArgb(18, 28, 46), Padding = new Padding(8) };
             file.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 85));
             file.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            file.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
             file.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 96));
             root.Controls.Add(file, 0, 1); root.SetColumnSpan(file, 3);
             file.Controls.Add(Label("\uBB38\uC81C\uC740\uD589"), 0, 0);
             pathBox = new TextBox { Dock = DockStyle.Fill, BackColor = Color.FromArgb(8, 17, 31), ForeColor = Color.White, BorderStyle = BorderStyle.FixedSingle };
             file.Controls.Add(pathBox, 1, 0);
             file.Controls.Add(Button("\uD30C\uC77C \uC120\uD0DD", Browse), 2, 0);
-            file.Controls.Add(Button("\uC0C8\uB85C\uACE0\uCE68", delegate { LoadBanks(); }), 3, 0);
             root.Controls.Add(BankPanel(), 0, 2);
             root.Controls.Add(SettingsPanel(), 1, 2);
             root.Controls.Add(PreviewPanel(), 2, 2);
@@ -1075,9 +1073,9 @@ namespace OjtExamPatch
         }
         void DrawAnswer(Graphics g, Rectangle bounds)
         {
-            DrawAnswerTable(g, bounds, doc.Bank.Name, doc.Questions, false);
+            DrawAnswerTable(g, bounds, doc.Bank.Name, doc.UserName, doc.EvalDate, doc.Questions, false);
         }
-        internal static void DrawAnswerTable(Graphics g, Rectangle bounds, string titleText, List<Question> questions, bool scaled)
+        internal static void DrawAnswerTable(Graphics g, Rectangle bounds, string titleText, string userName, string evalDate, List<Question> questions, bool scaled)
         {
             g.FillRectangle(Brushes.White, bounds);
             int titleSize = scaled ? Math.Max(14, bounds.Width / 42) : 22;
@@ -1100,9 +1098,9 @@ namespace OjtExamPatch
                 int labelW = Math.Max(scaled ? 58 : 88, usableW / 11);
                 int valueW = Math.Max(scaled ? 155 : 230, usableW / 4);
                 DrawInfoCell(g, gridPen, head, x, y, labelW, infoH, "\uC791\uC5C5\uC790");
-                DrawInfoCell(g, gridPen, font, x + labelW, y, valueW, infoH, "");
+                DrawInfoCell(g, gridPen, font, x + labelW, y, valueW, infoH, userName);
                 DrawInfoCell(g, gridPen, head, x + labelW + valueW + padX, y, labelW, infoH, "\uC2DC\uD5D8\uC77C\uC790");
-                DrawInfoCell(g, gridPen, font, x + labelW * 2 + valueW + padX, y, valueW, infoH, "");
+                DrawInfoCell(g, gridPen, font, x + labelW * 2 + valueW + padX, y, valueW, infoH, evalDate);
                 y += infoH + Math.Max(5, padY);
 
                 int blockGap = Math.Max(8, usableW / 55);
