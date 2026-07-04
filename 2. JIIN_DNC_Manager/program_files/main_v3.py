@@ -79,63 +79,6 @@ def bring_existing_app_to_front() -> None:
         pass
 
 
-def get_window_handle(widget) -> int:
-    """Tk 위젯의 Windows HWND를 안전하게 가져옵니다."""
-    if widget is None or not sys.platform.startswith("win"):
-        return 0
-    try:
-        if not widget.winfo_exists():
-            return 0
-        widget.update_idletasks()
-        return int(widget.winfo_id())
-    except Exception:
-        return 0
-
-
-def flash_window(widget, count: int = 3) -> None:
-    """Windows 작업표시줄에서 창을 짧게 깜빡여 확인이 필요한 팝업을 찾기 쉽게 합니다."""
-    hwnd = get_window_handle(widget)
-    if not hwnd:
-        return
-    try:
-        class FLASHWINFO(ctypes.Structure):
-            _fields_ = [
-                ("cbSize", ctypes.c_uint),
-                ("hwnd", ctypes.c_void_p),
-                ("dwFlags", ctypes.c_uint),
-                ("uCount", ctypes.c_uint),
-                ("dwTimeout", ctypes.c_uint),
-            ]
-
-        info = FLASHWINFO(
-            ctypes.sizeof(FLASHWINFO),
-            ctypes.c_void_p(hwnd),
-            0x00000003,
-            count,
-            0,
-        )
-        ctypes.windll.user32.FlashWindowEx(ctypes.byref(info))
-    except Exception:
-        pass
-
-
-def request_foreground_window(widget) -> None:
-    """가능하면 Windows에 해당 창을 앞으로 올려 달라고 요청합니다."""
-    hwnd = get_window_handle(widget)
-    if not hwnd:
-        return
-    try:
-        user32 = ctypes.windll.user32
-        try:
-            user32.AllowSetForegroundWindow(-1)
-        except Exception:
-            pass
-        user32.ShowWindow(hwnd, 9)
-        user32.SetForegroundWindow(hwnd)
-    except Exception:
-        pass
-
-
 def acquire_single_instance_lock() -> bool:
     """????? ?? ?? ??? ? ?? ??? ?? ?? ?? ??? ????."""
     global SINGLE_INSTANCE_HANDLE
@@ -416,6 +359,7 @@ def get_default_config() -> dict:
         "machine": "트리밍 1호기",
         "theme": "MES 블루",
         "last_master_auto_backup_date": "",
+        "tlb_condition_sheet": "",
         "kcc_hdi_condition_sheet": "",
     }
 
@@ -553,6 +497,14 @@ def load_config() -> dict:
         changed = True
     config["source_dnc_folders"] = saved_sources
     config["source_dnc_folder"] = saved_sources.get("KCC PKG", "")
+    tlb_sheet = str(config.get("tlb_condition_sheet", "") or "").strip()
+    kcc_hdi_sheet = str(config.get("kcc_hdi_condition_sheet", "") or "").strip()
+    if tlb_sheet and not kcc_hdi_sheet:
+        config["kcc_hdi_condition_sheet"] = tlb_sheet
+        changed = True
+    elif kcc_hdi_sheet and not tlb_sheet:
+        config["tlb_condition_sheet"] = kcc_hdi_sheet
+        changed = True
     if changed:
         try:
             save_config(config)
@@ -1007,43 +959,17 @@ def format_excel_error_for_operator(exc: Exception, context: str = "Excel 파일
 def keep_modal_on_top(dialog: tk.Toplevel, parent=None, focus_widget=None) -> None:
     """모달창이 다른 Windows 창 뒤로 숨어 프로그램이 멈춘 것처럼 보이는 상황을 막습니다."""
     target = focus_widget or dialog
-    parent_bindings: list[tuple[tk.Misc, str, str]] = []
 
-    def release_topmost() -> None:
-        try:
-            dialog.attributes("-topmost", False)
-        except tk.TclError:
-            pass
-
-    def release_modal_state() -> None:
-        try:
-            if dialog.grab_current() is dialog:
-                dialog.grab_release()
-        except tk.TclError:
-            pass
-        release_topmost()
-        for widget, sequence, bind_id in parent_bindings:
-            try:
-                widget.unbind(sequence, bind_id)
-            except tk.TclError:
-                pass
-
-    def raise_dialog() -> None:
+    def raise_dialog(count: int = 0) -> None:
         try:
             if not dialog.winfo_exists():
                 return
-            if parent is not None and parent.winfo_exists():
-                parent.deiconify()
-                parent.lift()
-                request_foreground_window(parent)
-                flash_window(parent)
             dialog.deiconify()
             dialog.attributes("-topmost", True)
             dialog.lift()
-            request_foreground_window(dialog)
-            flash_window(dialog)
-            dialog.after(250, release_topmost)
-            target.focus_set()
+            target.focus_force()
+            if count < 12:
+                dialog.after(500, lambda: raise_dialog(count + 1))
         except tk.TclError:
             return
 
@@ -1052,14 +978,7 @@ def keep_modal_on_top(dialog: tk.Toplevel, parent=None, focus_widget=None) -> No
             dialog.transient(parent)
         except tk.TclError:
             pass
-        for sequence in ("<FocusIn>", "<ButtonPress>"):
-            try:
-                bind_id = parent.bind(sequence, lambda _event: raise_dialog(), add="+")
-                parent_bindings.append((parent, sequence, bind_id))
-            except tk.TclError:
-                pass
-    dialog.bind("<Map>", lambda _event: raise_dialog(), add="+")
-    dialog.bind("<Destroy>", lambda event: release_modal_state() if event.widget is dialog else None, add="+")
+    dialog.bind("<Visibility>", lambda _event: raise_dialog(0))
     raise_dialog()
 
 
@@ -2116,7 +2035,16 @@ def normalize_round_key(value) -> str:
     return digits or text
 
 
-def lookup_tlb_condition_record_from_sheet(config: dict, tool_no: str, round_no: str) -> dict:
+def normalize_condition_sheet_process(value) -> str:
+    text = format_excel_cell_value(value).upper().replace(" ", "")
+    if text in {"KCC", "KCCHDI", "KCC_HDI"}:
+        return "KCC"
+    if text == "TLB":
+        return "TLB"
+    return text
+
+
+def lookup_tlb_condition_record_from_sheet(config: dict, tool_no: str, round_no: str, process_filter: str = "TLB") -> dict:
     sheet_path = Path(str(config.get("tlb_condition_sheet", "")).strip())
     if not sheet_path:
         raise FileNotFoundError("TLB 조건 시트 선택 필요")
@@ -2128,12 +2056,16 @@ def lookup_tlb_condition_record_from_sheet(config: dict, tool_no: str, round_no:
         raise RuntimeError(format_excel_error_for_operator(exc, "TLB 조건 시트")) from exc
     target_tool = tool_no.strip().upper()
     target_round = normalize_round_key(round_no)
+    target_process = normalize_condition_sheet_process(process_filter)
     matches: list[dict] = []
     try:
         if "Database" not in workbook.sheetnames:
             raise KeyError("Database 시트 없음")
         ws = workbook["Database"]
         for row in ws.iter_rows(min_row=2, values_only=True):
+            row_process = normalize_condition_sheet_process(row[0] if len(row) > 0 else "")
+            if target_process and row_process != target_process:
+                continue
             row_tool = format_excel_cell_value(row[1] if len(row) > 1 else "").upper()
             row_round = normalize_round_key(row[2] if len(row) > 2 else "")
             if row_tool == target_tool and row_round == target_round:
@@ -2168,7 +2100,8 @@ def lookup_tlb_condition_record_from_sheet(config: dict, tool_no: str, round_no:
         if item not in unique:
             unique.append(item)
     if not unique:
-        raise LookupError("조건 시트에서 Tool No / 차수를 찾을 수 없습니다.\n기술 문의 바랍니다.")
+        process_text = "KCC" if target_process == "KCC" else target_process
+        raise LookupError(f"조건 시트에서 {process_text} / Tool No / 차수를 찾을 수 없습니다.\n기술 문의 바랍니다.")
     if len(unique) > 1:
         raise ValueError("조건 시트에 동일 조건이 2개 이상입니다.\n기술 문의 바랍니다.")
     condition = unique[0]["condition"]
@@ -2190,7 +2123,7 @@ def normalize_tlb_condition_name(value: str) -> str:
 
 
 def lookup_tlb_condition_from_sheet(config: dict, tool_no: str, round_no: str) -> tuple[str, str]:
-    record = lookup_tlb_condition_record_from_sheet(config, tool_no, round_no)
+    record = lookup_tlb_condition_record_from_sheet(config, tool_no, round_no, process_filter="TLB")
     condition = record["condition"]
     jig = record["jig"]
     return condition, jig
@@ -2200,7 +2133,7 @@ def lookup_kcc_hdi_condition_record_from_sheet(config: dict, tool_no: str, round
     hdi_config = dict(config)
     hdi_config["tlb_condition_sheet"] = str(config.get("kcc_hdi_condition_sheet", "")).strip()
     try:
-        return lookup_tlb_condition_record_from_sheet(hdi_config, tool_no, round_no)
+        return lookup_tlb_condition_record_from_sheet(hdi_config, tool_no, round_no, process_filter="KCC")
     except Exception as exc:
         message = format_excel_error_for_operator(exc, "KCC HDI 조건 시트")
         message = message.replace("TLB", "KCC HDI").replace("Tool No", "\uad00\ub9ac\ubc88\ud638")
@@ -4214,7 +4147,7 @@ class JiinDncManager:
             self.tlb_status_labels[status_key].grid(row=0, column=0, sticky="ew", padx=(0, 6))
             self.hide_judgement_card(self.tlb_status_labels[status_key])
             if column == 0:
-                self.tlb_status_labels["cycle"] = self.create_judgement_card(status, "남은 사이클")
+                self.tlb_status_labels["cycle"] = self.create_judgement_card(status, "완료 사이클")
                 self.tlb_status_labels["cycle"].grid(row=0, column=1, sticky="ew", padx=(6, 0))
                 self.hide_judgement_card(self.tlb_status_labels["cycle"])
 
@@ -4371,8 +4304,12 @@ class JiinDncManager:
         if cycle_count <= 1 or remaining is None or remaining <= 0:
             self.hide_tlb_cycle_status()
             return
-        current_cycle = max(1, min(cycle_count, cycle_count - remaining + 1))
-        text = f"남은 사이클\n{current_cycle} / {cycle_count}회"
+        completed_cycle = cycle_count - remaining
+        if completed_cycle <= 0:
+            self.hide_tlb_cycle_status()
+            return
+        completed_cycle = min(cycle_count - 1, completed_cycle)
+        text = f"완료 사이클\n{completed_cycle} / {cycle_count}회"
         condition_label = self.tlb_status_labels.get("condition1")
         if condition_label is not None:
             condition_label.grid_configure(row=0, column=0, columnspan=1, sticky="ew", padx=(0, 6))
@@ -4519,10 +4456,13 @@ class JiinDncManager:
         if not path:
             return
         self.config["tlb_condition_sheet"] = path
+        self.config["kcc_hdi_condition_sheet"] = path
         if hasattr(self, "tlb_condition_sheet_var"):
             self.tlb_condition_sheet_var.set(path)
+        if hasattr(self, "kcc_hdi_condition_sheet_var"):
+            self.kcc_hdi_condition_sheet_var.set(path)
         save_config(self.config)
-        show_operator_alert(self.root, "TLB 조건 시트", "조건 시트 선택 완료", "info")
+        show_operator_alert(self.root, "조건 시트", "TLB / KCC HDI 조건 시트 선택 완료", "info")
 
     def validate_tlb_paths(self) -> bool:
         ok, message = validate_process_paths(self.config, "TLB")
@@ -4994,7 +4934,7 @@ class JiinDncManager:
             self.kcc_hdi_status_labels[status_key].grid(row=0, column=0, sticky="ew", padx=(0, 6))
             self.hide_judgement_card(self.kcc_hdi_status_labels[status_key])
             if column == 0:
-                self.kcc_hdi_status_labels["cycle"] = self.create_judgement_card(status, "남은 사이클")
+                self.kcc_hdi_status_labels["cycle"] = self.create_judgement_card(status, "완료 사이클")
                 self.kcc_hdi_status_labels["cycle"].grid(row=0, column=1, sticky="ew", padx=(6, 0))
                 self.hide_judgement_card(self.kcc_hdi_status_labels["cycle"])
 
@@ -5151,8 +5091,12 @@ class JiinDncManager:
         if cycle_count <= 1 or remaining is None or remaining <= 0:
             self.hide_kcc_hdi_cycle_status()
             return
-        current_cycle = max(1, min(cycle_count, cycle_count - remaining + 1))
-        text = f"남은 사이클\n{current_cycle} / {cycle_count}회"
+        completed_cycle = cycle_count - remaining
+        if completed_cycle <= 0:
+            self.hide_kcc_hdi_cycle_status()
+            return
+        completed_cycle = min(cycle_count - 1, completed_cycle)
+        text = f"완료 사이클\n{completed_cycle} / {cycle_count}회"
         condition_label = self.kcc_hdi_status_labels.get("condition1")
         if condition_label is not None:
             condition_label.grid_configure(row=0, column=0, columnspan=1, sticky="ew", padx=(0, 6))
@@ -5298,11 +5242,14 @@ class JiinDncManager:
         path = filedialog.askopenfilename(parent=self.root, title="KCC HDI 조건 시트 선택", filetypes=[("Excel files", "*.xlsx *.xlsm")])
         if not path:
             return
+        self.config["tlb_condition_sheet"] = path
         self.config["kcc_hdi_condition_sheet"] = path
+        if hasattr(self, "tlb_condition_sheet_var"):
+            self.tlb_condition_sheet_var.set(path)
         if hasattr(self, "kcc_hdi_condition_sheet_var"):
             self.kcc_hdi_condition_sheet_var.set(path)
         save_config(self.config)
-        show_operator_alert(self.root, "KCC HDI 조건 시트", "조건 시트 선택 완료", "info")
+        show_operator_alert(self.root, "조건 시트", "TLB / KCC HDI 조건 시트 선택 완료", "info")
 
     def validate_kcc_hdi_paths(self) -> bool:
         ok, message = validate_process_paths(self.config, "KCC HDI")
@@ -6789,7 +6736,7 @@ class JiinDncManager:
             if window is not None and window.winfo_exists():
                 window.deiconify()
                 window.lift()
-                window.focus_set()
+                window.focus_force()
                 return True
         except tk.TclError:
             pass
@@ -6909,12 +6856,6 @@ class JiinDncManager:
             return
         period = get_work_period()
         period_changed = bool(self.current_work_period_key and self.current_work_period_key != period["period_key"])
-        if period_changed and self.is_running:
-            if not initial:
-                self.append_log("근무 전환 대기: DNC 작업 완료 후 작업일자/근무 갱신")
-            if schedule_next:
-                self.root.after(60000, self.apply_work_time_defaults)
-            return
         prepared_next_shift = period_changed and self.has_prepared_next_shift(period)
         self.current_work_period_key = period["period_key"]
         self.common_entries["work_date"].set(period["work_date"])
@@ -6935,7 +6876,11 @@ class JiinDncManager:
             self.sync_common_defaults_to_tlb()
             self.set_status("dnc", "근무 전환 확인 필요", False)
             if not initial:
-                self.append_log("근무 전환: 작업일자/근무 변경됨, 작업자 입력 필요")
+                show_operator_alert(
+                    self.root,
+                    "근무 전환 확인",
+                    "작업일자/근무 변경됨\n작업자 입력 필요",
+                )
         elif period_changed and prepared_next_shift:
             self.set_status("dnc", "근무 전환 확인 완료", True)
         self.sync_common_defaults_to_tlb()

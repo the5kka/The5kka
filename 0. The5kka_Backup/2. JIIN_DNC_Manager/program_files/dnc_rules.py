@@ -12,7 +12,8 @@ def normalize_condition_filename(value: str) -> str:
 
 def search_condition_file_exact_txt(condition_name: str, source_folder: Path) -> list[Path]:
     """원본 폴더에서 .txt 조건 파일명 완전일치만 검색합니다."""
-    source_folder.mkdir(parents=True, exist_ok=True)
+    if not source_folder.exists() or not source_folder.is_dir():
+        return []
     normalized = normalize_condition_filename(condition_name)
     matches: list[Path] = []
     for file_path in source_folder.rglob("*.txt"):
@@ -55,9 +56,7 @@ def validate_process_paths(config: dict, process_name: str = "KCC PKG") -> tuple
         if kind == "file" and not path.exists():
             missing.append(label)
         elif kind == "dir":
-            try:
-                path.mkdir(parents=True, exist_ok=True)
-            except Exception:
+            if not path.exists() or not path.is_dir():
                 missing.append(label)
     if missing:
         return False, " / ".join(missing) + " 확인 필요"

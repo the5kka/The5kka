@@ -11,8 +11,9 @@ $DncDir = Join-Path $BasePath "2. JIIN_DNC_Manager"
 $IatfDir = Join-Path $BasePath "3. IATF 16949 Search"
 $ShortcutDir = (Get-ChildItem -LiteralPath $BasePath -Directory | Where-Object { $_.Name -like "4. Window *" } | Select-Object -First 1).FullName
 $CodexDir = (Get-ChildItem -LiteralPath $BasePath -Directory | Where-Object { $_.Name -like "5. Codex*" } | Select-Object -First 1).FullName
+$OjtDir = (Get-ChildItem -LiteralPath $BasePath -Directory | Where-Object { $_.Name -like "6. OJT*" } | Select-Object -First 1).FullName
 
-$SourceRepos = @($QuickAccessDir, $DncDir, $IatfDir, $ShortcutDir, $CodexDir) | Where-Object { $_ }
+$SourceRepos = @($QuickAccessDir, $DncDir, $IatfDir, $ShortcutDir, $CodexDir, $OjtDir) | Where-Object { $_ }
 
 function Write-Log($Message) {
     $time = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
@@ -94,6 +95,9 @@ function Copy-SourcesToSyncRoot() {
         Copy-Project $ShortcutDir (Split-Path -Leaf $ShortcutDir)
     }
     Copy-Project $CodexDir (Split-Path -Leaf $CodexDir)
+    if ($OjtDir) {
+        Copy-Project $OjtDir (Split-Path -Leaf $OjtDir)
+    }
 }
 
 function Write-Readme() {
@@ -108,6 +112,7 @@ Auto upload folder for D:\QC\8. Codex.
 - `3. IATF 16949 Search`
 - `$shortcutName`
 - `$(Split-Path -Leaf $CodexDir)`
+- `$(Split-Path -Leaf $OjtDir)`
 
 This repository is synchronized from the working folders under D:\QC\8. Codex.
 "@

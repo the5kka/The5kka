@@ -1,6 +1,6 @@
 {
   "config_version": 1,
-  "excel_file": "C:\\Users\\QC\\Desktop\\타사 DNC 작업일보.xlsm",
+  "excel_file": "C:/Users/오국진/Desktop/타사 DNC 작업일보.xlsm",
   "source_dnc_folder": "C:/Users/오국진/Desktop/KCC_PKG",
   "source_dnc_folders": {
     "TLB": "C:/Users/오국진/Desktop/지그 일원화",
@@ -23,9 +23,9 @@
     "121.155.196"
   ],
   "clear_common_after_normal": false,
-  "machine": "트리밍 3호기",
+  "machine": "트리밍 1호기",
   "theme": "MES 블루",
-  "last_master_auto_backup_date": "2026-06-30",
-  "kcc_hdi_condition_sheet": "C:/Users/오국진/Desktop/DNC 폴더/NEW_MLB 작업 조건 확인 Sheet_V5_260626-1.xlsx",
-  "tlb_condition_sheet": "//121.155.196.24/작업조건 확인 Sheet/MLB/NEW_MLB 작업 조건 확인 Sheet_V5_260616-2.xlsx"
+  "last_master_auto_backup_date": "2026-07-04",
+  "tlb_condition_sheet": "C:/Users/오국진/Desktop/DNC 폴더/NEW_MLB 작업 조건 확인 Sheet_V5_260626-1.xlsx",
+  "kcc_hdi_condition_sheet": "C:/Users/오국진/Desktop/DNC 폴더/NEW_MLB 작업 조건 확인 Sheet_V5_260626-1.xlsx"
 }

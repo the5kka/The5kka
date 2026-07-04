@@ -4,7 +4,7 @@
 ; ============================================================
 ; 오까_단축키
 ; - Shift + F1: QC 루트 폴더 열기
-; - Shift + F9 ~ F12: 자주 쓰는 프로그램 실행/활성화
+; - Shift + Esc: KakaoTalk 실행/맨앞으로 가져오기
 ; - 윈도우 시작 시 자동 실행 바로가기 등록
 ; ============================================================
 
@@ -16,8 +16,6 @@ QC_ROOT := "D:\QC"
 SCRIPT_DIR := QC_ROOT "\8. Codex\4. Window 단축키"
 SCRIPT_PATH := SCRIPT_DIR "\오까_단축키.ahk"
 SETTINGS_PATH := SCRIPT_DIR "\오까_단축키.ini"
-
-QUICK_ACCESS_SEARCHER_PATH := QC_ROOT "\8. Codex\1. Quick Access Searcher\Quick_Access_Searcher.exe"
 KAKAOTALK_PATH := "C:\Program Files (x86)\Kakao\KakaoTalk\KakaoTalk.exe"
 
 ; ------------------------------------------------------------
@@ -26,11 +24,8 @@ KAKAOTALK_PATH := "C:\Program Files (x86)\Kakao\KakaoTalk\KakaoTalk.exe"
 SetupStartupShortcut(SCRIPT_DIR, SCRIPT_PATH)
 
 ; ------------------------------------------------------------
-; Windows 시작프로그램으로 실행된 경우, 저장된 설정에 따라 Shift + F11 매크로를 자동 실행합니다.
+; Windows 시작프로그램으로 실행되면 단축키만 등록합니다.
 ; ------------------------------------------------------------
-if IsLaunchedFromStartup() {
-    SetTimer(RunStartupMacroIfEnabled, -5000)
-}
 
 ; ------------------------------------------------------------
 ; Shift + F1: QC 루트 폴더 열기
@@ -38,27 +33,9 @@ if IsLaunchedFromStartup() {
 +F1::OpenFolder(QC_ROOT)
 
 ; ------------------------------------------------------------
-; Shift + F9: Excel 실행 또는 기존 창 활성화
-; 창을 항상 최대 크기로 표시합니다.
+; Shift + Esc: KakaoTalk 실행 또는 기존 창을 맨앞으로 가져오기
 ; ------------------------------------------------------------
-+F9::ActivateOrRunProgramMaximized("ahk_exe EXCEL.EXE", "excel.exe", "Excel")
-
-; ------------------------------------------------------------
-; Shift + F10: PowerPoint 실행 또는 기존 창 활성화
-; ------------------------------------------------------------
-+F10::ActivateOrRunProgram("ahk_exe POWERPNT.EXE", "powerpnt.exe", "PowerPoint")
-
-; ------------------------------------------------------------
-; Shift + F11:
-; Windows 시작 시 Quick Access Searcher + Outlook 자동 실행 설정을 ON/OFF 합니다.
-; ON으로 변경하면 현재도 바로 한 번 실행합니다.
-; ------------------------------------------------------------
-+F11::ToggleStartupMacro()
-
-; ------------------------------------------------------------
-; Shift + F12: KakaoTalk 실행 또는 기존 창 활성화
-; ------------------------------------------------------------
-+F12::ActivateOrRunFile("ahk_exe KakaoTalk.exe", KAKAOTALK_PATH, "KakaoTalk")
++Esc::ActivateOrRunFile("ahk_exe KakaoTalk.exe", KAKAOTALK_PATH, "KakaoTalk")
 
 ; ============================================================
 ; 함수 모음
@@ -150,104 +127,6 @@ ActivateOrRunFileMaximized(windowTitle, filePath, programName) {
     }
 
     return WaitAndMaximizeWindow(windowTitle, programName)
-}
-
-; ------------------------------------------------------------
-; Shift + F11 매크로 본문입니다.
-; Quick Access Searcher와 Outlook을 실행 또는 활성화하고 최대화합니다.
-; ------------------------------------------------------------
-RunShiftF11Macro() {
-    ActivateOrRunQuickAccessSearcher()
-    ActivateOrRunProgramMaximized("ahk_exe OUTLOOK.EXE", "outlook.exe", "Outlook")
-}
-
-; ------------------------------------------------------------
-; Windows 시작 시 자동 실행 설정이 켜져 있으면 Shift + F11 매크로를 실행합니다.
-; ------------------------------------------------------------
-RunStartupMacroIfEnabled() {
-    if IsStartupMacroEnabled() {
-        RunShiftF11Macro()
-    }
-}
-
-; ------------------------------------------------------------
-; Shift + F11로 다음 Windows 시작 시 자동 실행 설정을 ON/OFF 합니다.
-; ------------------------------------------------------------
-ToggleStartupMacro() {
-    enabled := !IsStartupMacroEnabled()
-    SetStartupMacroEnabled(enabled)
-
-    if enabled {
-        RunShiftF11Macro()
-        MsgBox("[오까_단축키]`nPC 시작 시 자동 실행: ON`n`n다음 Windows 시작부터 Quick Access Searcher와 Outlook이 자동으로 실행됩니다.", "오까_단축키", "Iconi")
-        return
-    }
-
-    MsgBox("[오까_단축키]`nPC 시작 시 자동 실행: OFF`n`n다음 Windows 시작부터 Quick Access Searcher와 Outlook을 자동으로 실행하지 않습니다.`n현재 열려 있는 창은 닫지 않습니다.", "오까_단축키", "Iconi")
-}
-
-; ------------------------------------------------------------
-; INI 설정 파일에서 시작 자동 실행 여부를 읽습니다.
-; 설정 파일이 없으면 기본값은 ON입니다.
-; ------------------------------------------------------------
-IsStartupMacroEnabled() {
-    return IniRead(SETTINGS_PATH, "StartupMacro", "Enabled", "1") = "1"
-}
-
-; ------------------------------------------------------------
-; 시작 자동 실행 여부를 INI 설정 파일에 저장합니다.
-; ------------------------------------------------------------
-SetStartupMacroEnabled(enabled) {
-    IniWrite(enabled ? "1" : "0", SETTINGS_PATH, "StartupMacro", "Enabled")
-}
-
-; ------------------------------------------------------------
-; 시작프로그램 바로가기에서 /startup 인수로 실행됐는지 확인합니다.
-; ------------------------------------------------------------
-IsLaunchedFromStartup() {
-    for arg in A_Args {
-        if StrLower(arg) = "/startup" {
-            return true
-        }
-    }
-
-    return false
-}
-
-; ------------------------------------------------------------
-; Quick Access Searcher 전용 실행 함수입니다.
-; 창 없는 잔여 프로세스가 있으면 새 창 중복 생성을 막기 위해 먼저 종료합니다.
-; ------------------------------------------------------------
-ActivateOrRunQuickAccessSearcher() {
-    windowTitle := "ahk_exe Quick_Access_Searcher.exe"
-    programName := "Quick Access Searcher"
-
-    if ActivateWindowMaximized(windowTitle) {
-        return true
-    }
-
-    closedAny := false
-    while pid := ProcessExist("Quick_Access_Searcher.exe") {
-        try {
-            ProcessClose(pid)
-            ProcessWaitClose(pid, 2)
-            closedAny := true
-        } catch as err {
-            ShowError(programName " 잔여 프로세스를 정리할 수 없습니다.`n`n오류:`n" err.Message)
-            return false
-        }
-    }
-
-    if !FileExist(QUICK_ACCESS_SEARCHER_PATH) {
-        ShowPathNotFound(QUICK_ACCESS_SEARCHER_PATH)
-        return false
-    }
-
-    if !TryRunWithWorkDir(QUICK_ACCESS_SEARCHER_PATH, programName "을(를) 실행할 수 없습니다.`n`n경로:`n" QUICK_ACCESS_SEARCHER_PATH, DirName(QUICK_ACCESS_SEARCHER_PATH)) {
-        return false
-    }
-
-    return WaitAndMaximizeWindow(windowTitle, programName, 20)
 }
 
 ; ------------------------------------------------------------
