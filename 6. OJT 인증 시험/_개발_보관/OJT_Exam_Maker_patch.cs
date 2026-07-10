@@ -534,17 +534,18 @@ namespace OjtExamPatch
             }
             Rectangle page = PageRect(ClientRectangle);
             e.Graphics.FillRectangle(Brushes.White, page);
-            e.Graphics.DrawRectangle(Pens.White, page);
+            e.Graphics.DrawRectangle(Pens.LightGray, page);
+            Rectangle content = PrintContentRect(page);
             if (PageIndex >= QuestionPageCount)
-                DrawAnswerPage(e.Graphics, page);
+                DrawAnswerPage(e.Graphics, content);
             else
-                DrawPage(e.Graphics, page, PageIndex, Doc.ShowAnswers);
+                DrawPage(e.Graphics, content, PageIndex, Doc.ShowAnswers);
         }
         public void DrawPrint(Graphics g, Rectangle bounds, int page, bool answers) { DrawPage(g, bounds, page, answers); }
         public void DrawAnswerPrint(Graphics g, Rectangle bounds) { DrawAnswerPage(g, bounds); }
         Rectangle PageRect(Rectangle bounds)
         {
-            float ratio = 1122f / 793f;
+            float ratio = 793f / 1122f;
             int w = bounds.Width - 28;
             int h = (int)(w / ratio);
             int maxH = bounds.Height - 28;
@@ -552,6 +553,27 @@ namespace OjtExamPatch
             w = (int)(w * Zoom);
             h = (int)(h * Zoom);
             return new Rectangle(bounds.X + (bounds.Width - w) / 2 + pan.X, bounds.Y + (bounds.Height - h) / 2 + pan.Y, w, h);
+        }
+        Rectangle PrintContentRect(Rectangle page)
+        {
+            int mx = Math.Max(1, (int)Math.Round(page.Width * 18f / 827f));
+            int my = Math.Max(1, (int)Math.Round(page.Height * 18f / 1169f));
+            return new Rectangle(page.Left + mx, page.Top + my, page.Width - mx * 2, page.Height - my * 2);
+        }
+        void DrawPageFit(Graphics g, Rectangle bounds, int pageIndex, bool answers)
+        {
+            const float designW = 1122f;
+            const float designH = 793f;
+            float scale = Math.Min(bounds.Width / designW, bounds.Height / designH);
+            int drawW = (int)Math.Round(designW * scale);
+            int drawH = (int)Math.Round(designH * scale);
+            int x = bounds.Left + (bounds.Width - drawW) / 2;
+            int y = bounds.Top;
+            GraphicsState state = g.Save();
+            g.TranslateTransform(x, y);
+            g.ScaleTransform(scale, scale);
+            DrawPage(g, new Rectangle(0, 0, (int)designW, (int)designH), pageIndex, answers);
+            g.Restore(state);
         }
         void BuildPages()
         {
@@ -606,12 +628,12 @@ namespace OjtExamPatch
                 display = StripImageChoiceLines(display);
             int lines = Math.Max(1, (display ?? "").Count(c => c == '\n') + 1);
             int textLines = Math.Max(lines, (display ?? "").Length / 92 + 1);
-            int image = q.Images.Count == 0 ? 0 : 88;
+            int image = q.Images.Count == 0 ? 0 : 132;
             bool subjType = q.Type == "\uC8FC\uAD00\uC2DD";
             if (subjType)
                 return Math.Max(58, textLines * 17 + image + 8);
             if (q.Images.Count > 0)
-                return Math.Max(112, textLines * 13 + image + 4);
+                return Math.Max(156, textLines * 13 + image + 10);
             return Math.Max(34, textLines * 13 + 4);
         }
         void DrawPage(Graphics g, Rectangle page, int pageIndex, bool answers)
@@ -753,16 +775,16 @@ namespace OjtExamPatch
         static void QuestionCell2(Graphics g, Question q, int number, Font font, Font bold, Brush brush, Rectangle rect, bool answers)
         {
             string text = number.ToString() + ".  " + FormatQuestionText(q);
-            if (q.Images.Count > 0)
-                text = StripImageChoiceLines(text);
             Rectangle textRect = new Rectangle(rect.X + 4, rect.Y + 6, rect.Width - 8, rect.Height - 12);
             if (q.Images.Count > 0)
             {
                 int count = Math.Min(4, q.Images.Count);
-                int imgH = 78;
-                int gap = 34;
-                int imgY = rect.Y + 32;
-                int imgW = 72;
+                string imageText = StripImageChoiceLines(text);
+                string choiceText = ImageChoiceLines(text);
+                int imgH = 98;
+                int gap = 42;
+                int imgY = rect.Y + 36;
+                int imgW = 96;
                 int startX = rect.X + 42;
                 for (int idx = 0; idx < count; idx++)
                 {
@@ -780,6 +802,18 @@ namespace OjtExamPatch
                     g.DrawImage(img, x, imgY, iw, ih);
                 }
                 textRect.Height = Math.Max(22, imgY - textRect.Y - 4);
+                DrawSpacedText(g, imageText, font, brush, textRect, 0);
+                if (choiceText.Trim().Length > 0)
+                {
+                    var choiceRect = new Rectangle(rect.X + 42, imgY + imgH + 4, rect.Width - 80, Math.Max(16, rect.Bottom - imgY - imgH - 6));
+                    DrawSpacedText(g, choiceText, font, brush, choiceRect, 0);
+                }
+                if (answers)
+                {
+                    using (var red = new SolidBrush(Color.FromArgb(200, 0, 0)))
+                        g.DrawString(AnswerMark(q), bold, red, rect.Right - 70, rect.Y + 5);
+                }
+                return;
             }
             DrawSpacedText(g, text, font, brush, textRect, q.Type == "\uC8FC\uAD00\uC2DD" ? 2 : 0);
             if (answers)
@@ -793,10 +827,18 @@ namespace OjtExamPatch
             var kept = new List<string>();
             foreach (string line in (text ?? "").Split('\n'))
             {
-                if (Regex.IsMatch(line.Trim(), @"^[①②③④⑤⑥]\s*.*$"))
+                if (Regex.IsMatch(line.Trim(), @"^[①②③④⑤⑥]\s+.+$"))
                     continue;
                 kept.Add(line);
             }
+            return string.Join("\n", kept);
+        }
+        static string ImageChoiceLines(string text)
+        {
+            var kept = new List<string>();
+            foreach (string line in (text ?? "").Split('\n'))
+                if (Regex.IsMatch(line.Trim(), @"^[①②③④⑤⑥]\s+.+$"))
+                    kept.Add(line);
             return string.Join("\n", kept);
         }
         static void DrawSpacedText(Graphics g, string text, Font font, Brush brush, Rectangle rect, int extra)
@@ -972,6 +1014,7 @@ namespace OjtExamPatch
             nav.Controls.Add(Button("\uB2E4\uC74C", delegate { preview.MovePage(1); UpdatePage(); }), 2, 0);
             body.Controls.Add(nav);
             body.Controls.Add(Action("\uB79C\uB364 \uBBF8\uB9AC\uBCF4\uAE30", Generate, Color.FromArgb(32, 208, 132)));
+            body.Controls.Add(Action("\uCD9C\uB825 \uBBF8\uB9AC\uBCF4\uAE30", delegate { PrintPreviewProblemAndAnswer(); }, Color.FromArgb(30, 45, 72)));
             body.Controls.Add(Action("\uBB38\uC81C + \uB2F5\uC548 \uD504\uB9B0\uD2B8", delegate { PrintProblemAndAnswer(); }, Color.FromArgb(30, 45, 72)));
             return p;
         }
@@ -1059,6 +1102,7 @@ namespace OjtExamPatch
                 throw new InvalidOperationException("\uD3C9\uAC00 \uC77C\uC2DC\uB97C \uC785\uB825\uD574\uC57C \uCD9C\uB825\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.");
         }
         void PrintProblem(bool answers) { try { EnsureDoc(); PrintPages(doc.Bank.Name, preview.QuestionPageCount, (g, r, p) => preview.DrawPrint(g, r, p, answers)); } catch (Exception ex) { MessageBox.Show(this, ex.Message, "\uC624\uB958"); } }
+        void PrintPreviewProblemAndAnswer() { try { EnsureDoc(); EnsurePrintInfo(); int pc = preview.QuestionPageCount; PreviewPages("OJT \uC2DC\uD5D8\uC9C0 + \uB2F5\uC548\uC9C0", pc + 1, (g, r, p) => { if (p < pc) preview.DrawPrint(g, r, p, false); else preview.DrawAnswerPrint(g, r); }); } catch (Exception ex) { MessageBox.Show(this, ex.Message, "\uC624\uB958"); } }
         void PrintProblemAndAnswer() { try { EnsureDoc(); EnsurePrintInfo(); int pc = preview.QuestionPageCount; PrintPages("OJT \uC2DC\uD5D8\uC9C0 + \uB2F5\uC548\uC9C0", pc + 1, (g, r, p) => { if (p < pc) preview.DrawPrint(g, r, p, false); else preview.DrawAnswerPrint(g, r); }); } catch (Exception ex) { MessageBox.Show(this, ex.Message, "\uC624\uB958"); } }
         void PrintAnswerOnly() { try { EnsureDoc(); PrintPages("OJT \uB2F5\uC548\uC9C0", 1, (g, r, p) => DrawAnswer(g, r)); } catch (Exception ex) { MessageBox.Show(this, ex.Message, "\uC624\uB958"); } }
         delegate void DrawPage(Graphics g, Rectangle r, int p);
@@ -1066,9 +1110,21 @@ namespace OjtExamPatch
         {
             using (var pd = new PrintDocument())
             {
-                pd.DocumentName = name; pd.DefaultPageSettings.Landscape = true; pd.DefaultPageSettings.Margins = new Margins(18, 18, 18, 18);
+                pd.DocumentName = name; pd.DefaultPageSettings.Landscape = false; pd.DefaultPageSettings.Margins = new Margins(18, 18, 18, 18);
                 int page = 0; pd.PrintPage += delegate(object s, PrintPageEventArgs e) { draw(e.Graphics, e.MarginBounds, page); page++; e.HasMorePages = page < pages; };
+                pd.BeginPrint += delegate { page = 0; };
                 using (var dlg = new PrintDialog { Document = pd, UseEXDialog = true }) if (dlg.ShowDialog(this) == DialogResult.OK) pd.Print();
+            }
+        }
+        void PreviewPages(string name, int pages, DrawPage draw)
+        {
+            using (var pd = new PrintDocument())
+            {
+                pd.DocumentName = name; pd.DefaultPageSettings.Landscape = false; pd.DefaultPageSettings.Margins = new Margins(18, 18, 18, 18);
+                int page = 0; pd.PrintPage += delegate(object s, PrintPageEventArgs e) { draw(e.Graphics, e.MarginBounds, page); page++; e.HasMorePages = page < pages; };
+                pd.BeginPrint += delegate { page = 0; };
+                using (var dlg = new PrintPreviewDialog { Document = pd, Width = 1200, Height = 850, StartPosition = FormStartPosition.CenterParent, UseAntiAlias = true })
+                    dlg.ShowDialog(this);
             }
         }
         void DrawAnswer(Graphics g, Rectangle bounds)
@@ -1094,26 +1150,46 @@ namespace OjtExamPatch
                 g.DrawString(titleText ?? "", title, Brushes.Blue, x, y);
                 y += Math.Max(scaled ? 30 : 48, title.Height + (scaled ? 8 : 14));
 
-                int infoH = Math.Max(scaled ? 24 : 34, font.Height + 10);
-                int labelW = Math.Max(scaled ? 58 : 88, usableW / 11);
-                int valueW = Math.Max(scaled ? 155 : 230, usableW / 4);
+                int infoH = Math.Max(scaled ? 44 : 58, font.Height * 2 + 12);
+                int labelW = Math.Max(scaled ? 54 : 82, usableW / 12);
+                int finalLabelW = Math.Max(scaled ? 76 : 110, usableW / 8);
+                int valueW = (usableW - labelW * 2 - finalLabelW) / 3;
                 DrawInfoCell(g, gridPen, head, x, y, labelW, infoH, "\uC791\uC5C5\uC790");
                 DrawInfoCell(g, gridPen, font, x + labelW, y, valueW, infoH, userName);
-                DrawInfoCell(g, gridPen, head, x + labelW + valueW + padX, y, labelW, infoH, "\uC2DC\uD5D8\uC77C\uC790");
-                DrawInfoCell(g, gridPen, font, x + labelW * 2 + valueW + padX, y, valueW, infoH, evalDate);
+                DrawInfoCell(g, gridPen, head, x + labelW + valueW, y, labelW, infoH, "\uC2DC\uD5D8\uC77C\uC790");
+                DrawInfoCell(g, gridPen, font, x + labelW * 2 + valueW, y, valueW, infoH, evalDate);
+                DrawInfoCell(g, gridPen, head, x + labelW * 2 + valueW * 2, y, finalLabelW, infoH, "\uCD5C\uC885\uC810\uC218");
+                DrawInfoCell(g, gridPen, font, x + labelW * 2 + valueW * 2 + finalLabelW, y, valueW, infoH, "");
                 y += infoH + Math.Max(5, padY);
 
+                var objective = new List<int>();
+                var subjective = new List<int>();
+                for (int i = 0; i < questions.Count; i++)
+                {
+                    if (questions[i].Type == "\uC8FC\uAD00\uC2DD") subjective.Add(i);
+                    else objective.Add(i);
+                }
                 int blockGap = Math.Max(8, usableW / 55);
-                int blockCount = questions.Count > 12 ? 2 : 1;
+                int blockCount = objective.Count > 12 ? 2 : 1;
                 int blockW = blockCount == 2 ? (usableW - blockGap) / 2 : usableW;
-                int leftCount = blockCount == 2 ? (questions.Count + 1) / 2 : questions.Count;
-                int rightCount = questions.Count - leftCount;
-                int rows = Math.Max(1, (blockCount == 2 ? Math.Max(leftCount, rightCount) : questions.Count) + 1);
-                int rowH = Math.Max(scaled ? 15 : 20, (bounds.Bottom - y - padY) / rows);
+                int leftCount = blockCount == 2 ? (objective.Count + 1) / 2 : objective.Count;
+                int rightCount = objective.Count - leftCount;
+                int objRows = Math.Max(leftCount, rightCount) + (objective.Count > 0 ? 1 : 0);
+                int subjRows = subjective.Count + (subjective.Count > 0 ? 1 : 0);
+                int gapY = subjective.Count > 0 && objective.Count > 0 ? Math.Max(10, padY * 2) : 0;
+                int remain = Math.Max(1, bounds.Bottom - y - padY - gapY);
+                int rowH = Math.Max(scaled ? 18 : 24, Math.Min(scaled ? 34 : 44, (int)(remain / Math.Max(1.0, objRows * 1.15 + subjRows * 3.2))));
+                int subjRowH = Math.Max(scaled ? 70 : 86, rowH * 3);
 
-                DrawAnswerBlock(g, gridPen, head, font, questions, 0, leftCount, x, y, blockW, rowH);
-                if (blockCount == 2)
-                    DrawAnswerBlock(g, gridPen, head, font, questions, leftCount, rightCount, x + blockW + blockGap, y, blockW, rowH);
+                if (objective.Count > 0)
+                {
+                    DrawAnswerBlock(g, gridPen, head, font, questions, objective, 0, leftCount, x, y, blockW, rowH);
+                    if (blockCount == 2)
+                        DrawAnswerBlock(g, gridPen, head, font, questions, objective, leftCount, rightCount, x + blockW + blockGap, y, blockW, rowH);
+                    y += objRows * rowH + gapY;
+                }
+                if (subjective.Count > 0)
+                    DrawAnswerBlock(g, gridPen, head, font, questions, subjective, 0, subjective.Count, x, y, usableW, subjRowH);
             }
         }
         static void DrawInfoCell(Graphics g, Pen pen, Font font, int x, int y, int w, int h, string text)
@@ -1122,7 +1198,7 @@ namespace OjtExamPatch
             g.DrawRectangle(pen, rect);
             CenterText(g, text, font, Brushes.Black, rect);
         }
-        static void DrawAnswerBlock(Graphics g, Pen pen, Font head, Font font, List<Question> questions, int start, int count, int x, int y, int blockW, int rowH)
+        static void DrawAnswerBlock(Graphics g, Pen pen, Font head, Font font, List<Question> questions, List<int> indices, int start, int count, int x, int y, int blockW, int rowH)
         {
             int noW = Math.Max(32, blockW / 8);
             int scoreW = Math.Max(38, blockW / 8);
@@ -1134,8 +1210,9 @@ namespace OjtExamPatch
             y += rowH;
             for (int i = 0; i < count; i++)
             {
-                Question q = questions[start + i];
-                DrawAnswerRow(g, pen, head, font, x, y, noW, ansW, scoreW, checkW, rowH, (start + i + 1).ToString(), Preview.AnswerMark(q), q.Score.ToString("0.##"), "", false);
+                int qIndex = indices[start + i];
+                Question q = questions[qIndex];
+                DrawAnswerRow(g, pen, head, font, x, y, noW, ansW, scoreW, checkW, rowH, (qIndex + 1).ToString(), Preview.AnswerMark(q), q.Score.ToString("0.##"), "", false);
                 y += rowH;
             }
         }
@@ -1150,9 +1227,31 @@ namespace OjtExamPatch
             g.DrawRectangle(pen, scoreRect);
             g.DrawRectangle(pen, checkRect);
             CenterText(g, no, header ? head : font, Brushes.Black, noRect);
-            CenterText(g, answer, header ? head : font, Brushes.Black, ansRect);
+            if (header)
+                CenterText(g, answer, head, Brushes.Black, ansRect);
+            else
+                FitAnswerText(g, answer, font, Brushes.Black, ansRect);
             CenterText(g, score, header ? head : font, Brushes.Black, scoreRect);
             CenterText(g, check, header ? head : font, Brushes.Black, checkRect);
+        }
+        static void FitAnswerText(Graphics g, string text, Font baseFont, Brush brush, Rectangle rect)
+        {
+            Rectangle inner = new Rectangle(rect.X + 4, rect.Y + 2, rect.Width - 8, rect.Height - 4);
+            using (var sf = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center, FormatFlags = 0, Trimming = StringTrimming.EllipsisCharacter })
+            {
+                for (float size = baseFont.Size; size >= 6f; size -= .5f)
+                {
+                    using (var f = new Font(baseFont.FontFamily, size, baseFont.Style))
+                    {
+                        SizeF measured = g.MeasureString(text ?? "", f, inner.Size, sf);
+                        if (measured.Height <= inner.Height || size <= 6f)
+                        {
+                            g.DrawString(text ?? "", f, brush, inner, sf);
+                            return;
+                        }
+                    }
+                }
+            }
         }
         static void CenterText(Graphics g, string text, Font font, Brush brush, Rectangle rect)
         {
