@@ -1,0 +1,71 @@
+# -*- mode: python ; coding: utf-8 -*-
+
+import os
+import sys
+from pathlib import Path
+
+
+python_root = Path(sys.executable).resolve().parent
+tcl_root = python_root / "tcl"
+tkinter_root = python_root / "Lib" / "tkinter"
+tk_binaries = []
+for dll_name in ("tcl86t.dll", "tk86t.dll"):
+    dll_path = python_root / "DLLs" / dll_name
+    if dll_path.exists():
+        tk_binaries.append((str(dll_path), "."))
+
+tk_datas = []
+if tcl_root.exists():
+    tcl_library = tcl_root / "tcl8.6"
+    tk_library = tcl_root / "tk8.6"
+    if tcl_library.exists():
+        tk_datas.append((str(tcl_library), "_tcl_data"))
+    if tk_library.exists():
+        tk_datas.append((str(tk_library), "_tk_data"))
+if tkinter_root.exists():
+    tk_datas.append((str(tkinter_root), "tkinter"))
+
+project_root = Path(SPECPATH).resolve().parent
+asset_datas = []
+asset_root = project_root.parent / "data"
+for asset_name in ("company_logo.png", "korea_circuit_logo.png", "tlb_logo.png", "simtek_logo.png"):
+    asset_path = asset_root / asset_name
+    if asset_path.exists():
+        asset_datas.append((str(asset_path), "."))
+
+
+a = Analysis(
+    ['main_v4_1.py'],
+    pathex=[],
+    binaries=tk_binaries,
+    datas=tk_datas + asset_datas,
+    hiddenimports=['tkinter', '_tkinter'],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=['tk_runtime_hook_v4_1.py'],
+    excludes=[],
+    noarchive=False,
+    optimize=0,
+)
+pyz = PYZ(a.pure)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.datas,
+    [],
+    name='JIIN_DNC_Manager_V4-1',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)

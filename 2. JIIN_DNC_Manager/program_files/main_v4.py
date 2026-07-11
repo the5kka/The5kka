@@ -50,7 +50,7 @@ DNC_DELETE_SECONDS = 10
 # DNC 완료 후 초품 확인 팝업이 뜨기 전 대기 시간입니다. 현장 적용 시 이 값만 바꾸면 됩니다.
 FIRST_ARTICLE_WAIT_SECONDS = 5
 EXCEL_LOCK_STALE_SECONDS = 10 * 60
-WORK_LOG_SCHEMA_VERSION = 2
+WORK_LOG_SCHEMA_VERSION = 3
 CONDITION_MASTER_SCHEMA_VERSION = 2
 MASTER_SETTINGS_PASSWORD = "1"
 CONDITION_MASTER_PASSWORD = "1"
@@ -64,11 +64,14 @@ APP_VERSION_TEXT = "JIIN_DNC_Manager V4.0"
 LOG_SHEET_NAME = "KCC PKG"
 EXCEL_PROCESS_CODE_COLUMN = 30
 EXCEL_EXPORT_ID_COLUMN = 31
-SIMTEK_HDI_EXPORT_ID_COLUMN = 32
+SIMTEK_HDI_LEGACY_EXPORT_ID_COLUMN = 32
+SIMTEK_HDI_EXPORT_ID_COLUMN = 33
 SINGLE_INSTANCE_MUTEX_NAME = "JIIN_DNC_Manager_V4_Single_Instance"
 ERROR_ALREADY_EXISTS = 183
 SINGLE_INSTANCE_HANDLE = None
 PROCESS_NAMES = ["TLB", "심텍 SPS", "심텍 HDI", "KCC PKG", "KCC HDI"]
+# 신규 검증을 지원하는 공정은 과거 로그 ID 기반의 조건 마스터 제외 기능을 함께 둡니다.
+# 현재 KCC PKG/심텍 HDI에 적용하며, 향후 심텍 SPS 추가 시에도 동일 구조를 사용합니다.
 TLB_LOOKUP_GEAR_PNG_BASE64 = "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"
 
 
@@ -1017,16 +1020,15 @@ def keep_modal_on_top(dialog: tk.Toplevel, parent=None, focus_widget=None) -> No
     """모달창이 다른 Windows 창 뒤로 숨어 프로그램이 멈춘 것처럼 보이는 상황을 막습니다."""
     target = focus_widget or dialog
 
-    def raise_dialog(count: int = 0) -> None:
+    def raise_dialog(set_focus: bool = False) -> None:
         try:
             if not dialog.winfo_exists():
                 return
             dialog.deiconify()
             dialog.attributes("-topmost", True)
             dialog.lift()
-            target.focus_force()
-            if count < 12:
-                dialog.after(500, lambda: raise_dialog(count + 1))
+            if set_focus:
+                target.focus_set()
         except tk.TclError:
             return
 
@@ -1035,8 +1037,10 @@ def keep_modal_on_top(dialog: tk.Toplevel, parent=None, focus_widget=None) -> No
             dialog.transient(parent)
         except tk.TclError:
             pass
-    dialog.bind("<Visibility>", lambda _event: raise_dialog(0))
-    raise_dialog()
+    # IME 조합 중 반복 focus_force()를 호출하면 한글 표시 지연과 마지막 글자
+    # 누락이 생길 수 있으므로, 포커스는 창 생성 직후 한 번만 설정합니다.
+    dialog.bind("<Visibility>", lambda _event: raise_dialog(False), add="+")
+    dialog.after_idle(lambda: raise_dialog(True))
 
 
 def show_operator_alert(parent, title: str, message: str, kind: str = "warning") -> None:
@@ -1116,47 +1120,135 @@ def ask_system_input(parent, title: str, prompt: str, show: str | None = None, n
     dialog.configure(bg=SURFACE_BG)
     dialog.transient(parent if parent else None)
     result = {"value": None}
-    value_var = tk.StringVar(value=initial)
 
     body = tk.Frame(dialog, bg=SURFACE_BG, padx=30, pady=24)
     body.pack(fill=tk.BOTH, expand=True)
     tk.Label(body, text=title, bg=SURFACE_BG, fg=PRIMARY, font=("맑은 고딕", 16, "bold"), anchor="center").pack(fill=tk.X, pady=(0, 14))
     tk.Label(body, text=prompt, bg=SURFACE_BG, fg=TEXT_COLOR, font=("맑은 고딕", 12, "bold"), anchor="center", justify=tk.CENTER).pack(fill=tk.X, pady=(0, 12))
-    vcmd = (dialog.register(lambda text: text.isdigit() or text == ""), "%P") if numeric_only else None
+    input_var = tk.StringVar()
     entry = ttk.Entry(
         body,
-        textvariable=value_var,
-        style="Wide.TEntry",
+        textvariable=input_var,
         show=show or "",
         width=34,
-        validate="key" if numeric_only else "none",
-        validatecommand=vcmd,
-        font=("맑은 고딕", 12),
+        style="Wide.TEntry",
     )
     entry.pack(fill=tk.X)
+    if initial:
+        input_var.set(initial)
+        entry.icursor(tk.END)
+
+    def repaint_entry(_event=None) -> None:
+        try:
+            if not dialog.winfo_exists():
+                return
+            entry.update_idletasks()
+            dialog.update_idletasks()
+            entry.after(15, entry.update_idletasks)
+        except tk.TclError:
+            return
+
+    entry.bind("<KeyRelease>", repaint_entry, add="+")
 
     footer = tk.Frame(dialog, bg=APP_BG, padx=18, pady=14)
     footer.pack(fill=tk.X)
 
+    confirm_state = {"pending": False}
+
     def confirm() -> None:
-        # Korean IME may still be composing the last syllable when the button is
-        # clicked. Move focus once and read shortly after so the final character
-        # is committed before we capture the value.
-        dialog.focus_set()
-        dialog.after(80, finalize_confirm)
+        if confirm_state["pending"]:
+            return
+        confirm_state["pending"] = True
+        # Enter/버튼 이벤트 뒤 IME가 마지막 조합 문자를 Entry에 전달할 시간을 준 뒤
+        # 입력값을 한 번만 읽습니다. 입력 중 Entry 재작성이나 실시간 검증은 하지 않습니다.
+        dialog.after_idle(lambda: dialog.after(80, finalize_confirm))
 
     def finalize_confirm() -> None:
-        result["value"] = value_var.get().strip()
-        dialog.destroy()
+        try:
+            if not dialog.winfo_exists():
+                return
+            result["value"] = input_var.get().strip()
+            dialog.destroy()
+        except tk.TclError:
+            return
 
     ttk.Button(footer, text="확인", command=confirm, style="Primary.TButton", width=14).pack(side=tk.LEFT, expand=True, padx=(60, 8))
     ttk.Button(footer, text="취소", command=dialog.destroy, width=14).pack(side=tk.LEFT, expand=True, padx=(8, 60))
-    dialog.bind("<Return>", lambda _event: confirm())
+    dialog.bind("<Return>", lambda _event: confirm() or "break")
     dialog.bind("<Escape>", lambda _event: dialog.destroy())
     dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
     center_dialog(dialog, parent, 500, 250)
     dialog.grab_set()
     keep_modal_on_top(dialog, parent, entry)
+    dialog.wait_window()
+    return result["value"]
+
+
+def ask_leader_name_input(parent) -> str | None:
+    """조장명은 작업자가 그냥 지나치지 못하도록 별도 팝업에서 입력받습니다."""
+    dialog = tk.Toplevel(parent) if parent else tk.Toplevel()
+    dialog.title("조장명 입력")
+    dialog.resizable(False, False)
+    dialog.configure(bg=SURFACE_BG)
+    dialog.transient(parent if parent else None)
+    result = {"value": None}
+
+    body = tk.Frame(dialog, bg=SURFACE_BG, padx=30, pady=24)
+    body.pack(fill=tk.BOTH, expand=True)
+    tk.Label(body, text="조장명 입력", bg=SURFACE_BG, fg=PRIMARY, font=("맑은 고딕", 16, "bold"), anchor="center").pack(fill=tk.X, pady=(0, 14))
+    tk.Label(body, text="신규 모델 검증 조장명 입력", bg=SURFACE_BG, fg=TEXT_COLOR, font=("맑은 고딕", 12, "bold"), anchor="center", justify=tk.CENTER).pack(fill=tk.X, pady=(0, 12))
+    text = tk.Text(
+        body,
+        width=34,
+        height=1,
+        wrap="none",
+        font=("맑은 고딕", 12),
+        relief=tk.SOLID,
+        bd=1,
+        padx=4,
+        pady=3,
+        undo=False,
+    )
+    text.pack(fill=tk.X)
+
+    def repaint_text(_event=None) -> None:
+        try:
+            if dialog.winfo_exists():
+                text.update_idletasks()
+                dialog.update_idletasks()
+        except tk.TclError:
+            return
+
+    text.bind("<KeyRelease>", repaint_text, add="+")
+
+    footer = tk.Frame(dialog, bg=APP_BG, padx=18, pady=14)
+    footer.pack(fill=tk.X)
+    confirm_state = {"pending": False}
+
+    def confirm() -> str:
+        if confirm_state["pending"]:
+            return "break"
+        confirm_state["pending"] = True
+        dialog.after_idle(lambda: dialog.after(120, finalize_confirm))
+        return "break"
+
+    def finalize_confirm() -> None:
+        try:
+            if not dialog.winfo_exists():
+                return
+            result["value"] = text.get("1.0", "end-1c").strip()
+            dialog.destroy()
+        except tk.TclError:
+            return
+
+    ttk.Button(footer, text="확인", command=confirm, style="Primary.TButton", width=14).pack(side=tk.LEFT, expand=True, padx=(60, 8))
+    ttk.Button(footer, text="취소", command=dialog.destroy, width=14).pack(side=tk.LEFT, expand=True, padx=(8, 60))
+    text.bind("<Return>", lambda _event: confirm())
+    dialog.bind("<Escape>", lambda _event: dialog.destroy())
+    dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+    center_dialog(dialog, parent, 500, 250)
+    dialog.grab_set()
+    keep_modal_on_top(dialog, parent, text)
     dialog.wait_window()
     return result["value"]
 
@@ -1214,10 +1306,10 @@ def ask_system_yes_no(parent, title: str, message: str) -> bool:
     return bool(result["ok"])
 
 
-def ask_incomplete_action(parent, count: int) -> str:
+def ask_incomplete_action(parent, process_name: str, count: int) -> str:
     """시작 시 미완료 이력을 작업자가 바로 처리할 수 있게 묻습니다."""
     dialog = tk.Toplevel(parent) if parent else tk.Toplevel()
-    dialog.title("미완료 이력 확인")
+    dialog.title(f"{process_name} 미완료 이력 확인")
     dialog.resizable(False, False)
     dialog.configure(bg=SURFACE_BG)
     dialog.transient(parent if parent else None)
@@ -1228,7 +1320,7 @@ def ask_incomplete_action(parent, count: int) -> str:
     tk.Label(body, text="미완료 이력 있음", bg=SURFACE_BG, fg=NG_COLOR, font=("맑은 고딕", 16, "bold"), anchor="center").pack(fill=tk.X, pady=(0, 14))
     tk.Label(
         body,
-        text=f"완료 처리되지 않은 이력 {count}건\n처리 방법을 선택하세요.",
+        text=f"{process_name} 완료 처리되지 않은 이력 {count}건\n처리 방법을 선택하세요.",
         bg=SURFACE_BG,
         fg=TEXT_COLOR,
         font=("맑은 고딕", 13, "bold"),
@@ -1293,8 +1385,8 @@ def get_next_empty_row(ws) -> int:
 
 def get_simtek_hdi_log_header_row(ws) -> int:
     """심텍 HDI 작업일보 헤더 행을 찾습니다."""
-    required_headers = {"작업일자", "차수", "제품 코드", "LOT NO", "수량"}
-    preferred_headers = {"OMS Trim Size", "작업 Program", "추가 가공", "Stack", "Jig"}
+    required_headers = {"작업일자", "차수", "제품 코드", "LOT NO", "매수"}
+    preferred_headers = {"OMS Trim Size", "작업 Program", "추가 가공", "Stack", "Jig", "지그"}
     best_row = 5
     best_score = 0
     for row in range(1, min(ws.max_row, 30) + 1):
@@ -1376,6 +1468,23 @@ def excel_upper_value(value):
     return value
 
 
+def excel_time_only(value):
+    """DB의 날짜+시간 문자열을 Excel에서 날짜 없이 표시되는 시간값으로 바꿉니다."""
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    try:
+        return datetime.fromisoformat(text).time().replace(microsecond=0)
+    except ValueError:
+        pass
+    for pattern in ("%H:%M:%S", "%H:%M"):
+        try:
+            return datetime.strptime(text, pattern).time()
+        except ValueError:
+            continue
+    return text
+
+
 def ensure_log_sheet_machine_column(ws) -> None:
     """작업일보에 A열 '호기'가 없으면 자동으로 한 칸 삽입합니다.
 
@@ -1392,6 +1501,13 @@ def ensure_log_sheet_machine_column(ws) -> None:
         ws.cell(row=2, column=1).value = "호기"
 
 
+def clear_xlsx_macro_metadata(workbook) -> None:
+    """매크로 제외 작업일보에 남은 VBA 코드명 표식을 제거합니다."""
+    workbook.code_name = None
+    for sheet in workbook.worksheets:
+        sheet.sheet_properties.codeName = None
+
+
 def open_log_workbook(config: dict, sheet_name: str = LOG_SHEET_NAME):
     """작업일보 파일과 지정 시트를 열고 기본 오류를 메시지로 변환합니다."""
     excel_file = config.get("excel_file", "")
@@ -1404,7 +1520,11 @@ def open_log_workbook(config: dict, sheet_name: str = LOG_SHEET_NAME):
     try:
         if not zipfile.is_zipfile(path):
             raise ValueError("작업일보 파일 오류")
-        workbook = load_workbook(path, keep_vba=path.suffix.lower() == ".xlsm")
+        # 작업일보에 남은 불필요한 외부 링크를 openpyxl이 불완전하게 재작성하면
+        # Excel이 파일 복구 경고를 띄우므로, 독립 작업일보 저장 시 링크 패키지를 제거합니다.
+        workbook = load_workbook(path, keep_vba=path.suffix.lower() == ".xlsm", keep_links=False)
+        if path.suffix.lower() == ".xlsx":
+            clear_xlsx_macro_metadata(workbook)
     except PermissionError:
         raise PermissionError("작업일보 파일 열림")
     except zipfile.BadZipFile:
@@ -1478,6 +1598,10 @@ def save_workbook_safely(workbook, path: Path) -> None:
             workbook.save(path)
             return
         except PermissionError:
+            # 백그라운드 스레드에서 Tk 팝업을 만들면 창이 숨거나 UI가 멈출 수 있습니다.
+            # 호출자가 오류를 메인 스레드로 전달해 안내하도록 즉시 반환합니다.
+            if threading.current_thread() is not threading.main_thread():
+                raise PermissionError("작업일보 파일 열림")
             retry = ask_excel_save_retry()
             if not retry:
                 raise PermissionError("작업일보 저장 보류")
@@ -1541,10 +1665,12 @@ def ask_excel_save_retry() -> bool:
     return result["retry"]
 
 
-def ask_numeric_input(parent, title: str, prompt: str) -> str | None:
+def ask_numeric_input(parent, title: str, prompt: str, initial: str = "") -> str | None:
     """숫자만 입력 가능한 간단한 팝업입니다."""
-    value = ask_system_input(parent, title, prompt, numeric_only=True)
-    if value == "":
+    value = ask_system_input(parent, title, prompt, numeric_only=True, initial=initial)
+    if value is None:
+        return None
+    if value == "" or not value.isdigit():
         show_operator_alert(parent, title, "숫자 입력 필요")
         return None
     return value
@@ -1590,6 +1716,7 @@ WORK_LOG_COLUMNS = {
     "jig_axis_6": "TEXT",
     "exported": "INTEGER NOT NULL DEFAULT 0",
     "exported_at": "TEXT",
+    "master_excluded": "INTEGER NOT NULL DEFAULT 0",
     "created_at": "TEXT",
 }
 
@@ -1673,6 +1800,7 @@ def get_kcc_pkg_connection() -> sqlite3.Connection:
                 jig_axis_6 TEXT,
                 exported INTEGER NOT NULL DEFAULT 0,
                 exported_at TEXT,
+                master_excluded INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT
             )
             """
@@ -1765,6 +1893,7 @@ def initialize_work_log_connection(db_path: Path, backup_on_migration: bool = Fa
                 jig_axis_6 TEXT,
                 exported INTEGER NOT NULL DEFAULT 0,
                 exported_at TEXT,
+                master_excluded INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT
             )
             """
@@ -1790,6 +1919,9 @@ def migrate_process_rows_from_kcc_pkg(process_name: str, target_conn: sqlite3.Co
     if process_name == "KCC PKG" or not KCC_PKG_DB_FILE.exists():
         return
     try:
+        # 분리 전 공용 DB도 현재 스키마로 맞춘 뒤 전체 컬럼을 복사합니다.
+        source_ready = get_kcc_pkg_connection()
+        source_ready.close()
         target_count = target_conn.execute("SELECT COUNT(*) AS count FROM dnc_logs").fetchone()["count"]
         if int(target_count or 0) > 0:
             return
@@ -2126,7 +2258,7 @@ def save_simtek_hdi_condition_record(record: dict) -> None:
                 condition,
                 str(record.get("trim_program", record.get("condition", ""))).strip(),
                 additional_process,
-                str(record.get("stack", "")).strip(),
+                "",
                 str(record.get("jig", "")).strip(),
                 str(record.get("source", "신규 검증")).strip(),
                 now_text,
@@ -2156,6 +2288,74 @@ def lookup_simtek_hdi_condition_record(record: dict) -> dict:
     if row is None:
         raise LookupError("심텍 HDI 조건 마스터에 등록된 조건이 없습니다.\n신규 모델 검증 후 조건을 저장하세요.")
     return dict(row)
+
+
+def load_simtek_hdi_condition_master_records() -> list[dict]:
+    """심텍 HDI 조건 마스터 관리 화면에 표시할 전체 레코드입니다."""
+    conn = get_simtek_hdi_condition_master_connection()
+    try:
+        rows = conn.execute(
+            """
+            SELECT id, step, round_no, product_code, condition, trim_program,
+                   additional_process, stack, jig, source, updated_at
+              FROM condition_master
+             ORDER BY id DESC
+            """
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def update_simtek_hdi_condition_master_record(record_id: int, record: dict) -> None:
+    """관리 화면에서 선택한 심텍 HDI 조건 한 건을 수정합니다."""
+    step, round_no, product_code, condition, additional_process = normalize_simtek_hdi_condition_key(record)
+    conn = get_simtek_hdi_condition_master_connection()
+    try:
+        cursor = conn.execute(
+            """
+            UPDATE condition_master
+               SET step=?, round_no=?, product_code=?, condition=?, trim_program=?,
+                   additional_process=?, stack=?, jig=?, source=?, updated_at=?
+             WHERE id=?
+            """,
+            (
+                step,
+                round_no,
+                product_code,
+                condition,
+                str(record.get("trim_program", "")).strip(),
+                additional_process,
+                "",
+                str(record.get("jig", "")).strip(),
+                "사용자 수정",
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                int(record_id),
+            ),
+        )
+        if cursor.rowcount != 1:
+            raise LookupError("수정할 조건 마스터를 찾을 수 없습니다.")
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def delete_simtek_hdi_condition_master_record(record_id: int) -> None:
+    """관리 화면에서 선택한 심텍 HDI 조건 한 건을 삭제합니다."""
+    conn = get_simtek_hdi_condition_master_connection()
+    try:
+        cursor = conn.execute("DELETE FROM condition_master WHERE id=?", (int(record_id),))
+        if cursor.rowcount != 1:
+            raise LookupError("삭제할 조건 마스터를 찾을 수 없습니다.")
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def calculate_result_value(qty_number: int) -> float | None:
@@ -2312,6 +2512,105 @@ def update_new_model_db(log_id: int, condition_name: str, first_article_ok: bool
         conn.close()
 
 
+def get_master_excluded_log_ids(process_name: str) -> set[int]:
+    conn = get_process_connection(process_name)
+    try:
+        rows = conn.execute(
+            "SELECT id FROM dnc_logs WHERE customer_process=? AND master_excluded=1",
+            (process_name,),
+        ).fetchall()
+        return {int(row["id"]) for row in rows}
+    finally:
+        conn.close()
+
+
+def find_condition_master_source_log_ids(process_name: str, record: dict) -> list[int]:
+    """선택한 마스터와 정확히 일치하는 기존 로그만 찾습니다."""
+    conn = get_process_connection(process_name)
+    try:
+        if process_name == "심텍 HDI":
+            params = (
+                process_name,
+                str(record.get("step", "")).strip(),
+                str(record.get("round_no", record.get("round", ""))).strip(),
+                str(record.get("product_code", record.get("manage_no", ""))).strip(),
+                str(record.get("condition", "")).strip(),
+                str(record.get("trim_program", "")).strip(),
+                str(record.get("jig", "")).strip(),
+                normalize_simtek_hdi_additional_process(str(record.get("additional_process", ""))),
+            )
+            rows = conn.execute(
+                """
+                SELECT id FROM dnc_logs
+                 WHERE customer_process=? AND status='완료' AND master_excluded=0
+                   AND COALESCE(step, '')=? AND COALESCE(round_no, '')=?
+                   AND COALESCE(manage_no, '')=? AND COALESCE(process_code, '')=?
+                   AND COALESCE(condition_name, '')=? AND COALESCE(jig, '')=?
+                   AND COALESCE(model_change_text, '')=?
+                 ORDER BY id
+                """,
+                params,
+            ).fetchall()
+        else:
+            params = (
+                process_name,
+                str(record.get("step", "")).strip(),
+                str(record.get("round", record.get("round_no", ""))).strip(),
+                str(record.get("manage_no", "")).strip(),
+                str(record.get("process_code", "")).strip(),
+                str(record.get("condition", record.get("condition_name", ""))).strip(),
+                str(record.get("jig", "")).strip(),
+            )
+            rows = conn.execute(
+                """
+                SELECT id FROM dnc_logs
+                 WHERE customer_process=? AND status='완료' AND master_excluded=0
+                   AND COALESCE(step, '')=? AND COALESCE(round_no, '')=?
+                   AND COALESCE(manage_no, '')=? AND COALESCE(process_code, '')=?
+                   AND COALESCE(condition_name, '')=? AND COALESCE(jig, '')=?
+                 ORDER BY id
+                """,
+                params,
+            ).fetchall()
+        return [int(row["id"]) for row in rows]
+    finally:
+        conn.close()
+
+
+def exclude_condition_master_source_logs(process_name: str, log_ids: list[int]) -> None:
+    """과거 원본 로그만 제외합니다. 이후 신규 검증으로 생긴 새 ID는 정상 등록됩니다."""
+    if not log_ids:
+        return
+    conn = get_process_connection(process_name)
+    try:
+        conn.executemany(
+            "UPDATE dnc_logs SET master_excluded=1 WHERE customer_process=? AND id=?",
+            [(process_name, int(log_id)) for log_id in log_ids],
+        )
+        conn.commit()
+        log_app(f"{process_name} 조건 마스터 원본 로그 제외: ids={log_ids}")
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def restore_condition_master_source_logs(process_name: str, log_ids: list[int]) -> None:
+    """마스터 삭제 저장이 실패했을 때 로그 제외 표시를 원복합니다."""
+    if not log_ids:
+        return
+    conn = get_process_connection(process_name)
+    try:
+        conn.executemany(
+            "UPDATE dnc_logs SET master_excluded=0 WHERE customer_process=? AND id=?",
+            [(process_name, int(log_id)) for log_id in log_ids],
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def sync_condition_master_from_completed_logs() -> int:
     """완료된 DB 이력 중 조건 마스터에 반영 가능한 조건을 동기화합니다."""
     conn = get_kcc_pkg_connection()
@@ -2324,6 +2623,7 @@ def sync_condition_master_from_completed_logs() -> int:
               FROM dnc_logs
              WHERE customer_process='KCC PKG'
                AND status='완료'
+               AND master_excluded=0
                AND step IS NOT NULL
                AND round_no IS NOT NULL
                AND manage_no IS NOT NULL
@@ -2764,6 +3064,7 @@ def export_simtek_hdi_logs_to_excel(config: dict) -> int:
         workbook, ws, path = open_log_workbook(config, "심텍 HDI")
         header_row = get_simtek_hdi_log_header_row(ws)
         existing_excel_ids = get_excel_exported_log_ids_at(ws, SIMTEK_HDI_EXPORT_ID_COLUMN, header_row)
+        existing_excel_ids.update(get_excel_exported_log_ids_at(ws, SIMTEK_HDI_LEGACY_EXPORT_ID_COLUMN, header_row))
         start_row = get_simtek_hdi_next_empty_row(ws)
         written_count = 0
         for log in logs:
@@ -2838,6 +3139,64 @@ def complete_incomplete_kcc_pkg_logs(log_ids: list[int]) -> None:
         )
         conn.commit()
         log_app(f"미완료 이력 완료 처리: ids={log_ids}")
+    finally:
+        conn.close()
+
+
+def fetch_incomplete_process_logs(process_name: str) -> list[sqlite3.Row]:
+    """TLB/심텍 HDI/KCC HDI의 미완료 이력을 시작 시 확인합니다."""
+    conn = get_process_connection(process_name)
+    try:
+        return conn.execute(
+            """
+            SELECT id, dnc_type, status, work_date, worker, step, round_no,
+                   manage_no, lot_no, condition_name, created_at
+              FROM dnc_logs
+             WHERE customer_process=? AND status!='완료'
+             ORDER BY id
+            """,
+            (process_name,),
+        ).fetchall()
+    finally:
+        conn.close()
+
+
+def delete_incomplete_process_logs(process_name: str, log_ids: list[int]) -> None:
+    if not log_ids:
+        return
+    conn = get_process_connection(process_name)
+    try:
+        conn.executemany(
+            "DELETE FROM dnc_logs WHERE customer_process=? AND id=? AND status!='완료'",
+            [(process_name, log_id) for log_id in log_ids],
+        )
+        conn.commit()
+        log_app(f"{process_name} 미완료 이력 삭제: ids={log_ids}")
+    finally:
+        conn.close()
+
+
+def complete_incomplete_process_logs(process_name: str, log_ids: list[int]) -> None:
+    """미완료 이력을 작업일보 반영 대상에서 제외한 뒤 완료 처리합니다."""
+    if not log_ids:
+        return
+    conn = get_process_connection(process_name)
+    try:
+        now_text = datetime.now().strftime("%H:%M:%S")
+        exported_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conn.executemany(
+            """
+            UPDATE dnc_logs
+               SET status='완료',
+                   record_time=COALESCE(NULLIF(record_time, ''), ?),
+                   exported=1,
+                   exported_at=COALESCE(NULLIF(exported_at, ''), ?)
+             WHERE customer_process=? AND id=? AND status!='완료'
+            """,
+            [(now_text, exported_at, process_name, log_id) for log_id in log_ids],
+        )
+        conn.commit()
+        log_app(f"{process_name} 미완료 이력 완료 처리: ids={log_ids}")
     finally:
         conn.close()
 
@@ -3244,7 +3603,13 @@ def write_tlb_log_row_to_excel(ws, row: int, log: sqlite3.Row) -> None:
 
 
 def write_simtek_hdi_log_row_to_excel(ws, row: int, log: sqlite3.Row) -> None:
+    additional_process_text = normalize_simtek_hdi_additional_process(log["model_change_text"] or "")
+    if str(log["dnc_type"] or "") == "신규 검증":
+        verification_text = "신규 검증"
+    else:
+        verification_text = "기종교체" if any(log[f"jig_axis_{index}"] for index in range(1, 7)) else ""
     values = [
+        log["machine"],
         log["work_date"],
         log["shift_group"],
         log["shift_name"],
@@ -3256,19 +3621,20 @@ def write_simtek_hdi_log_row_to_excel(ws, row: int, log: sqlite3.Row) -> None:
         log["qty_text"],
         "" if log["result_value"] is None else log["result_value"],
         log["process_code"] or "",
+        additional_process_text,
         log["condition_name"],
-        log["model_change_text"] or "",
-        log["stack"] or "",
-        "OK",
         log["burr_result"] or "",
-        "",
-        log["record_time"] or "",
+        log["stack"] or "",
         log["jig"],
+        verification_text,
+        excel_time_only(log["created_at"] or log["record_time"] or ""),
     ]
+    preserve_case_columns = {12, 13, 14, 15, 17}
     for col, value in enumerate(values, start=1):
-        ws.cell(row=row, column=col).value = value if col == 12 else excel_upper_value(value)
+        ws.cell(row=row, column=col).value = value if col in preserve_case_columns else excel_upper_value(value)
+    ws.cell(row=row, column=19).number_format = "h:mm"
     if log["burr_result"] == "Burr 발생":
-        ws.cell(row=row, column=16).font = Font(color="FF0000", bold=False)
+        ws.cell(row=row, column=15).font = Font(color="FF0000", bold=False)
 
     frequent_values = [
         log["first_axis_1"],
@@ -3737,9 +4103,17 @@ def rebuild_condition_master_from_log(config: dict) -> int:
     sync_condition_master_from_completed_logs()
     workbook, ws, _path = open_log_workbook(config)
     records = load_condition_master()
+    excluded_log_ids = get_master_excluded_log_ids("KCC PKG")
     before_keys = {make_condition_value_key(record) for record in records}
     try:
         for row in range(8, ws.max_row + 1):
+            raw_log_id = ws.cell(row=row, column=EXCEL_EXPORT_ID_COLUMN).value
+            try:
+                excel_log_id = int(float(raw_log_id)) if raw_log_id not in (None, "") else None
+            except (TypeError, ValueError):
+                excel_log_id = None
+            if excel_log_id in excluded_log_ids:
+                continue
             step = str(ws.cell(row=row, column=6).value or "").strip()
             round_no = str(ws.cell(row=row, column=7).value or "").strip()
             manage_no = str(ws.cell(row=row, column=8).value or "").strip()
@@ -4487,6 +4861,8 @@ class JiinDncManager:
         self.last_common_manual_change_at: datetime | None = None
         self.master_settings_popup = None
         self.condition_master_popup = None
+        self.simtek_hdi_condition_master_popup = None
+        self.simtek_hdi_new_model_popup = None
 
         self.setup_style()
         self.create_layout()
@@ -4519,25 +4895,53 @@ class JiinDncManager:
 
     def handle_startup_incomplete_logs(self) -> None:
         """앱 시작 시 미완료 이력이 있으면 현장에서 바로 처리할 수 있게 안내합니다."""
-        try:
-            rows = fetch_incomplete_kcc_pkg_logs()
-        except Exception as exc:
-            log_error("미완료 이력 조회 실패", exc)
-            return
-        if not rows:
-            return
-        log_ids = [int(row["id"]) for row in rows]
-        action = ask_incomplete_action(self.root, len(log_ids))
-        try:
-            if action == "delete":
-                delete_incomplete_kcc_pkg_logs(log_ids)
-                self.set_status("excel", "미완료 이력 삭제 완료", True)
-            elif action == "complete":
-                complete_incomplete_kcc_pkg_logs(log_ids)
-                self.set_status("excel", "미완료 이력 완료처리", True)
-        except Exception as exc:
-            log_error("미완료 이력 처리 실패", exc)
-            show_operator_alert(self.root, "미완료 처리 실패", "처리 실패", "error")
+        targets = (
+            ("KCC PKG", fetch_incomplete_kcc_pkg_logs),
+            ("TLB", lambda: fetch_incomplete_process_logs("TLB")),
+            ("심텍 HDI", lambda: fetch_incomplete_process_logs("심텍 HDI")),
+            ("KCC HDI", lambda: fetch_incomplete_process_logs("KCC HDI")),
+        )
+
+        for process_name, fetcher in targets:
+            try:
+                rows = fetcher()
+            except Exception as exc:
+                log_error(f"{process_name} 미완료 이력 조회 실패", exc)
+                continue
+            if not rows:
+                continue
+
+            log_ids = [int(row["id"]) for row in rows]
+            action = ask_incomplete_action(self.root, process_name, len(log_ids))
+            if action == "later":
+                continue
+            try:
+                if process_name == "KCC PKG":
+                    if action == "delete":
+                        delete_incomplete_kcc_pkg_logs(log_ids)
+                    else:
+                        complete_incomplete_kcc_pkg_logs(log_ids)
+                elif action == "delete":
+                    delete_incomplete_process_logs(process_name, log_ids)
+                else:
+                    complete_incomplete_process_logs(process_name, log_ids)
+                self.set_incomplete_process_status(
+                    process_name,
+                    "미완료 이력 삭제 완료" if action == "delete" else "미완료 이력 완료처리",
+                )
+            except Exception as exc:
+                log_error(f"{process_name} 미완료 이력 처리 실패", exc)
+                show_operator_alert(self.root, f"{process_name} 미완료 처리 실패", "처리 실패", "error")
+
+    def set_incomplete_process_status(self, process_name: str, text: str) -> None:
+        if process_name == "TLB":
+            self.set_tlb_status("excel", text, True)
+        elif process_name == "심텍 HDI":
+            self.set_simtek_hdi_status("excel", text, True)
+        elif process_name == "KCC HDI":
+            self.set_kcc_hdi_status("excel", text, True)
+        else:
+            self.set_status("excel", text, True)
 
     def setup_style(self) -> None:
         style = ttk.Style()
@@ -5617,12 +6021,6 @@ class JiinDncManager:
         for key in ("trim_program", "stack", "jig"):
             if key in entries:
                 entries[key].clear()
-        lot = {key: entry.get() for key, entry in entries.items()}
-        trim_program, jig, _errors = build_simtek_hdi_generated_condition(self.config, lot)
-        if trim_program and "trim_program" in entries:
-            entries["trim_program"].set(trim_program)
-        if jig and "jig" in entries:
-            entries["jig"].set(jig)
         self.simtek_hdi_condition_records.pop(lot_no, None)
         label = self.simtek_hdi_status_labels.get(f"condition{lot_no}")
         if label is not None:
@@ -5668,7 +6066,7 @@ class JiinDncManager:
             self.set_simtek_hdi_run_gradient(False)
             return False
         entries["trim_program"].set(record.get("trim_program", ""))
-        entries["stack"].set(record.get("stack", ""))
+        entries["stack"].clear()
         entries["jig"].set(record.get("jig", ""))
         self.simtek_hdi_condition_records[lot_no] = record
         self.show_judgement_card(self.simtek_hdi_status_labels[f"condition{lot_no}"], "조건 조회", "OK", True)
@@ -5688,7 +6086,12 @@ class JiinDncManager:
         if lot1.get("lot_no", "").strip() and lot1.get("lot_no", "").strip() == lot2.get("lot_no", "").strip():
             label.configure(text="NG - LOT No 동일", fg=NG_COLOR)
             return
-        for key, title in (("trim_program", "조건(조회)"), ("jig", "지그(조회)")):
+        for key, title in (
+            ("condition", "OMS 조건"),
+            ("additional_process", "추가가공"),
+            ("trim_program", "조건(조회)"),
+            ("jig", "지그(조회)"),
+        ):
             if lot1.get(key, "").strip() != lot2.get(key, "").strip():
                 label.configure(text=f"NG - {title} 불일치", fg=NG_COLOR)
                 return
@@ -5834,7 +6237,12 @@ class JiinDncManager:
         if len(lots) == 2:
             if lots[0].get("lot_no", "").strip() == lots[1].get("lot_no", "").strip():
                 errors.append("LOT 1 / LOT 2 LOT No 동일")
-            for key, label in (("trim_program", "조건(조회)"), ("jig", "지그(조회)")):
+            for key, label in (
+                ("condition", "OMS 조건"),
+                ("additional_process", "추가가공"),
+                ("trim_program", "조건(조회)"),
+                ("jig", "지그(조회)"),
+            ):
                 if lots[0].get(key, "").strip() != lots[1].get(key, "").strip():
                     errors.append(f"LOT 1 / LOT 2 {label} 불일치")
         return len(errors) == 0, errors
@@ -5870,7 +6278,8 @@ class JiinDncManager:
         if self.is_running:
             show_operator_alert(self.root, "진행 중", "DNC 실행중")
             return
-        if not self.ensure_simtek_hdi_work_period_ready():
+        active_cycle = bool(self.simtek_hdi_cycle_state and int(self.simtek_hdi_cycle_state.get("remaining", 0)) > 0)
+        if not active_cycle and not self.ensure_simtek_hdi_work_period_ready():
             return
         if not self.save_settings_from_ui_silent():
             return
@@ -5960,6 +6369,10 @@ class JiinDncManager:
                 self.root.after(0, lambda: self.set_simtek_hdi_status("dnc", "DB 저장중", None))
                 log_ids = insert_simtek_hdi_dnc_db(common, lots, stack, bool(state.get("model_change")))
                 state["log_ids"] = log_ids
+                inherited_checks = state.get("inherited_check_values")
+                if inherited_checks:
+                    update_normal_frequent_check_db(log_ids, True, list(inherited_checks), "심텍 HDI")
+                    state["inherited_check_values"] = None
                 self.simtek_hdi_cycle_state = state
             else:
                 log_ids = list(state["log_ids"])
@@ -6073,7 +6486,10 @@ class JiinDncManager:
             return True
         except Exception as exc:
             log_error("심텍 HDI 작업일보 자동 반영 실패", exc)
-            self.set_simtek_hdi_status("excel", f"Excel 미반영 {get_unexported_process_log_count('심텍 HDI')}건", False)
+            pending = get_unexported_process_log_count("심텍 HDI")
+            self.set_simtek_hdi_status("excel", f"자동 반영 실패 / Excel 미반영 {pending}건", False)
+            alert_message = "다른 PC 반영 중\n나중에 작업일보 반영" if "다른 PC" in str(exc) else "DB 저장 완료\n나중에 작업일보 반영"
+            show_operator_alert(parent or self.root, "작업일보 반영 실패", alert_message, "error")
             return False
 
     def export_simtek_hdi_to_excel_from_ui(self) -> None:
@@ -6100,7 +6516,6 @@ class JiinDncManager:
             "condition": {"조건", "작업조건", "OMS 조건", "OMS조건", "OMS Trim 조건", "OMS Trim Size"},
             "trim_program": {"작업 Program", "작업Program", "작업 P/G", "작업P/G"},
             "additional_process": {"추가 가공", "추가가공"},
-            "stack": {"Stack"},
             "jig": {"Jig", "지그"},
         }
 
@@ -6131,6 +6546,7 @@ class JiinDncManager:
         except Exception as exc:
             show_operator_alert(self.root, "마스터 갱신", format_excel_error_for_operator(exc, "작업일보 Excel"), "error")
             return
+        excluded_log_ids = get_master_excluded_log_ids("심텍 HDI")
         count = 0
         try:
             for sheet_name in ("Log File", "심텍 HDI"):
@@ -6139,16 +6555,26 @@ class JiinDncManager:
                 ws = workbook[sheet_name]
                 header_row, columns = header_map(ws)
                 fixed = {
-                    "step": 5,
-                    "round": 6,
-                    "product_code": 7,
-                    "condition": 11,
-                    "trim_program": 12,
+                    "step": 6,
+                    "round": 7,
+                    "product_code": 8,
+                    "condition": 12,
+                    "trim_program": 14,
                     "additional_process": 13,
-                    "stack": 14,
-                    "jig": 19,
+                    "jig": 17,
                 }
                 for row in range(header_row + 1, ws.max_row + 1):
+                    excel_log_id = None
+                    for id_column in (SIMTEK_HDI_EXPORT_ID_COLUMN, SIMTEK_HDI_LEGACY_EXPORT_ID_COLUMN):
+                        raw_log_id = ws.cell(row=row, column=id_column).value
+                        try:
+                            excel_log_id = int(float(raw_log_id)) if raw_log_id not in (None, "") else None
+                        except (TypeError, ValueError):
+                            excel_log_id = None
+                        if excel_log_id is not None:
+                            break
+                    if excel_log_id in excluded_log_ids:
+                        continue
                     record = {
                         "step": cell_text(ws, row, columns.get("step", fixed["step"])),
                         "round": cell_text(ws, row, columns.get("round", fixed["round"])),
@@ -6156,11 +6582,11 @@ class JiinDncManager:
                         "condition": cell_text(ws, row, columns.get("condition", fixed["condition"])),
                         "trim_program": cell_text(ws, row, columns.get("trim_program", fixed["trim_program"])),
                         "additional_process": cell_text(ws, row, columns.get("additional_process", fixed["additional_process"])),
-                        "stack": cell_text(ws, row, columns.get("stack", fixed["stack"])),
+                        "stack": "",
                         "jig": cell_text(ws, row, columns.get("jig", fixed["jig"])),
                         "source": sheet_name,
                     }
-                    required = ("step", "round", "product_code", "condition", "trim_program", "stack", "jig")
+                    required = ("step", "round", "product_code", "condition", "trim_program", "jig")
                     if not all(record[key] for key in required):
                         continue
                     save_simtek_hdi_condition_record(record)
@@ -6173,8 +6599,90 @@ class JiinDncManager:
     def run_simtek_hdi_new_model_dnc(self) -> None:
         open_simtek_hdi_new_model_popup(self)
 
+    def prepare_simtek_hdi_remaining_work(
+        self,
+        common: dict,
+        remaining_lots: list[dict],
+        stack: str,
+        total_cycles: int,
+        remaining_cycles: int,
+        first_check_values: list[str],
+    ) -> None:
+        """신규 검증 뒤 남은 수량을 본 화면의 일반 DNC 사이클로 인계합니다."""
+        self.simtek_hdi_cycle_state = None
+        self.simtek_hdi_condition_records.clear()
+        for entries in (self.simtek_hdi_entries, self.simtek_hdi_lot2_entries):
+            for entry in entries.values():
+                entry.clear()
+        for key, value in common.items():
+            entry = self.simtek_hdi_common_entries.get(key)
+            if entry is not None:
+                entry.set(value)
+
+        for lot_no, lot in enumerate(remaining_lots[:2], start=1):
+            entries = self.simtek_hdi_entries if lot_no == 1 else self.simtek_hdi_lot2_entries
+            for key in ("step", "round", "product_code", "lot_no", "qty", "condition", "additional_process"):
+                entries[key].set(lot.get(key, ""))
+            entries["trim_program"].set(lot.get("trim_program", ""))
+            entries["stack"].set(stack)
+            entries["jig"].set(lot.get("jig", ""))
+            record = {
+                **lot,
+                "round_no": lot.get("round", ""),
+                "stack": stack,
+                "source": "신규 검증 완료",
+            }
+            self.simtek_hdi_condition_records[lot_no] = record
+            self.show_judgement_card(
+                self.simtek_hdi_status_labels[f"condition{lot_no}"],
+                "조건 조회",
+                "OK",
+                True,
+            )
+
+        current_common = self.get_simtek_hdi_common_data()
+        current_lots = self.get_simtek_hdi_used_lots()
+        first_values = (list(first_check_values) + [""] * 12)[:12]
+        self.simtek_hdi_cycle_state = {
+            "signature": self.make_simtek_hdi_cycle_signature(current_common, current_lots),
+            "stack": str(stack).strip(),
+            "total": int(total_cycles),
+            "remaining": int(remaining_cycles),
+            "log_ids": None,
+            "model_change": False,
+            "work_axis_values": first_values[:6],
+            "jig_axis_values": first_values[6:],
+            "capacity_values": first_values[:],
+            "first_check_done": True,
+            "inherited_check_values": first_values[:],
+            "continued_from_new_model": True,
+        }
+        remaining_qty = sum(int(lot.get("qty", "0") or 0) for lot in current_lots)
+        self.update_simtek_hdi_match_status(current_lots)
+        self.update_simtek_hdi_cycle_status(int(total_cycles), int(remaining_cycles))
+        self.set_simtek_hdi_run_gradient(True)
+        self.set_simtek_hdi_status(
+            "dnc",
+            f"신규 검증 완료 / 잔량 {remaining_qty}매 / 남은 {remaining_cycles}사이클",
+            True,
+        )
+
     def open_simtek_hdi_condition_master_popup(self) -> None:
-        show_operator_alert(self.root, "조건 마스터 관리", "심텍 HDI 조건 마스터 관리 화면은 다음 단계에서 연결합니다.", "info")
+        if self.focus_existing_popup("simtek_hdi_condition_master_popup"):
+            return
+        password = ask_system_input(self.root, "조건 마스터 관리", "비밀번호 입력", show="*")
+        if password is None:
+            return
+        if password != str(self.config.get("condition_master_password", CONDITION_MASTER_PASSWORD)):
+            show_operator_alert(self.root, "비밀번호 확인", "비밀번호 불일치")
+            return
+
+        def delayed_open() -> None:
+            if self.focus_existing_popup("simtek_hdi_condition_master_popup"):
+                return
+            self.simtek_hdi_condition_master_popup = SimtekHdiConditionMasterPopup(self)
+
+        self.root.after(150, delayed_open)
 
     def clear_simtek_hdi_inputs(self, after_done: bool = False) -> None:
         self.simtek_hdi_cycle_state = None
@@ -8916,8 +9424,9 @@ class FrequentCheckPopup:
     FIRST_OK_COLOR = "#0ea5e9"
     JIG_OK_COLOR = "#10b981"
 
-    def __init__(self, app: JiinDncManager, mode: str, allowed_axes: list[int] | None = None):
+    def __init__(self, app: JiinDncManager, mode: str, allowed_axes: list[int] | None = None, parent=None):
         self.app = app
+        self.parent = parent or app.root
         self.mode = mode
         self.allowed_axes = set(allowed_axes) if allowed_axes is not None else None
         self.saved = False
@@ -8934,17 +9443,17 @@ class FrequentCheckPopup:
         # 이전 작업의 축 선택이 다음 하부 Pin/초품 확인에 남으면 현장 오판이 생깁니다.
         for axis_index in self.visible_axes:
             self.values[self.get_value_index(axis_index)] = ""
-        self.window = tk.Toplevel(app.root)
+        self.window = tk.Toplevel(self.parent)
         self.window.title(self.get_title())
         width = 560 if len(self.visible_axes) >= 6 else 420
         self.window.geometry(f"{width}x300")
         self.window.configure(bg=APP_BG)
         self.window.resizable(False, False)
         self.create_ui()
-        self.window.transient(app.root)
+        self.window.transient(self.parent)
         self.window.grab_set()
         self.center_on_parent()
-        keep_modal_on_top(self.window, app.root)
+        keep_modal_on_top(self.window, self.parent)
         self.window.after(450, self.enable_clicks)
 
     def enable_clicks(self) -> None:
@@ -8952,10 +9461,10 @@ class FrequentCheckPopup:
 
     def center_on_parent(self) -> None:
         self.window.update_idletasks()
-        parent_x = self.app.root.winfo_rootx()
-        parent_y = self.app.root.winfo_rooty()
-        parent_w = self.app.root.winfo_width()
-        parent_h = self.app.root.winfo_height()
+        parent_x = self.parent.winfo_rootx()
+        parent_y = self.parent.winfo_rooty()
+        parent_w = self.parent.winfo_width()
+        parent_h = self.parent.winfo_height()
         width = self.window.winfo_width()
         height = self.window.winfo_height()
         x = parent_x + max((parent_w - width) // 2, 0)
@@ -9482,6 +9991,7 @@ class ConditionMasterPopup:
         top.pack(fill=tk.X)
         ttk.Button(top, text="작업일보 마스터 갱신", command=self.rebuild_from_log, style="Primary.TButton").pack(side=tk.LEFT, padx=(0, 8))
         ttk.Button(top, text="선택 수정 저장", command=self.save_selected_edit).pack(side=tk.LEFT, padx=(0, 8))
+        ttk.Button(top, text="선택 조건 마스터 제외", command=self.exclude_selected_record, style="SideDanger.TButton").pack(side=tk.LEFT, padx=(0, 8))
         ttk.Button(top, text="선택 삭제", command=self.delete_selected_record).pack(side=tk.LEFT, padx=(0, 8))
         ttk.Button(top, text="닫기", command=self.window.destroy).pack(side=tk.RIGHT)
 
@@ -9644,6 +10154,37 @@ class ConditionMasterPopup:
         self.refresh_tree()
         show_operator_alert(self.window, "삭제 완료", "조건 삭제 완료", "info")
 
+    def exclude_selected_record(self) -> None:
+        selected = self.tree.selection()
+        if not selected:
+            show_operator_alert(self.window, "선택 필요", "마스터에서 제외할 조건 선택")
+            return
+        index = int(selected[0])
+        record = self.records[index]
+        log_ids = find_condition_master_source_log_ids("KCC PKG", record)
+        if not log_ids:
+            show_operator_alert(self.window, "원본 로그 확인", "일치하는 기존 DNC 로그가 없습니다.\n일반 삭제를 사용하세요.", "info")
+            return
+        if not ask_system_yes_no(
+            self.window,
+            "조건 마스터 제외 확인",
+            f"동일한 과거 DNC 로그 {len(log_ids)}건을 마스터 등록에서 제외합니다.\n"
+            f"관리번호: {record.get('manage_no', '')}\n공정코드: {record.get('process_code', '')}",
+        ):
+            return
+        exclude_condition_master_source_logs("KCC PKG", log_ids)
+        try:
+            del self.records[index]
+            save_condition_master(self.records)
+        except Exception as exc:
+            restore_condition_master_source_logs("KCC PKG", log_ids)
+            log_error("KCC PKG 조건 마스터 제외 실패", exc)
+            show_operator_alert(self.window, "마스터 제외 실패", str(exc), "error")
+            return
+        self.records = load_condition_master()
+        self.refresh_tree()
+        show_operator_alert(self.window, "마스터 제외 완료", f"과거 DNC 로그 {len(log_ids)}건 제외 완료", "info")
+
     def rebuild_from_log(self) -> None:
         self.app.save_settings_from_ui_silent()
         try:
@@ -9655,6 +10196,237 @@ class ConditionMasterPopup:
         self.refresh_tree()
         show_operator_alert(self.window, "작업일보 마스터 갱신", f"신규 등록 {count}건", "info")
 
+
+
+class SimtekHdiConditionMasterPopup:
+    """심텍 HDI SQLite 조건 마스터를 조회, 수정, 삭제하는 관리 창입니다."""
+
+    def __init__(self, app: JiinDncManager):
+        self.app = app
+        self.records: list[dict] = []
+        self.records_by_id: dict[int, dict] = {}
+        self.search_var = tk.StringVar()
+        self.window = tk.Toplevel(app.root)
+        self.window.title("심텍 HDI 조건 마스터 관리")
+        self.window.geometry("1240x700")
+        self.window.minsize(1080, 620)
+        self.window.configure(bg=APP_BG)
+        self.create_ui()
+        self.reload_records()
+        self.window.protocol("WM_DELETE_WINDOW", self.close)
+        self.window.after_idle(self.window.focus_set)
+
+    def close(self) -> None:
+        self.app.simtek_hdi_condition_master_popup = None
+        self.window.destroy()
+
+    def create_ui(self) -> None:
+        theme = PROCESS_COLORS["심텍 HDI"]
+        top = ttk.Frame(self.window, padding=(12, 12, 12, 8))
+        top.pack(fill=tk.X)
+        ttk.Button(top, text="작업일보 마스터 갱신", command=self.rebuild_from_log, style="Primary.TButton").pack(side=tk.LEFT, padx=(0, 8))
+        ttk.Button(top, text="선택 수정 저장", command=self.save_selected_edit).pack(side=tk.LEFT, padx=(0, 8))
+        ttk.Button(top, text="선택 조건 마스터 제외", command=self.exclude_selected_record, style="SideDanger.TButton").pack(side=tk.LEFT, padx=(0, 8))
+        ttk.Button(top, text="선택 삭제", command=self.delete_selected_record).pack(side=tk.LEFT, padx=(0, 8))
+        ttk.Button(top, text="닫기", command=self.close).pack(side=tk.RIGHT)
+
+        search = ttk.Frame(self.window, padding=(12, 0, 12, 8))
+        search.pack(fill=tk.X)
+        ttk.Label(search, text="조회").pack(side=tk.LEFT, padx=(0, 6))
+        search_entry = ttk.Entry(search, textvariable=self.search_var, style="Wide.TEntry", width=50)
+        search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
+        ttk.Button(search, text="전체 보기", command=self.clear_search).pack(side=tk.LEFT)
+        self.search_var.trace_add("write", lambda *_args: self.refresh_tree())
+
+        body = ttk.Frame(self.window, padding=(12, 0, 12, 8))
+        body.pack(fill=tk.BOTH, expand=True)
+        body.columnconfigure(0, weight=1)
+        body.rowconfigure(0, weight=1)
+        columns = (
+            "step", "round_no", "product_code", "condition", "additional_process",
+            "trim_program", "jig", "source", "updated_at",
+        )
+        self.tree = ttk.Treeview(body, columns=columns, show="headings", selectmode="browse")
+        headings = {
+            "step": "STEP", "round_no": "차수", "product_code": "관리번호",
+            "condition": "OMS 조건", "additional_process": "추가가공",
+            "trim_program": "조건(조회)", "jig": "지그(조회)",
+            "source": "출처", "updated_at": "수정일시",
+        }
+        widths = {
+            "step": 65, "round_no": 55, "product_code": 145, "condition": 250,
+            "additional_process": 85, "trim_program": 230,
+            "jig": 115, "source": 105, "updated_at": 135,
+        }
+        for column in columns:
+            self.tree.heading(column, text=headings[column])
+            self.tree.column(column, width=widths[column], minwidth=45, anchor="w", stretch=column in {"condition", "trim_program"})
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        self.tree.bind("<<TreeviewSelect>>", self.on_select)
+        y_scroll = ttk.Scrollbar(body, orient=tk.VERTICAL, command=self.tree.yview)
+        y_scroll.grid(row=0, column=1, sticky="ns")
+        x_scroll = ttk.Scrollbar(body, orient=tk.HORIZONTAL, command=self.tree.xview)
+        x_scroll.grid(row=1, column=0, sticky="ew")
+        self.tree.configure(yscrollcommand=y_scroll.set, xscrollcommand=x_scroll.set)
+
+        edit = tk.Frame(self.window, bg=SURFACE_BG, highlightthickness=1, highlightbackground=theme["border"], bd=0)
+        edit.pack(fill=tk.X, padx=12, pady=(0, 12))
+        self.edit_vars = {
+            "step": tk.StringVar(), "round_no": tk.StringVar(), "product_code": tk.StringVar(),
+            "condition": tk.StringVar(), "additional_process": tk.StringVar(),
+            "trim_program": tk.StringVar(), "jig": tk.StringVar(),
+        }
+        fields = [
+            ("step", "STEP"), ("round_no", "차수"), ("product_code", "관리번호"),
+            ("condition", "OMS 조건"), ("additional_process", "추가가공"),
+            ("trim_program", "조건(조회)"), ("jig", "지그(조회)"),
+        ]
+        for index, (key, label) in enumerate(fields):
+            row = index // 4
+            column = (index % 4) * 2
+            ttk.Label(edit, text=label, background=SURFACE_BG).grid(row=row, column=column, sticky="e", padx=(10, 4), pady=8)
+            ttk.Entry(edit, textvariable=self.edit_vars[key], style="Wide.TEntry", width=24).grid(row=row, column=column + 1, sticky="ew", padx=(0, 10), pady=8)
+            edit.columnconfigure(column + 1, weight=1)
+
+    def reload_records(self) -> None:
+        try:
+            self.records = load_simtek_hdi_condition_master_records()
+        except Exception as exc:
+            log_error("심텍 HDI 조건 마스터 조회 실패", exc)
+            show_operator_alert(self.window, "조건 마스터 조회", str(exc), "error")
+            self.records = []
+        self.records_by_id = {int(record["id"]): record for record in self.records}
+        self.refresh_tree()
+
+    def refresh_tree(self) -> None:
+        if not hasattr(self, "tree"):
+            return
+        self.tree.delete(*self.tree.get_children())
+        keyword = self.search_var.get().strip().casefold()
+        for record in self.records:
+            if keyword and not any(keyword in str(value or "").casefold() for value in record.values()):
+                continue
+            record_id = int(record["id"])
+            self.tree.insert(
+                "", "end", iid=str(record_id),
+                values=(
+                    record.get("step", ""), record.get("round_no", ""),
+                    record.get("product_code", ""), record.get("condition", ""),
+                    record.get("additional_process", "") or "없음", record.get("trim_program", ""),
+                    record.get("jig", ""), record.get("source", ""),
+                    record.get("updated_at", ""),
+                ),
+            )
+
+    def clear_search(self) -> None:
+        self.search_var.set("")
+
+    def selected_record(self) -> tuple[int, dict] | None:
+        selected = self.tree.selection()
+        if not selected:
+            show_operator_alert(self.window, "선택 필요", "조건 마스터 한 줄을 선택하세요.")
+            return None
+        record_id = int(selected[0])
+        record = self.records_by_id.get(record_id)
+        if record is None:
+            show_operator_alert(self.window, "선택 확인", "선택한 조건을 다시 조회하세요.", "error")
+            return None
+        return record_id, record
+
+    def on_select(self, _event=None) -> None:
+        selected = self.tree.selection()
+        if not selected:
+            return
+        record = self.records_by_id.get(int(selected[0]))
+        if record is None:
+            return
+        for key, var in self.edit_vars.items():
+            value = record.get(key, "")
+            if key == "additional_process" and not str(value or "").strip():
+                value = "없음"
+            var.set(value)
+
+    def save_selected_edit(self) -> None:
+        selected = self.selected_record()
+        if selected is None:
+            return
+        record_id, _record = selected
+        updated = {key: var.get().strip() for key, var in self.edit_vars.items()}
+        required = {
+            "step": "STEP", "round_no": "차수", "product_code": "관리번호",
+            "condition": "OMS 조건", "trim_program": "조건(조회)",
+            "jig": "지그(조회)",
+        }
+        missing = [label for key, label in required.items() if not updated.get(key, "")]
+        if missing:
+            show_operator_alert(self.window, "입력값 확인", f"{', '.join(missing)} 입력 필요", "error")
+            return
+        try:
+            update_simtek_hdi_condition_master_record(record_id, updated)
+        except sqlite3.IntegrityError:
+            show_operator_alert(self.window, "조건 중복", "동일한 조건 마스터가 이미 있습니다.", "error")
+            return
+        except Exception as exc:
+            log_error("심텍 HDI 조건 마스터 수정 실패", exc)
+            show_operator_alert(self.window, "수정 실패", str(exc), "error")
+            return
+        self.reload_records()
+        if self.tree.exists(str(record_id)):
+            self.tree.selection_set(str(record_id))
+            self.tree.see(str(record_id))
+        show_operator_alert(self.window, "저장 완료", "조건 마스터 수정 완료", "info")
+
+    def delete_selected_record(self) -> None:
+        selected = self.selected_record()
+        if selected is None:
+            return
+        record_id, record = selected
+        if not ask_system_yes_no(
+            self.window, "조건 삭제 확인",
+            f"조건 마스터 삭제\n{record.get('product_code', '')}\n{record.get('trim_program', '')}",
+        ):
+            return
+        try:
+            delete_simtek_hdi_condition_master_record(record_id)
+        except Exception as exc:
+            log_error("심텍 HDI 조건 마스터 삭제 실패", exc)
+            show_operator_alert(self.window, "삭제 실패", str(exc), "error")
+            return
+        self.reload_records()
+        show_operator_alert(self.window, "삭제 완료", "조건 마스터 삭제 완료", "info")
+
+    def exclude_selected_record(self) -> None:
+        selected = self.selected_record()
+        if selected is None:
+            return
+        record_id, record = selected
+        log_ids = find_condition_master_source_log_ids("심텍 HDI", record)
+        if not log_ids:
+            show_operator_alert(self.window, "원본 로그 확인", "일치하는 기존 DNC 로그가 없습니다.\n일반 삭제를 사용하세요.", "info")
+            return
+        if not ask_system_yes_no(
+            self.window,
+            "조건 마스터 제외 확인",
+            f"동일한 과거 DNC 로그 {len(log_ids)}건을 마스터 등록에서 제외합니다.\n"
+            f"관리번호: {record.get('product_code', '')}\n조건: {record.get('trim_program', '')}",
+        ):
+            return
+        exclude_condition_master_source_logs("심텍 HDI", log_ids)
+        try:
+            delete_simtek_hdi_condition_master_record(record_id)
+        except Exception as exc:
+            restore_condition_master_source_logs("심텍 HDI", log_ids)
+            log_error("심텍 HDI 조건 마스터 제외 실패", exc)
+            show_operator_alert(self.window, "마스터 제외 실패", str(exc), "error")
+            return
+        self.reload_records()
+        show_operator_alert(self.window, "마스터 제외 완료", f"과거 DNC 로그 {len(log_ids)}건 제외 완료", "info")
+
+    def rebuild_from_log(self) -> None:
+        if not self.app.save_settings_from_ui_silent():
+            return
+        self.app.rebuild_simtek_hdi_condition_master()
+        self.reload_records()
 
 
 class SimtekHdiNewModelPopup:
@@ -9669,6 +10441,7 @@ class SimtekHdiNewModelPopup:
         self.both_entries: dict[str, dict[str, object]] = {}
         self.buttons: list[ttk.Button] = []
         self.run_button: ttk.Button | None = None
+        self.cycle_state: dict | None = None
         self.mode_buttons: dict[str, tk.Button] = {}
         self.is_loading_fields = False
         self.selected_lot = tk.StringVar(value="lot1")
@@ -9687,6 +10460,8 @@ class SimtekHdiNewModelPopup:
             show_operator_alert(app.root, "신규 모델 검증 DNC", "신규 검증 대상 없음", "info")
             self.window.destroy()
             return
+        self.app.simtek_hdi_new_model_popup = self
+        self.active_check_popup = None
         self.selected_lot.set(self.target_lots[0])
         self.run_mode.set(self.target_lots[0])
         self.is_running = False
@@ -9697,12 +10472,45 @@ class SimtekHdiNewModelPopup:
         self.refresh_input_mode()
         self.update_checks()
         self.window.protocol("WM_DELETE_WINDOW", self.close)
+        self.window.bind("<Destroy>", self.on_destroy, add="+")
+
+    def on_destroy(self, event=None) -> None:
+        if event is not None and event.widget is not self.window:
+            return
+        if getattr(self.app, "simtek_hdi_new_model_popup", None) is self:
+            self.app.simtek_hdi_new_model_popup = None
+
+    def focus_active_check_popup(self) -> bool:
+        popup = getattr(self, "active_check_popup", None)
+        window = getattr(popup, "window", None) if popup is not None else None
+        try:
+            if window is not None and window.winfo_exists():
+                window.deiconify()
+                window.lift()
+                window.focus_force()
+                return True
+        except tk.TclError:
+            pass
+        self.active_check_popup = None
+        return False
 
     def close(self) -> None:
         if self.is_running or self.app.is_running:
             show_operator_alert(self.window, "DNC 진행중", "작업 완료 후 종료")
             return
+        if self.has_pending_cycle():
+            if self.focus_active_check_popup():
+                return
+            state = self.cycle_state or {}
+            if state.get("awaiting_first_check") and state.get("log_ids"):
+                show_operator_alert(self.window, "신규 검증 진행중", "DNC 실행 버튼을 누르면 초품 확인창이 다시 뜹니다.")
+            else:
+                show_operator_alert(self.window, "신규 검증 진행중", "초품 확인을 완료한 뒤 종료하세요.")
+            return
         self.window.destroy()
+
+    def has_pending_cycle(self) -> bool:
+        return bool(self.cycle_state and self.cycle_state.get("verification_pending"))
 
     def get_new_model_target_lots(self) -> list[str]:
         targets: list[str] = []
@@ -9774,7 +10582,7 @@ class SimtekHdiNewModelPopup:
         self.run_button = self.add_button(buttons, "신규 모델 DNC 실행", self.run_new_model_dnc, "Primary.TButton")
         self.run_button.pack(side=tk.LEFT, padx=4)
         self.add_button(buttons, "입력 초기화", self.clear_inputs).pack(side=tk.LEFT, padx=4)
-        self.add_button(buttons, "닫기", self.window.destroy).pack(side=tk.RIGHT, padx=4)
+        self.add_button(buttons, "닫기", self.close).pack(side=tk.RIGHT, padx=4)
 
     def add_button(self, parent, text, command, style="TButton") -> ttk.Button:
         button = ttk.Button(parent, text=text, command=command, style=style, width=20)
@@ -9896,9 +10704,9 @@ class SimtekHdiNewModelPopup:
             if not self.app.is_simtek_hdi_lot_used(lot):
                 continue
             draft = dict(self.lot_drafts[lot_key])
-            for key in ("step", "round", "product_code", "lot_no", "condition", "additional_process"):
+            for key in ("step", "round", "product_code", "lot_no", "qty", "condition", "additional_process"):
                 draft[key] = lot.get(key, "")
-            for key in ("qty", "trim_program", "stack", "jig"):
+            for key in ("trim_program", "stack", "jig"):
                 draft[key] = ""
             self.lot_drafts[lot_key] = draft
         if not self.app.is_simtek_hdi_lot_used(self.app.get_simtek_hdi_lot_data()):
@@ -9906,6 +10714,9 @@ class SimtekHdiNewModelPopup:
                 self.selected_lot.set("lot2")
 
     def set_run_mode(self, mode: str) -> None:
+        if self.has_pending_cycle():
+            show_operator_alert(self.window, "사이클 진행중", "진행 중인 LOT 변경 불가")
+            return
         self.save_current_lot_draft()
         self.run_mode.set(mode)
         self.selected_lot.set("lot1" if mode == "both" else mode)
@@ -9939,6 +10750,7 @@ class SimtekHdiNewModelPopup:
         if all(lot_numbers) and len(set(lot_numbers)) < len(lot_numbers):
             errors.append("LOT 1 / LOT 2 LOT No 동일 - 동시 신규 검증 불가")
         for key, label in (
+            ("condition", "OMS 조건"),
             ("trim_program", "조건(조회)"),
             ("jig", "지그(조회)"),
             ("additional_process", "추가가공"),
@@ -9987,10 +10799,28 @@ class SimtekHdiNewModelPopup:
     def set_dnc_status(self, text: str) -> None:
         self.window.after(0, lambda: self.dnc_label.configure(text=f"DNC 진행 상태: {text}", fg=MUTED_TEXT))
 
+    def open_check_popup(self, mode: str, allowed_axes: list[int] | None = None) -> bool:
+        status_text = "초품 4Point 확인 대기중" if mode == "first" else "하부 Pin 확인 대기중"
+        self.dnc_label.configure(text=f"DNC 진행 상태: {status_text}", fg=MUTED_TEXT)
+        check_popup = FrequentCheckPopup(self.app, mode=mode, allowed_axes=allowed_axes, parent=self.window)
+        self.active_check_popup = check_popup
+        check_popup.window.bind(
+            "<Destroy>",
+            lambda event, popup=check_popup: setattr(self, "active_check_popup", None)
+            if event.widget is popup.window and getattr(self, "active_check_popup", None) is popup
+            else None,
+            add="+",
+        )
+        self.window.wait_window(check_popup.window)
+        return check_popup.saved
+
     def run_new_model_dnc(self) -> None:
         run_simtek_hdi_new_model_dnc(self)
 
     def clear_inputs(self) -> None:
+        if self.has_pending_cycle():
+            show_operator_alert(self.window, "사이클 진행중", "모든 사이클 완료 전 입력 초기화 불가")
+            return
         run_keys = ["lot1", "lot2"] if self.run_mode.get() == "both" else [self.selected_lot.get()]
         for lot_key in run_keys:
             draft = dict(self.lot_drafts[lot_key])
@@ -10006,6 +10836,7 @@ class SimtekHdiNewModelPopup:
         self.dnc_label.configure(text="DNC 진행 상태: 대기중", fg=MUTED_TEXT)
 
     def clear_after_done(self) -> None:
+        self.cycle_state = None
         _common, lot_items = self.get_run_lots()
         for lot_key, draft in lot_items:
             for key in ["qty", "condition", "additional_process", "trim_program", "stack", "jig"]:
@@ -10373,97 +11204,406 @@ class NewModelPopup:
 
 def open_simtek_hdi_new_model_popup(app: JiinDncManager) -> None:
     """심텍 HDI 신규 모델 검증 DNC 팝업창을 엽니다."""
+    if app.focus_existing_popup("simtek_hdi_new_model_popup"):
+        return
     SimtekHdiNewModelPopup(app)
 
 
+def ask_simtek_hdi_verification_quantities(
+    popup: SimtekHdiNewModelPopup,
+    lot_items: list[tuple[str, dict]],
+    capacity: int,
+) -> list[int] | None:
+    """신규 검증 1회에 실제 투입할 LOT별 매수를 확인합니다."""
+    positive_items = [(key, lot) for key, lot in lot_items if int(lot.get("qty", "0") or 0) > 0]
+    if not positive_items:
+        return [0 for _key, _lot in lot_items]
+    quantities_by_key: dict[str, int] = {}
+    for lot_key, lot in positive_items:
+        total_qty = int(lot.get("qty", "0") or 0)
+        lot_label = "LOT 1" if lot_key == "lot1" else "LOT 2"
+        value = ask_numeric_input(
+            popup.window,
+            f"{lot_label} 신규 검증 매수",
+            f"전체 {total_qty}매 중 이번 신규 검증에 실제 투입할 매수\n"
+            f"현재 1회 최대 용량: {capacity}매",
+        )
+        if value is None:
+            return None
+        verification_qty = int(value)
+        if verification_qty < 0 or verification_qty > total_qty:
+            show_operator_alert(
+                popup.window,
+                "신규 검증 매수 확인",
+                f"{lot_label} 검증 매수는 0매(더미) 또는 전체 {total_qty}매 이하여야 합니다.",
+                "error",
+            )
+            return None
+        quantities_by_key[lot_key] = verification_qty
+    quantities = [quantities_by_key.get(lot_key, 0) for lot_key, _lot in lot_items]
+    if sum(quantities) > capacity:
+        show_operator_alert(
+            popup.window,
+            "신규 검증 매수 확인",
+            f"신규 검증 투입 {sum(quantities)}매가 1회 최대 용량 {capacity}매를 초과합니다.",
+            "error",
+        )
+        return None
+    return quantities
+
+
 def run_simtek_hdi_new_model_dnc(popup: SimtekHdiNewModelPopup) -> None:
-    """심텍 HDI 신규 모델 DNC 실행 버튼 흐름입니다."""
+    """신규 검증은 1회만 실행하고, 잔량은 본 화면의 일반 DNC로 인계합니다."""
     if popup.is_running or popup.app.is_running:
         show_operator_alert(popup.window, "진행 중", "DNC 실행중")
         return
-    if not popup.app.ensure_simtek_hdi_work_period_ready():
+    pending_state = popup.cycle_state if popup.has_pending_cycle() else None
+    if pending_state is None and not popup.app.ensure_simtek_hdi_work_period_ready():
         return
     if not popup.app.save_settings_from_ui_silent():
         return
     if not popup.app.validate_simtek_hdi_paths():
         return
     popup.refresh_generated_fields()
-    common, lot_items = popup.get_run_lots()
-    lots = [lot for _lot_key, lot in lot_items]
-    all_errors = []
-    for lot_key, lot in lot_items:
+    current_common, current_lot_items = popup.get_run_lots()
+    current_lots = [dict(lot) for _lot_key, lot in current_lot_items]
+    current_signature = popup.app.make_simtek_hdi_cycle_signature(current_common, current_lots)
+    common = dict(pending_state.get("common", current_common)) if pending_state else current_common
+    original_lot_items = pending_state.get("original_lot_items", current_lot_items) if pending_state else current_lot_items
+    original_lots = [dict(lot) for _lot_key, lot in original_lot_items]
+    all_errors: list[str] = []
+    for lot_key, lot in original_lot_items:
         lot_label = "LOT 1" if lot_key == "lot1" else "LOT 2"
         ok, errors = validate_simtek_hdi_new_model_dnc(common, lot)
         if not ok:
             all_errors.extend([f"{lot_label} - {error}" for error in errors])
-    all_errors.extend(popup.get_joint_condition_mismatch_errors(lots))
+    selected_keys = {lot_key for lot_key, _lot in original_lot_items}
+    preexisting_lots: list[dict] = []
+    for lot_key, lot_no, main_lot in (
+        ("lot1", 1, popup.app.get_simtek_hdi_lot_data()),
+        ("lot2", 2, popup.app.get_simtek_hdi_lot2_data()),
+    ):
+        if lot_key in selected_keys or not popup.app.is_simtek_hdi_lot_used(main_lot):
+            continue
+        if not popup.app.is_simtek_hdi_lot_condition_confirmed(lot_no, main_lot):
+            all_errors.append("메인 화면에 미검증 LOT가 함께 있습니다. LOT 1 + LOT 2로 신규 검증하세요.")
+        else:
+            qty_ok, qty_message = validate_positive_number(main_lot.get("qty", ""), f"LOT {lot_no} 매수", required=True)
+            if not qty_ok:
+                all_errors.append(qty_message)
+            preexisting_lots.append(dict(main_lot))
+    all_errors.extend(popup.get_joint_condition_mismatch_errors(original_lots + preexisting_lots))
     if all_errors:
         log_app("심텍 HDI 신규 검증 입력값 NG: " + " / ".join(all_errors))
         show_operator_alert(popup.window, "입력값 확인", format_operator_errors(all_errors))
         popup.dnc_label.configure(text="DNC 진행 상태: 입력값 NG", fg=NG_COLOR)
         return
-    leader_name = ask_system_input(popup.window, "조장명 입력", "신규 모델 검증 조장명 입력")
-    if not leader_name or not leader_name.strip():
-        popup.dnc_label.configure(text="DNC 진행 상태: 취소", fg=MUTED_TEXT)
-        return
-    stack = ask_numeric_input(popup.window, "Stack 수 입력", "Stack 수를 입력 하세요.")
-    ok, message = validate_positive_number(stack or "", "Stack 수", required=True)
-    if not ok:
-        show_operator_alert(popup.window, "Stack 수 확인", message)
-        popup.dnc_label.configure(text="DNC 진행 상태: Stack 수 확인 필요", fg=NG_COLOR)
-        return
-    for lot in lots:
-        lot["stack"] = str(stack).strip()
-    condition_file = popup.app.validate_simtek_hdi_new_model_file(lots[0], parent=popup.window)
+    condition_file = popup.app.validate_simtek_hdi_new_model_file(original_lots[0], parent=popup.window)
     if not condition_file:
         popup.dnc_label.configure(text="DNC 진행 상태: DNC 파일 NG", fg=NG_COLOR)
         return
-    log_app(f"심텍 HDI 신규 검증 DNC 시작: {len(lots)} LOT, 조건={lots[0]['condition']}, 추가가공={lots[0]['additional_process']}")
+    signature = popup.app.make_simtek_hdi_cycle_signature(common, original_lots)
+    state = popup.cycle_state
+    if pending_state:
+        if state.get("signature") != current_signature:
+            show_operator_alert(popup.window, "신규 검증 확인", "진행 중인 LOT 정보와 다릅니다.\n입력값을 확인하세요.", "error")
+            popup.dnc_label.configure(text="DNC 진행 상태: 검증 정보 불일치", fg=NG_COLOR)
+            return
+    else:
+        leader_name = ask_leader_name_input(popup.window)
+        if leader_name is None:
+            popup.dnc_label.configure(text="DNC 진행 상태: 취소", fg=MUTED_TEXT)
+            return
+        if not leader_name.strip():
+            popup.dnc_label.configure(text="DNC 진행 상태: 조장명 입력 필요", fg=NG_COLOR)
+            return
+        popup.app.frequent_check_values = [""] * 12
+        machine_axes = get_machine_allowed_axes(common.get("machine", ""))
+        if not popup.open_check_popup("jig", allowed_axes=machine_axes):
+            popup.dnc_label.configure(text="DNC 진행 상태: 하부 Pin 확인 미완료", fg=NG_COLOR)
+            return
+        jig_axis_values = list(popup.app.frequent_check_values[6:])
+        axis_count = count_frequent_check_axes(jig_axis_values)
+        if axis_count <= 0:
+            show_operator_alert(popup.window, "하부 Pin 확인", "확인 축 선택 필요", "error")
+            return
+        stack = ask_numeric_input(popup.window, "Stack 수 입력", "Stack 수를 입력 하세요.")
+        ok, message = validate_positive_number(stack or "", "Stack 수", required=True)
+        if not ok:
+            show_operator_alert(popup.window, "Stack 수 확인", message)
+            popup.dnc_label.configure(text="DNC 진행 상태: Stack 수 확인 필요", fg=NG_COLOR)
+            return
+        stack_text = str(stack).strip()
+        capacity = axis_count * int(stack_text)
+        verification_quantities = ask_simtek_hdi_verification_quantities(popup, original_lot_items, capacity)
+        if verification_quantities is None:
+            popup.dnc_label.configure(text="DNC 진행 상태: 신규 검증 매수 확인 필요", fg=NG_COLOR)
+            return
+
+        verification_lots: list[dict] = []
+        remaining_lots: list[dict] = []
+        for (_lot_key, original_lot), verification_qty in zip(original_lot_items, verification_quantities):
+            original_qty = int(original_lot.get("qty", "0") or 0)
+            verification_lot = dict(original_lot)
+            verification_lot["qty"] = str(verification_qty) if original_qty > 0 else ""
+            verification_lot["stack"] = stack_text
+            verification_lots.append(verification_lot)
+            remaining_qty = original_qty - verification_qty
+            if remaining_qty > 0:
+                remaining_lot = dict(original_lot)
+                remaining_lot["qty"] = str(remaining_qty)
+                remaining_lot["stack"] = stack_text
+                remaining_lots.append(remaining_lot)
+        remaining_lots.extend({**lot, "stack": stack_text} for lot in preexisting_lots)
+
+        verified_qty = sum(verification_quantities)
+        remaining_qty = sum(int(lot.get("qty", "0") or 0) for lot in remaining_lots)
+        remaining_cycles = (remaining_qty + capacity - 1) // capacity if remaining_qty > 0 else 0
+        total_cycles = remaining_cycles + (1 if verified_qty > 0 else 0)
+        popup.cycle_state = {
+            "verification_pending": True,
+            "signature": signature,
+            "common": dict(common),
+            "leader_name": leader_name.strip(),
+            "stack": stack_text,
+            "capacity": capacity,
+            "total": total_cycles,
+            "remaining": remaining_cycles,
+            "original_lot_items": [(key, dict(lot)) for key, lot in original_lot_items],
+            "original_lots": [dict(lot) for lot in original_lots],
+            "verification_lots": verification_lots,
+            "remaining_lots": remaining_lots,
+            "verified_qty": verified_qty,
+            "remaining_qty": remaining_qty,
+            "log_ids": None,
+            "jig_axis_values": jig_axis_values,
+            "first_check_values": None,
+            "first_check_done": False,
+            "awaiting_first_check": False,
+        }
+        state = popup.cycle_state
+        verified_text = f"{verified_qty}매" if verified_qty > 0 else "더미"
+        popup.dnc_label.configure(text=f"DNC 진행 상태: 신규 검증 {verified_text} / 잔량 {remaining_qty}매", fg=OK_COLOR)
+        popup.excel_label.configure(text="DB 저장: 신규 검증 매수만 저장", fg=MUTED_TEXT)
+
+    verification_lots = [dict(lot) for lot in state["verification_lots"]]
+    if state.get("awaiting_first_check") and state.get("log_ids"):
+        popup.set_running(True)
+        popup.app.set_running(True)
+        popup.window.after(
+            0,
+            lambda ids=list(state["log_ids"]), lt=verification_lots: finish_simtek_hdi_new_model_cycle(popup, ids, lt),
+        )
+        return
+    log_app(
+        f"심텍 HDI 신규 검증 DNC 시작: LOT={len(verification_lots)}, "
+        f"검증={state.get('verified_qty', 0)}매, 잔량={state.get('remaining_qty', 0)}매"
+    )
     popup.set_running(True)
     popup.app.set_running(True)
-    threading.Thread(target=simtek_hdi_new_model_worker, args=(popup, common, lots, leader_name.strip(), condition_file), daemon=True).start()
+    threading.Thread(
+        target=simtek_hdi_new_model_worker,
+        args=(popup, common, verification_lots, condition_file),
+        daemon=True,
+    ).start()
 
 
-def simtek_hdi_new_model_worker(popup: SimtekHdiNewModelPopup, common: dict, lots: list[dict], leader_name: str, condition_file: Path) -> None:
-    """심텍 HDI 신규 모델 DNC 백그라운드 작업입니다."""
+def simtek_hdi_new_model_worker(popup: SimtekHdiNewModelPopup, common: dict, lots: list[dict], condition_file: Path) -> None:
+    """심텍 HDI 신규 검증 1회만 처리합니다."""
     try:
-        popup.set_dnc_status("DB 저장중")
-        log_ids = [insert_simtek_hdi_new_model_db(common, lot, leader_name) for lot in lots]
-        popup.set_dnc_status("DB 저장 완료")
+        state = popup.cycle_state or {}
+        if not state.get("log_ids"):
+            popup.set_dnc_status("DB 저장중")
+            leader_name = str(state.get("leader_name", "")).strip()
+            log_ids = [insert_simtek_hdi_new_model_db(common, lot, leader_name) for lot in lots]
+            state["log_ids"] = log_ids
+            popup.cycle_state = state
+            popup.set_dnc_status("DB 저장 완료")
+        else:
+            log_ids = list(state["log_ids"])
+
         transfer_folder = Path(popup.app.config["transfer_dnc_folder"])
+        popup.set_dnc_status("신규 검증 DNC 진행중")
         delete_existing_dnc_txt(transfer_folder)
         copied_file = copy_dnc_file(condition_file, transfer_folder)
-        popup.set_dnc_status("DNC 파일 복사 완료")
-        delete_after_delay(copied_file, int(popup.app.config["dnc_delete_seconds"]), popup.set_dnc_status)
-        popup.window.after(0, lambda: finish_simtek_hdi_new_model_dnc(popup, log_ids, lots))
+        popup.set_dnc_status("신규 검증 DNC 파일 복사 완료")
+        delete_thread = threading.Thread(
+            target=delete_after_delay,
+            args=(copied_file, int(popup.app.config["dnc_delete_seconds"]), popup.set_dnc_status),
+            daemon=True,
+        )
+        delete_thread.start()
+        if not state.get("first_check_done"):
+            state["awaiting_first_check"] = True
+            popup.cycle_state = state
+            wait_seconds = int(popup.app.config.get("first_article_wait_seconds", FIRST_ARTICLE_WAIT_SECONDS))
+            for remain in range(wait_seconds, 0, -1):
+                popup.set_dnc_status(f"초품 확인 대기중 ({remain}초)")
+                time.sleep(1)
+        popup.window.after(
+            0,
+            lambda ids=log_ids, lt=lots, dt=delete_thread: finish_simtek_hdi_new_model_cycle(popup, ids, lt, dt),
+        )
     except Exception as exc:
         popup.window.after(0, lambda error=exc: handle_simtek_hdi_popup_error(popup, error))
 
 
-def finish_simtek_hdi_new_model_dnc(popup: SimtekHdiNewModelPopup, log_ids: list[int], lots: list[dict]) -> None:
-    """심텍 HDI 신규 검증 완료 후 초품 결과와 조건 마스터를 저장합니다."""
+def release_simtek_hdi_new_model_cycle(popup: SimtekHdiNewModelPopup, message: str, ok: bool) -> None:
+    if not popup.window.winfo_exists():
+        popup.app.set_running(False)
+        return
+    popup.dnc_label.configure(text=f"DNC 진행 상태: {message}", fg=OK_COLOR if ok else NG_COLOR)
+    popup.set_running(False)
+    popup.app.set_running(False)
+
+
+def wait_for_simtek_hdi_delete(popup: SimtekHdiNewModelPopup, delete_thread: threading.Thread, callback) -> None:
+    """DNC 파일 삭제 스레드가 끝난 뒤 Tk 메인 스레드에서 다음 단계를 실행합니다."""
+    def wait_and_dispatch() -> None:
+        delete_thread.join()
+        try:
+            popup.window.after(0, callback)
+        except tk.TclError:
+            popup.app.set_running(False)
+
+    threading.Thread(target=wait_and_dispatch, daemon=True).start()
+
+
+def finish_simtek_hdi_new_model_cycle(
+    popup: SimtekHdiNewModelPopup,
+    log_ids: list[int],
+    lots: list[dict],
+    delete_thread: threading.Thread | None = None,
+) -> None:
+    """신규 검증 1회 완료 후 초품 확인을 마치고 본 화면으로 인계합니다."""
     try:
+        state = popup.cycle_state or {}
+        if not state.get("first_check_done"):
+            allowed_axes = [
+                index
+                for index, value in enumerate(state.get("jig_axis_values", []))
+                if value == "OK"
+            ]
+            while True:
+                popup.app.frequent_check_values = [""] * 6 + list(state.get("jig_axis_values", [""] * 6))
+                if not popup.open_check_popup("first", allowed_axes=allowed_axes):
+                    if delete_thread and delete_thread.is_alive():
+                        wait_for_simtek_hdi_delete(
+                            popup,
+                            delete_thread,
+                            lambda: release_simtek_hdi_new_model_cycle(popup, "초품 확인 미완료 / 실행 버튼으로 재확인", False),
+                        )
+                    else:
+                        release_simtek_hdi_new_model_cycle(popup, "초품 확인 미완료 / 실행 버튼으로 재확인", False)
+                    return
+                first_axes = [
+                    index
+                    for index, value in enumerate(popup.app.frequent_check_values[:6])
+                    if value == "OK"
+                ]
+                if first_axes == allowed_axes:
+                    break
+                show_operator_alert(popup.window, "초품 4Point 확인", "하부 Pin 축과 초품 축 다름")
+                popup.dnc_label.configure(text="DNC 진행 상태: 초품 축 확인 NG", fg=NG_COLOR)
+            update_normal_frequent_check_db(log_ids, True, popup.app.frequent_check_values, "심텍 HDI")
+            state["first_check_done"] = True
+            state["awaiting_first_check"] = False
+            state["first_check_values"] = list(popup.app.frequent_check_values)
+        popup.cycle_state = state
+        if delete_thread and delete_thread.is_alive():
+            wait_for_simtek_hdi_delete(
+                popup,
+                delete_thread,
+                lambda: finish_simtek_hdi_new_model_dnc(popup, log_ids, lots),
+            )
+            return
+        finish_simtek_hdi_new_model_dnc(popup, log_ids, lots)
+    except Exception as exc:
+        handle_simtek_hdi_popup_error(popup, exc)
+
+
+def finish_simtek_hdi_new_model_dnc(popup: SimtekHdiNewModelPopup, log_ids: list[int], lots: list[dict]) -> None:
+    """신규 검증 1회 완료 후 마스터 등록과 잔량 인계를 처리합니다."""
+    try:
+        state = popup.cycle_state or {}
         first_article_ok = ask_system_yes_no(popup.window, "초도품 확인", "초도품 이상 없습니까?")
         for log_id, lot in zip(log_ids, lots):
             update_simtek_hdi_new_model_db(log_id, lot, first_article_ok)
-            if first_article_ok:
-                save_simtek_hdi_condition_record({**lot, "source": "신규 검증 완료"})
+        if first_article_ok:
+            for original_lot in state.get("original_lots", lots):
+                save_simtek_hdi_condition_record(
+                    {**original_lot, "stack": state.get("stack", ""), "source": "신규 검증 완료"}
+                )
+            remaining_lots = [dict(lot) for lot in state.get("remaining_lots", [])]
+            remaining_cycles = int(state.get("remaining", 0))
+            if remaining_lots and remaining_cycles > 0:
+                popup.app.prepare_simtek_hdi_remaining_work(
+                    dict(state.get("common", {})),
+                    remaining_lots,
+                    str(state.get("stack", "")),
+                    int(state.get("total", 1)),
+                    remaining_cycles,
+                    list(state.get("first_check_values") or popup.app.frequent_check_values),
+                )
+            else:
+                popup.app.clear_simtek_hdi_inputs(after_done=True)
+                popup.app.set_simtek_hdi_status("dnc", "신규 검증 DNC 완료 / 잔량 없음", True)
+            popup.master_label.configure(text="조건 마스터 등록: OK", fg=OK_COLOR)
+        else:
+            popup.master_label.configure(text="조건 마스터 등록: NG - 등록 안 함", fg=NG_COLOR)
+            popup.app.set_simtek_hdi_status("dnc", "신규 검증 NG / 조건 마스터 미등록", False)
+        state["verification_pending"] = False
+        popup.cycle_state = state
         pending_count = get_unexported_process_log_count("심텍 HDI")
-        popup.dnc_label.configure(text="DNC 진행 상태: DNC 완료", fg=OK_COLOR)
+        popup.dnc_label.configure(
+            text="DNC 진행 상태: 신규 검증 완료" if first_article_ok else "DNC 진행 상태: 신규 검증 NG",
+            fg=OK_COLOR if first_article_ok else NG_COLOR,
+        )
         popup.excel_label.configure(text=f"DB 저장: 완료 / 작업일보 미반영 {pending_count}건", fg=OK_COLOR)
-        popup.app.set_simtek_hdi_status("dnc", "신규 검증 DNC 완료", True)
         popup.app.set_simtek_hdi_status("excel", f"DB 저장 완료 / Excel 미반영 {pending_count}건", True)
-        log_app(f"심텍 HDI 신규 검증 DNC 완료: ids={log_ids}, Excel 미반영={pending_count}건")
-        popup.clear_after_done()
-        popup.set_running(False)
-        popup.app.set_running(False)
-        popup.window.after(400, popup.window.destroy)
+        log_app(
+            f"심텍 HDI 신규 검증 DNC 완료: ids={log_ids}, 초도품={'OK' if first_article_ok else 'NG'}, "
+            f"잔량={state.get('remaining_qty', 0)}매, Excel 미반영={pending_count}건"
+        )
+        popup.excel_label.configure(text="작업일보 반영: 처리중", fg=MUTED_TEXT)
+        threading.Thread(target=simtek_hdi_new_model_export_worker, args=(popup,), daemon=True).start()
     except Exception as exc:
         handle_simtek_hdi_popup_error(popup, exc)
-    finally:
-        if popup.window.winfo_exists():
-            popup.set_running(False)
+
+
+def simtek_hdi_new_model_export_worker(popup: SimtekHdiNewModelPopup) -> None:
+    """작업일보 저장 중 팝업이 멈추지 않도록 Excel 반영을 백그라운드에서 처리합니다."""
+    error = None
+    try:
+        export_simtek_hdi_logs_to_excel(popup.app.config)
+    except Exception as exc:
+        error = exc
+    try:
+        popup.window.after(0, lambda export_error=error: finish_simtek_hdi_new_model_export(popup, export_error))
+    except tk.TclError:
         popup.app.set_running(False)
+
+
+def finish_simtek_hdi_new_model_export(popup: SimtekHdiNewModelPopup, error: Exception | None) -> None:
+    """심텍 HDI 신규 검증 작업일보 반영 결과를 화면에 표시합니다."""
+    if not popup.window.winfo_exists():
+        popup.app.set_running(False)
+        return
+    pending_count = get_unexported_process_log_count("심텍 HDI")
+    if error is None:
+        popup.excel_label.configure(text=f"작업일보 반영: 완료 / Excel 미반영 {pending_count}건", fg=OK_COLOR)
+        popup.app.set_simtek_hdi_status("excel", f"작업일보 반영 완료 / Excel 미반영 {pending_count}건", True)
+    else:
+        log_error("심텍 HDI 신규 검증 작업일보 자동 반영 실패", error)
+        popup.excel_label.configure(text=f"작업일보 반영: 실패 / Excel 미반영 {pending_count}건", fg=NG_COLOR)
+        popup.app.set_simtek_hdi_status("excel", f"자동 반영 실패 / Excel 미반영 {pending_count}건", False)
+        alert_message = "다른 PC 반영 중\n나중에 작업일보 반영" if "다른 PC" in str(error) else "DB 저장 완료\n나중에 작업일보 반영"
+        show_operator_alert(popup.window, "작업일보 반영 실패", alert_message, "error")
+    popup.clear_after_done()
+    popup.set_running(False)
+    popup.app.set_running(False)
+    if error is None:
+        popup.window.after(700, popup.window.destroy)
 
 
 def handle_simtek_hdi_popup_error(popup: SimtekHdiNewModelPopup, exc: Exception) -> None:
