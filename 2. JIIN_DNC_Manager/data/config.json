@@ -4,8 +4,8 @@
   "source_dnc_folder": "C:/Users/오국진/Desktop/KCC_PKG",
   "source_dnc_folders": {
     "TLB": "C:/Users/오국진/Desktop/지그 일원화",
-    "심텍 SPS": "C:\\Users\\오국진\\Desktop\\SIMMTECH_SPS",
-    "심텍 HDI": "C:\\Users\\오국진\\Desktop\\SIMMTECH_HDI",
+    "심텍 SPS": "",
+    "심텍 HDI": "",
     "KCC PKG": "C:/Users/오국진/Desktop/KCC_PKG",
     "KCC HDI": "C:/Users/오국진/Desktop/지그 일원화"
   },
@@ -25,7 +25,7 @@
   "clear_common_after_normal": false,
   "machine": "트리밍 1호기",
   "theme": "MES 블루",
-  "last_master_auto_backup_date": "2026-07-06",
+  "last_master_auto_backup_date": "2026-08-03",
   "tlb_condition_sheet": "C:/Users/오국진/Desktop/DNC 폴더/NEW_MLB 작업 조건 확인 Sheet_V5_260626-1.xlsx",
   "kcc_hdi_condition_sheet": "C:/Users/오국진/Desktop/DNC 폴더/NEW_MLB 작업 조건 확인 Sheet_V5_260626-1.xlsx"
 }

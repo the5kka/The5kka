@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OJT Exam Maker V2 디자인 시안</title>
+  <style>
+    * { box-sizing: border-box; letter-spacing: 0; }
+    :root { font-family: "Malgun Gothic", "Segoe UI", sans-serif; }
+    html, body { margin: 0; min-width: 1600px; background: #20242a; }
+    body { padding: 32px 0; }
+    button, input { font: inherit; }
+    button { cursor: default; }
+    .concept {
+      position: relative;
+      width: 1600px;
+      height: 900px;
+      margin: 0 auto 32px;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .concept-id {
+      position: absolute;
+      z-index: 20;
+      right: 18px;
+      bottom: 14px;
+      padding: 6px 10px;
+      border: 1px solid currentColor;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 800;
+      opacity: .72;
+    }
+    .ico { width: 17px; height: 17px; stroke-width: 2; flex: 0 0 auto; }
+    .brand { font-family: "Segoe UI", "Malgun Gothic", sans-serif; font-weight: 900; }
+    .section-title { margin: 0; font-size: 19px; line-height: 1.2; }
+    .file-line { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .file-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .process-list { display: grid; gap: 0; overflow: hidden; }
+    .process-head, .process-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 56px 64px 58px;
+      align-items: center;
+    }
+    .process-head > span, .process-row > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .condition-grid { display: grid; grid-template-columns: minmax(90px, 1fr) 112px 112px; align-items: center; gap: 10px 12px; }
+    .condition-grid .ch { text-align: center; font-size: 12px; font-weight: 800; }
+    .condition-grid .kind { font-weight: 800; }
+    .condition-grid .header-spacer { display: none; }
+    .value-box { display: flex; align-items: center; justify-content: center; height: 34px; font-family: "Segoe UI", sans-serif; font-weight: 800; }
+    .value-box .ico { width: 13px; height: 13px; margin-left: 7px; opacity: .55; }
+    .total-box { display: flex; align-items: baseline; justify-content: center; gap: 9px; }
+    .total-box b { font: 900 34px/1 "Segoe UI", sans-serif; }
+    .identity { display: grid; grid-template-columns: 88px 1fr; gap: 9px 12px; align-items: center; }
+    .identity label { font-weight: 800; }
+    .identity .entry { height: 34px; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+    .actions { display: grid; gap: 10px; }
+    .action-btn { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 42px; font-weight: 900; border-radius: 4px; }
+    .pager { display: grid; grid-template-columns: 1fr 76px 1fr; align-items: center; gap: 10px; }
+    .pager button { height: 36px; font-weight: 800; }
+    .pager span { text-align: center; font-weight: 900; }
+    .paper-stage { position: relative; display: grid; place-items: center; overflow: hidden; }
+    .paper {
+      position: relative;
+      width: 430px;
+      aspect-ratio: 210 / 297;
+      padding: 18px 20px 17px;
+      background: #fff;
+      color: #111;
+      border: 1px solid #333;
+      box-shadow: 0 8px 24px rgba(0,0,0,.18);
+      font-family: "Malgun Gothic", sans-serif;
+    }
+    .paper-top { display: grid; grid-template-columns: 88px 1fr 110px; gap: 8px; align-items: stretch; }
+    .paper-mini-table { display: grid; grid-template-columns: 38px 1fr; border-top: 1px solid #111; border-left: 1px solid #111; font-size: 6.5px; }
+    .paper-mini-table span { display: grid; place-items: center; min-height: 15px; border-right: 1px solid #111; border-bottom: 1px solid #111; }
+    .paper-title { display: grid; place-items: center; font-size: 18px; font-weight: 900; border: 0; }
+    .paper-approval { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #111; border-left: 1px solid #111; font-size: 6px; }
+    .paper-approval span { display: grid; place-items: center; min-height: 20px; border-right: 1px solid #111; border-bottom: 1px solid #111; }
+    .paper-info { margin-top: 8px; border-top: 1px solid #111; border-left: 1px solid #111; font-size: 6.5px; }
+    .paper-info-row { display: grid; grid-template-columns: 72px 1fr 44px 1fr; }
+    .paper-info-row span { min-height: 13px; display: grid; place-items: center; border-right: 1px solid #111; border-bottom: 1px solid #111; }
+    .paper-info-row span:nth-child(1), .paper-info-row span:nth-child(3) { font-weight: 800; }
+    .paper-questions { margin-top: 9px; display: grid; gap: 8px; }
+    .paper-q { display: grid; grid-template-columns: 14px 1fr 29px; gap: 3px; font-size: 6.7px; line-height: 1.35; }
+    .paper-q .no { text-align: right; font-weight: 700; }
+    .paper-q .score { text-align: right; }
+    .paper-options { grid-column: 2 / 4; padding-left: 3px; color: #222; }
+    .paper-footer { position: absolute; left: 20px; right: 20px; bottom: 8px; display: grid; grid-template-columns: 1fr 1fr 1fr; font-size: 5.5px; }
+    .paper-footer span:nth-child(2) { text-align: center; }
+    .paper-footer span:nth-child(3) { text-align: right; }
+
+    /* 01 Industrial control console */
+    .c1 { color: #edf2f7; background: #111820; }
+    .c1 .topbar { height: 104px; padding: 23px 26px 18px; border-bottom: 4px solid #25313c; background: #0b1118; }
+    .c1 .brand { color: #fff; font-size: 31px; text-shadow: 0 2px 0 #000; }
+    .c1 .brand em { color: #3ee59d; font-style: normal; }
+    .c1 .file-line { margin-top: 15px; }
+    .c1 .file-line > .ico { color: #3ee59d; }
+    .c1 .file-path { flex: 1; height: 32px; padding: 6px 10px; border: 1px solid #64727e; background: #071019; box-shadow: inset 0 2px 4px #000; color: #dfe8f0; }
+    .c1 .steel-btn { height: 34px; min-width: 122px; color: #fff; border: 1px solid #93a1ad; background: #26384b; box-shadow: inset 0 1px 0 #71849a, 0 3px 0 #070b0f; font-weight: 800; }
+    .c1 .workspace { height: 796px; display: grid; grid-template-columns: 420px 405px 1fr; gap: 10px; padding: 10px; }
+    .c1 .zone { min-width: 0; padding: 18px; border: 1px solid #263340; background: #17222d; box-shadow: inset 0 1px 0 #344451; }
+    .c1 .section-title { padding-bottom: 13px; color: #fff; border-bottom: 1px solid #394a58; }
+    .c1 .process-list { margin-top: 12px; border: 1px solid #74818c; }
+    .c1 .process-head { height: 31px; background: #293e52; font-size: 12px; font-weight: 900; }
+    .c1 .process-row { height: 31px; border-top: 1px solid #52606d; background: #121d28; font-size: 12px; }
+    .c1 .process-row.active { color: #fff; background: #126c51; box-shadow: inset 5px 0 #40e7a1; }
+    .c1 .process-head span, .c1 .process-row span { padding: 0 7px; border-right: 1px solid #66737f; }
+    .c1 .condition-grid { margin-top: 17px; }
+    .c1 .value-box, .c1 .identity .entry { border: 1px solid #73808c; background: #07111b; box-shadow: inset 0 2px 3px #000; }
+    .c1 .settings { grid-column: 1; height: 33px; color: #fff; border: 1px solid #9aa6b0; background: #2b3e52; box-shadow: inset 0 1px 0 #8c9db0, 0 3px 0 #090d11; font-weight: 900; }
+    .c1 .total-box { margin: 22px 0 14px; height: 70px; padding-top: 16px; background: #0c2e3e; border: 1px solid #31566a; color: #3ee59d; box-shadow: inset 0 2px 7px #061923; }
+    .c1 .identity { margin-bottom: 16px; }
+    .c1 .actions { margin-top: 12px; }
+    .c1 .action-btn { color: #fff; border: 1px solid #8fa1b1; background: #26394f; box-shadow: inset 0 1px 0 #6e849b, 0 3px 0 #090d11; }
+    .c1 .action-btn.primary { color: #04130d; border-color: #75ffc2; background: #33d88f; box-shadow: inset 0 1px 0 #b9ffe1, 0 3px 0 #0a6644; }
+    .c1 .pager button { color: #fff; border: 1px solid #81909d; background: #24374b; box-shadow: inset 0 1px 0 #63778a, 0 2px 0 #080c10; }
+    .c1 .preview-zone { display: grid; grid-template-rows: 45px 1fr; padding: 0; }
+    .c1 .preview-head { display: flex; align-items: center; gap: 9px; padding: 0 18px; background: #1e2d3a; border-bottom: 1px solid #3b4c59; }
+    .c1 .paper-stage { background: #09131d; }
+    .c1 .concept-id { color: #3ee59d; }
+
+    /* 02 Light office workspace */
+    .c2 { color: #17243a; background: #edf2f7; }
+    .c2 .appbar { height: 76px; padding: 0 25px; display: flex; align-items: center; gap: 24px; background: #fff; border-bottom: 1px solid #cbd5e1; box-shadow: 0 3px 10px rgba(30,52,80,.10); }
+    .c2 .brand { font-size: 24px; color: #183b66; }
+    .c2 .brand span { display: block; color: #607086; font-size: 10px; font-weight: 700; }
+    .c2 .file-line { flex: 1; max-width: 900px; }
+    .c2 .file-path { flex: 1; height: 38px; padding: 9px 12px; border: 1px solid #bac6d3; background: #f8fafc; color: #405269; }
+    .c2 .outline-btn { height: 38px; padding: 0 16px; display: flex; align-items: center; gap: 7px; color: #184e89; border: 1px solid #184e89; background: #fff; box-shadow: 0 2px 0 #b8c9dc; font-weight: 800; }
+    .c2 .layout { height: 824px; display: grid; grid-template-columns: 76px 390px 1fr 315px; }
+    .c2 .rail { padding: 18px 12px; background: #173b66; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .c2 .rail button { width: 48px; height: 48px; display: grid; place-items: center; color: #dbeafe; border: 0; background: transparent; border-radius: 6px; }
+    .c2 .rail button.active { color: #173b66; background: #fff; box-shadow: 0 3px 0 #0e2745; }
+    .c2 .process-zone { padding: 24px 18px; background: #f8fafc; border-right: 1px solid #ced8e2; }
+    .c2 .section-title { color: #173b66; }
+    .c2 .subtext { margin: 6px 0 16px; color: #718096; font-size: 12px; }
+    .c2 .process-list { border: 1px solid #c3ceda; border-radius: 6px; background: #fff; }
+    .c2 .process-head { height: 36px; color: #5a6b80; background: #e8eef5; font-size: 11px; font-weight: 900; }
+    .c2 .process-row { height: 37px; border-top: 1px solid #dce4ec; font-size: 12px; }
+    .c2 .process-row.active { color: #fff; background: #1f7a8c; }
+    .c2 .process-head span, .c2 .process-row span { padding: 0 8px; }
+    .c2 .preview-zone { padding: 22px; background: #e9eef4; }
+    .c2 .preview-shell { height: 100%; display: grid; grid-template-rows: 45px 1fr; border: 1px solid #c3ced8; background: #fff; box-shadow: 0 8px 25px rgba(40,60,85,.12); }
+    .c2 .preview-head { display: flex; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 1px solid #d6dee7; }
+    .c2 .preview-head strong { display: flex; align-items: center; gap: 8px; }
+    .c2 .zoom { display: flex; gap: 5px; }
+    .c2 .zoom button { width: 30px; height: 28px; border: 1px solid #b9c6d4; background: #f7fafc; color: #36516f; box-shadow: 0 2px 0 #d2dce6; }
+    .c2 .paper-stage { background: #dde5ed; }
+    .c2 .control-zone { padding: 23px 18px; background: #fff; border-left: 1px solid #ced8e2; }
+    .c2 .condition-grid { margin-top: 18px; grid-template-columns: 1fr 82px 82px; }
+    .c2 .value-box, .c2 .identity .entry { border: 1px solid #becbd8; background: #f7fafc; color: #183b66; box-shadow: inset 0 1px 2px #d7e0e8; }
+    .c2 .settings { grid-column: 1 / 4; height: 37px; display: flex; align-items: center; justify-content: center; gap: 8px; color: #fff; border: 1px solid #174675; background: #1f5c99; box-shadow: inset 0 1px 0 #6f9dcc, 0 3px 0 #10375e; font-weight: 900; }
+    .c2 .header-spacer { display: block; }
+    .c2 .total-box { height: 66px; margin: 20px 0; color: #154360; border-left: 5px solid #f05d5e; background: #f2f7fb; }
+    .c2 .identity { margin-bottom: 19px; }
+    .c2 .pager button { border: 1px solid #9bacbd; background: #fff; color: #264968; box-shadow: 0 2px 0 #c8d3de; }
+    .c2 .action-btn { color: #fff; border: 1px solid #153f6a; background: #205b95; box-shadow: inset 0 1px 0 #77a5d1, 0 3px 0 #103457; }
+    .c2 .action-btn.primary { border-color: #d74548; background: #f05d5e; box-shadow: inset 0 1px 0 #ffb0b1, 0 3px 0 #a52f32; }
+    .c2 .concept-id { color: #1f5c99; }
+
+    /* 03 Safety high-contrast board */
+    .c3 { color: #101010; background: #f4f2ea; }
+    .c3 .masthead { height: 94px; display: grid; grid-template-columns: 310px 1fr 190px; align-items: center; background: #ffd400; border-bottom: 7px solid #111; }
+    .c3 .brand { height: 100%; padding: 24px 25px; display: flex; align-items: center; gap: 10px; color: #ffd400; background: #111; font-size: 25px; }
+    .c3 .file-line { padding: 0 23px; }
+    .c3 .file-path { flex: 1; height: 36px; padding: 8px 11px; border: 2px solid #111; background: #fff; font-weight: 700; }
+    .c3 .black-btn { height: 38px; padding: 0 18px; color: #fff; border: 2px solid #111; background: #1a1a1a; box-shadow: 0 4px 0 #765f00; font-weight: 900; }
+    .c3 .mode { display: grid; place-items: center; align-self: stretch; border-left: 2px solid #111; background: #ffef88; font-weight: 900; }
+    .c3 .layout { height: 806px; display: grid; grid-template-columns: 250px 1fr; }
+    .c3 .steps { padding: 23px 18px; color: #fff; background: #151515; border-right: 7px solid #ffd400; }
+    .c3 .steps h2 { margin: 0 0 23px; font-size: 19px; color: #ffd400; }
+    .c3 .step { display: grid; grid-template-columns: 38px 1fr; gap: 10px; align-items: center; min-height: 58px; border-bottom: 1px solid #4a4a4a; color: #c9c9c9; }
+    .c3 .step b { width: 32px; height: 32px; display: grid; place-items: center; border: 2px solid #777; }
+    .c3 .step.active { color: #fff; }
+    .c3 .step.active b { color: #111; border-color: #ffd400; background: #ffd400; box-shadow: 0 3px 0 #806c00; }
+    .c3 .step-actions { margin-top: 25px; display: grid; gap: 12px; }
+    .c3 .step-actions button { height: 46px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 2px solid #ffd400; background: #252525; color: #fff; box-shadow: 0 4px 0 #000; font-weight: 900; }
+    .c3 .step-actions button.primary { color: #111; background: #ffd400; box-shadow: inset 0 1px 0 #fff5aa, 0 4px 0 #8a7400; }
+    .c3 .work { min-width: 0; min-height: 0; display: grid; grid-template-rows: 170px minmax(0, 1fr) 160px; }
+    .c3 .conditions { display: grid; grid-template-columns: 130px 1fr 300px; gap: 18px; align-items: center; padding: 15px 24px; border-bottom: 3px solid #111; background: #fff; }
+    .c3 .conditions h2 { margin: 0; font-size: 21px; }
+    .c3 .condition-grid { grid-template-columns: 80px 72px 72px; gap: 7px 10px; }
+    .c3 .value-box { height: 29px; border: 2px solid #111; background: #fffbdc; box-shadow: inset 0 2px 0 #d6c85a; }
+    .c3 .conditions .identity { grid-template-columns: 72px 1fr; gap: 7px 9px; font-size: 13px; }
+    .c3 .conditions .entry { height: 30px; border: 2px solid #111; background: #fff; }
+    .c3 .conditions .total-box { grid-column: 1 / 3; height: 35px; color: #111; background: #ffd400; border: 2px solid #111; }
+    .c3 .conditions .total-box b { font-size: 24px; }
+    .c3 .preview-zone { min-height: 0; display: grid; grid-template-columns: 1fr 165px; padding: 16px 24px; overflow: hidden; background: #dddcd7; }
+    .c3 .paper-stage { position: relative; border: 2px solid #111; background: #bbb; }
+    .c3 .paper { position: absolute; top: 50%; left: 50%; width: 430px; transform: translate(-50%, -50%) scale(.70); }
+    .c3 .side-tools { padding: 0 0 0 12px; display: grid; align-content: start; gap: 10px; }
+    .c3 .side-tools button { height: 46px; display: flex; align-items: center; justify-content: center; gap: 7px; border: 2px solid #111; background: #fff; box-shadow: 0 4px 0 #777; font-weight: 900; }
+    .c3 .process-zone { padding: 13px 24px; border-top: 3px solid #111; background: #fff; }
+    .c3 .process-zone .bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+    .c3 .process-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px; }
+    .c3 .process-chip { min-width: 0; height: 56px; padding: 8px; border: 2px solid #111; background: #f4f2ea; box-shadow: 0 3px 0 #aaa; font-size: 11px; font-weight: 800; }
+    .c3 .process-chip.active { background: #ffd400; box-shadow: inset 0 2px 0 #fff3a3, 0 3px 0 #7f6a00; }
+    .c3 .concept-id { color: #111; background: #ffd400; }
+
+    /* 04 Blue ribbon application */
+    .c4 { color: #152337; background: #dfe7f0; }
+    .c4 .titlebar { height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; color: #fff; background: #092b54; }
+    .c4 .brand { display: flex; align-items: center; gap: 10px; font-size: 23px; }
+    .c4 .window-actions { display: flex; gap: 7px; }
+    .c4 .window-actions button { width: 32px; height: 27px; color: #dbeafe; border: 1px solid #52759a; background: #123c68; box-shadow: inset 0 1px 0 #6688a9; }
+    .c4 .ribbon { height: 116px; padding: 0 22px 14px; color: #fff; background: #124b87; border-bottom: 4px solid #ef9f26; }
+    .c4 .tabs { height: 34px; display: flex; align-items: end; gap: 3px; }
+    .c4 .tabs span { height: 28px; padding: 6px 17px; color: #cde2f7; font-size: 12px; font-weight: 800; }
+    .c4 .tabs span.active { color: #0a345f; background: #e9f2fb; }
+    .c4 .ribbon-tools { height: 63px; display: flex; align-items: center; gap: 11px; }
+    .c4 .tool-group { height: 53px; padding: 5px 12px; display: flex; align-items: center; gap: 8px; border-right: 1px solid #5b82aa; }
+    .c4 .tool-group button { height: 39px; padding: 0 15px; display: flex; align-items: center; gap: 8px; color: #fff; border: 1px solid #8eafd0; background: #1f609f; box-shadow: inset 0 1px 0 #82acd5, 0 2px 0 #07305a; font-weight: 800; }
+    .c4 .tool-group .file-path { width: 520px; height: 36px; padding: 8px 10px; color: #12263e; background: #f4f8fc; border: 1px solid #9bb2c9; }
+    .c4 .layout { height: 730px; display: grid; grid-template-columns: 365px 1fr 295px; gap: 12px; padding: 12px; }
+    .c4 .pane { min-width: 0; background: #f7f9fc; border: 1px solid #aebdcd; box-shadow: 0 3px 10px rgba(40,63,89,.15); }
+    .c4 .pane-head { height: 43px; display: flex; align-items: center; gap: 8px; padding: 0 13px; color: #fff; background: #315d8c; font-weight: 900; }
+    .c4 .process-list { margin: 12px; border: 1px solid #9dadbd; }
+    .c4 .process-head { height: 33px; color: #fff; background: #627d99; font-size: 11px; font-weight: 900; }
+    .c4 .process-row { height: 32px; border-top: 1px solid #c4ced8; background: #fff; font-size: 11px; }
+    .c4 .process-row:nth-child(odd) { background: #edf3f8; }
+    .c4 .process-row.active { color: #fff; background: #dd7b16; }
+    .c4 .process-head span, .c4 .process-row span { padding: 0 7px; border-right: 1px solid #b8c5d1; }
+    .c4 .preview-pane { display: grid; grid-template-rows: 43px 1fr 44px; }
+    .c4 .paper-stage { background: #c8d2dd; }
+    .c4 .statusbar { display: flex; align-items: center; justify-content: space-between; padding: 0 13px; border-top: 1px solid #b7c4d1; color: #56687b; font-size: 12px; }
+    .c4 .control-pane { padding-bottom: 15px; }
+    .c4 .condition-grid { margin: 15px 14px; grid-template-columns: 1fr 72px 72px; gap: 10px 8px; }
+    .c4 .value-box, .c4 .identity .entry { border: 1px solid #9eb0c2; background: #fff; box-shadow: inset 0 1px 2px #c8d3de; }
+    .c4 .settings { grid-column: 1 / 4; height: 35px; color: #fff; border: 1px solid #21517e; background: #326b9f; box-shadow: inset 0 1px 0 #8cb2d3, 0 3px 0 #1b4266; font-weight: 900; }
+    .c4 .header-spacer { display: block; }
+    .c4 .total-box { height: 59px; margin: 16px 14px; color: #0d4d85; background: #e4f1fc; border: 1px solid #99b9d6; }
+    .c4 .identity { margin: 0 14px 15px; grid-template-columns: 70px 1fr; }
+    .c4 .actions { margin: 0 14px; }
+    .c4 .pager button { border: 1px solid #7790a9; background: #edf3f8; color: #173b60; box-shadow: 0 2px 0 #bcc8d3; }
+    .c4 .action-btn { color: #fff; border: 1px solid #285884; background: #376e9f; box-shadow: inset 0 1px 0 #8fb2d2, 0 3px 0 #1d4569; }
+    .c4 .action-btn.primary { border-color: #c86b0c; background: #ee8c27; box-shadow: inset 0 1px 0 #ffc681, 0 3px 0 #a85100; }
+    .c4 .concept-id { color: #124b87; background: #fff; }
+
+    /* 05 Machine console */
+    .c5 { color: #eaf7f5; background: #283033; }
+    .c5 .sidebar { position: absolute; inset: 0 auto 0 0; width: 98px; padding: 20px 13px; background: #151b1d; border-right: 4px solid #3a474b; display: flex; flex-direction: column; align-items: center; }
+    .c5 .mark { width: 62px; height: 62px; display: grid; place-items: center; color: #0b2321; background: #5ce1d0; border: 2px solid #b9fff6; box-shadow: inset 0 2px 0 #e3fffb, 0 5px 0 #1a6d65; font: 900 21px/1 "Segoe UI"; }
+    .c5 .side-nav { margin-top: 28px; display: grid; gap: 15px; }
+    .c5 .side-nav button { width: 58px; height: 58px; display: grid; place-items: center; color: #9fb4b5; border: 2px solid #526064; background: #242c2f; box-shadow: inset 0 1px 0 #667478, 0 4px 0 #090d0e; }
+    .c5 .side-nav button.active { color: #071817; border-color: #a0fff3; background: #5ce1d0; box-shadow: inset 0 2px 0 #e1fffb, 0 4px 0 #1e6e67; }
+    .c5 .top { position: absolute; left: 98px; right: 0; top: 0; height: 116px; padding: 18px 24px; background: #323c3f; border-bottom: 4px solid #151b1d; }
+    .c5 .topline { display: flex; align-items: center; justify-content: space-between; }
+    .c5 .brand { font-size: 26px; color: #fff; }
+    .c5 .brand span { color: #5ce1d0; }
+    .c5 .machine-state { padding: 7px 13px; color: #5ce1d0; border: 1px solid #5ce1d0; background: #172122; font: 800 12px/1 "Segoe UI"; }
+    .c5 .file-line { margin-top: 15px; }
+    .c5 .file-path { flex: 1; height: 34px; padding: 7px 10px; color: #d7e9e7; border: 2px inset #657276; background: #151d1f; }
+    .c5 .metal-btn { height: 35px; padding: 0 17px; display: flex; align-items: center; gap: 7px; color: #edf7f6; border: 1px solid #7d8a8e; background: #445156; box-shadow: inset 0 2px 0 #849095, inset 0 -2px 0 #20282b, 0 3px 0 #0c1112; font-weight: 900; }
+    .c5 .body { position: absolute; left: 98px; right: 0; top: 116px; bottom: 0; display: grid; grid-template-rows: 112px 1fr; }
+    .c5 .process-strip { padding: 14px 20px; display: grid; grid-template-columns: 150px repeat(5, 1fr); gap: 10px; align-items: stretch; background: #242c2f; border-bottom: 2px solid #4b585c; }
+    .c5 .process-strip h2 { margin: 0; align-self: center; color: #5ce1d0; font-size: 18px; }
+    .c5 .process-card { padding: 11px; min-width: 0; border: 1px solid #657276; background: #303a3d; box-shadow: inset 0 1px 0 #637075, 0 3px 0 #121718; }
+    .c5 .process-card b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+    .c5 .process-card span { display: block; margin-top: 7px; color: #a9b9ba; font: 700 10px/1 "Segoe UI"; }
+    .c5 .process-card.active { color: #06211e; border-color: #b8fff6; background: #5ce1d0; box-shadow: inset 0 2px 0 #e3fffb, 0 4px 0 #1c6d65; }
+    .c5 .process-card.active span { color: #174844; }
+    .c5 .work { min-height: 0; display: grid; grid-template-columns: 338px 1fr; gap: 12px; padding: 12px; }
+    .c5 .console { min-height: 0; padding: 16px; border: 2px ridge #607075; background: #303a3d; }
+    .c5 .console h2 { margin: 0 0 15px; color: #fff; font-size: 18px; }
+    .c5 .condition-grid { grid-template-columns: 1fr 76px 76px; gap: 9px 8px; }
+    .c5 .value-box, .c5 .identity .entry { border: 2px inset #6b797d; background: #10191b; color: #69f0df; font-family: "Consolas", monospace; box-shadow: inset 0 2px 4px #050707; }
+    .c5 .settings { grid-column: 1 / 4; height: 37px; color: #fff; border: 1px solid #7e8d90; background: #46555a; box-shadow: inset 0 2px 0 #7f8d91, inset 0 -2px 0 #20292c, 0 3px 0 #101516; font-weight: 900; }
+    .c5 .header-spacer { display: block; }
+    .c5 .total-box { height: 73px; margin: 18px 0 15px; color: #5ce1d0; border: 2px inset #627074; background: #101a1c; text-shadow: 0 0 9px rgba(92,225,208,.4); }
+    .c5 .identity { grid-template-columns: 70px 1fr; margin-bottom: 16px; }
+    .c5 .pager button { color: #fff; border: 1px solid #79868a; background: #445156; box-shadow: inset 0 2px 0 #78868a, 0 3px 0 #111718; }
+    .c5 .action-btn { color: #fff; border: 1px solid #7f8b8f; background: #455358; box-shadow: inset 0 2px 0 #849195, inset 0 -2px 0 #222b2e, 0 4px 0 #111617; }
+    .c5 .action-btn.primary { color: #06201d; border-color: #b6fff6; background: #5ce1d0; box-shadow: inset 0 2px 0 #e2fffb, inset 0 -2px 0 #2c9e91, 0 4px 0 #1a6b63; }
+    .c5 .preview-zone { min-width: 0; display: grid; grid-template-rows: 46px 1fr; border: 2px ridge #607075; }
+    .c5 .preview-head { padding: 0 15px; display: flex; align-items: center; justify-content: space-between; background: #364246; }
+    .c5 .preview-head strong { display: flex; align-items: center; gap: 8px; }
+    .c5 .paper-stage { background: #172023; }
+    .c5 .concept-id { color: #5ce1d0; }
+
+    /* 06 Modern color workspace */
+    .c6 { color: #1d2a32; background: #f1f4f3; }
+    .c6 .topbar { height: 90px; display: grid; grid-template-columns: 315px 1fr auto; align-items: center; gap: 22px; padding: 0 26px; background: #fff; border-bottom: 6px solid #166b58; }
+    .c6 .brand { font-size: 27px; color: #123a32; }
+    .c6 .brand small { display: block; margin-top: 3px; color: #de5d47; font-size: 11px; font-weight: 800; }
+    .c6 .file-line { min-width: 0; }
+    .c6 .file-path { flex: 1; height: 38px; padding: 9px 12px; color: #46535a; border: 1px solid #b9c5c2; border-radius: 6px; background: #f7f9f8; }
+    .c6 .coral-btn { height: 39px; padding: 0 16px; display: flex; align-items: center; gap: 8px; color: #fff; border: 1px solid #a23b2b; border-radius: 6px; background: #de5d47; box-shadow: inset 0 1px 0 #ffad9f, 0 3px 0 #983827; font-weight: 900; }
+    .c6 .mode-tabs { display: flex; gap: 7px; }
+    .c6 .mode-tabs span { padding: 8px 12px; border-radius: 6px; color: #49645d; background: #e4ece9; font-size: 11px; font-weight: 900; }
+    .c6 .mode-tabs span.active { color: #fff; background: #166b58; box-shadow: 0 3px 0 #0e493c; }
+    .c6 .layout { height: 810px; display: grid; grid-template-columns: 330px 1fr; }
+    .c6 .left { min-height: 0; display: grid; grid-template-rows: 1fr 285px; border-right: 1px solid #c7d1ce; background: #fff; }
+    .c6 .process-zone { min-height: 0; padding: 21px 18px; overflow: hidden; }
+    .c6 .process-zone .heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .c6 .process-zone .heading span { color: #71807c; font-size: 11px; }
+    .c6 .process-list { border: 1px solid #c6d1ce; border-radius: 6px; }
+    .c6 .process-head { height: 33px; color: #fff; background: #166b58; font-size: 10px; font-weight: 900; }
+    .c6 .process-row { height: 32px; border-top: 1px solid #d9e1df; font-size: 11px; }
+    .c6 .process-row.active { color: #fff; background: #287e6a; box-shadow: inset 5px 0 #f5b642; }
+    .c6 .process-head span, .c6 .process-row span { padding: 0 7px; }
+    .c6 .mini-conditions { padding: 18px; color: #fff; background: #123a32; }
+    .c6 .mini-conditions h2 { margin: 0 0 12px; font-size: 17px; }
+    .c6 .condition-grid { grid-template-columns: 1fr 66px 66px; gap: 7px; }
+    .c6 .condition-grid .ch { color: #9bc1b8; }
+    .c6 .value-box { height: 28px; color: #fff; border: 1px solid #4b7c70; border-radius: 4px; background: #092921; box-shadow: inset 0 2px 3px #041512; }
+    .c6 .settings { grid-column: 1 / 4; height: 33px; color: #123a32; border: 1px solid #ebb13d; border-radius: 4px; background: #f5b642; box-shadow: inset 0 1px 0 #ffe3a0, 0 3px 0 #a8730b; font-weight: 900; }
+    .c6 .header-spacer { display: block; }
+    .c6 .main { min-width: 0; display: grid; grid-template-rows: 86px 1fr 84px; }
+    .c6 .context { display: grid; grid-template-columns: 1fr 365px; align-items: center; padding: 13px 20px; background: #f7faf9; border-bottom: 1px solid #c9d4d1; }
+    .c6 .context h2 { margin: 0 0 4px; color: #123a32; font-size: 19px; }
+    .c6 .context p { margin: 0; color: #6d7e79; font-size: 12px; }
+    .c6 .identity { grid-template-columns: 72px 1fr; gap: 7px 9px; }
+    .c6 .identity label { white-space: nowrap; font-size: 12px; }
+    .c6 .identity .entry { height: 28px; border: 1px solid #b8c6c2; border-radius: 4px; background: #fff; }
+    .c6 .preview-zone { min-height: 0; display: grid; grid-template-columns: 1fr 195px; padding: 16px 20px; background: #e4e9e7; }
+    .c6 .paper-stage { border-radius: 6px; background: #d5dcda; }
+    .c6 .preview-tools { padding-left: 12px; display: grid; align-content: start; gap: 10px; }
+    .c6 .preview-tools button { height: 43px; display: flex; align-items: center; justify-content: center; gap: 8px; color: #174c40; border: 1px solid #aebdb9; border-radius: 6px; background: #fff; box-shadow: 0 3px 0 #c1cbc8; font-weight: 900; }
+    .c6 .preview-tools button.primary { color: #fff; border-color: #115444; background: #19715d; box-shadow: inset 0 1px 0 #67ad9d, 0 3px 0 #0e493b; }
+    .c6 .bottom-dock { display: grid; grid-template-columns: 240px 1fr 320px; align-items: center; gap: 14px; padding: 12px 20px; color: #fff; background: #1d2f36; }
+    .c6 .total-box { justify-content: flex-start; color: #f5b642; }
+    .c6 .total-box b { font-size: 27px; }
+    .c6 .pager button { color: #fff; border: 1px solid #61747b; border-radius: 4px; background: #30474f; box-shadow: inset 0 1px 0 #708188, 0 2px 0 #101c20; }
+    .c6 .final-print { height: 44px; display: flex; align-items: center; justify-content: center; gap: 9px; color: #182325; border: 1px solid #e7ab31; border-radius: 6px; background: #f5b642; box-shadow: inset 0 1px 0 #ffe6a8, 0 4px 0 #9d6d0d; font-weight: 900; }
+    .c6 .concept-id { top: 104px; bottom: auto; left: 760px; right: auto; color: #166b58; background: #fff; }
+  </style>
+</head>
+<body>
+  <section class="concept c1" id="concept-1">
+    <header class="topbar">
+      <div class="brand">OJT <em>EXAM</em> MAKER</div>
+      <div class="file-line"><i data-lucide="database" class="ico"></i><span class="file-path">D:\QC\8. Codex\6. OJT 인증 시험\작업자 인증 시험 문제_20260805.xlsm</span><button class="steel-btn">파일 선택</button></div>
+    </header>
+    <main class="workspace">
+      <section class="zone"><h2 class="section-title">공정 선택</h2><div class="process-list js-process"></div></section>
+      <section class="zone">
+        <h2 class="section-title">시험 조건</h2>
+        <div class="condition-grid js-condition"></div>
+        <div class="total-box"><span>TOTAL</span><b>100</b></div>
+        <div class="identity js-identity"></div>
+        <div class="pager"><button>이전</button><span>1 / 1</span><button>다음</button></div>
+        <div class="actions"><button class="action-btn primary"><i data-lucide="shuffle" class="ico"></i>랜덤 미리보기</button><button class="action-btn"><i data-lucide="search" class="ico"></i>출력 미리보기</button><button class="action-btn"><i data-lucide="printer" class="ico"></i>문제 + 답안 프린트</button></div>
+      </section>
+      <section class="zone preview-zone"><div class="preview-head"><i data-lucide="file-text" class="ico"></i><strong>시험지 미리보기</strong></div><div class="paper-stage"><div class="paper js-paper"></div></div></section>
+    </main>
+    <span class="concept-id">DESIGN 01 · INDUSTRIAL CONTROL</span>
+  </section>
+
+  <section class="concept c2" id="concept-2">
+    <header class="appbar">
+      <div class="brand">OJT EXAM MAKER<span>QUALITY EDUCATION SYSTEM</span></div>
+      <div class="file-line"><i data-lucide="file-spreadsheet" class="ico"></i><span class="file-path">작업자 인증 시험 문제_20260805.xlsm</span><button class="outline-btn"><i data-lucide="folder-open" class="ico"></i>파일 선택</button></div>
+    </header>
+    <main class="layout">
+      <nav class="rail"><button class="active"><i data-lucide="list-checks" class="ico"></i></button><button><i data-lucide="sliders-horizontal" class="ico"></i></button><button><i data-lucide="file-search" class="ico"></i></button><button><i data-lucide="printer" class="ico"></i></button></nav>
+      <section class="process-zone"><h2 class="section-title">공정 선택</h2><p class="subtext">시험을 만들 공정을 선택하세요.</p><div class="process-list js-process"></div></section>
+      <section class="preview-zone"><div class="preview-shell"><div class="preview-head"><strong><i data-lucide="file-text" class="ico"></i>시험지 미리보기</strong><div class="zoom"><button>−</button><button>+</button></div></div><div class="paper-stage"><div class="paper js-paper"></div></div></div></section>
+      <aside class="control-zone"><h2 class="section-title">시험 조건</h2><div class="condition-grid js-condition"></div><div class="total-box"><span>총점</span><b>100</b><span>점</span></div><div class="identity js-identity"></div><div class="pager"><button>이전</button><span>1 / 1</span><button>다음</button></div><div class="actions" style="margin-top:14px"><button class="action-btn primary"><i data-lucide="shuffle" class="ico"></i>랜덤 미리보기</button><button class="action-btn"><i data-lucide="search" class="ico"></i>출력 미리보기</button><button class="action-btn"><i data-lucide="printer" class="ico"></i>문제 + 답안 프린트</button></div></aside>
+    </main>
+    <span class="concept-id">DESIGN 02 · LIGHT OFFICE</span>
+  </section>
+
+  <section class="concept c3" id="concept-3">
+    <header class="masthead"><div class="brand"><i data-lucide="shield-check" class="ico"></i>OJT EXAM</div><div class="file-line"><span class="file-path">작업자 인증 시험 문제_20260805.xlsm</span><button class="black-btn">파일 선택</button></div><div class="mode">현장 시험 생성</div></header>
+    <main class="layout">
+      <nav class="steps"><h2>시험 생성 순서</h2><div class="step active"><b>1</b><span>공정 선택</span></div><div class="step active"><b>2</b><span>시험 조건 확인</span></div><div class="step active"><b>3</b><span>작업자 입력</span></div><div class="step"><b>4</b><span>출력 확인</span></div><div class="step-actions"><button class="primary"><i data-lucide="shuffle" class="ico"></i>랜덤 생성</button><button><i data-lucide="printer" class="ico"></i>최종 프린트</button></div></nav>
+      <section class="work">
+        <div class="conditions"><h2>시험 조건</h2><div class="condition-grid js-condition compact"></div><div><div class="identity js-identity"></div><div class="total-box"><span>총점</span><b>100</b></div></div></div>
+        <div class="preview-zone"><div class="paper-stage"><div class="paper js-paper"></div></div><div class="side-tools"><button><i data-lucide="search" class="ico"></i>확대 보기</button><button><i data-lucide="chevron-left" class="ico"></i>이전 페이지</button><button><i data-lucide="chevron-right" class="ico"></i>다음 페이지</button></div></div>
+        <div class="process-zone"><div class="bar"><h2 class="section-title">공정 선택</h2><strong>PRESS 전장용 선택됨</strong></div><div class="process-strip"><div class="process-chip">Brown OXIDE<br>일반용</div><div class="process-chip">CZ 전처리<br>전장용</div><div class="process-chip">Dualdetach<br>일반용</div><div class="process-chip active">PRESS<br>전장용</div><div class="process-chip">TRIM<br>전장용</div></div></div>
+      </section>
+    </main>
+    <span class="concept-id">DESIGN 03 · SAFETY HIGH CONTRAST</span>
+  </section>
+
+  <section class="concept c4" id="concept-4">
+    <header class="titlebar"><div class="brand"><i data-lucide="clipboard-check" class="ico"></i>OJT Exam Maker V2</div><div class="window-actions"><button>—</button><button>□</button><button>×</button></div></header>
+    <div class="ribbon"><div class="tabs"><span class="active">시험 만들기</span><span>문제은행</span><span>출력</span></div><div class="ribbon-tools"><div class="tool-group"><button><i data-lucide="folder-open" class="ico"></i>파일 선택</button><span class="file-path">작업자 인증 시험 문제_20260805.xlsm</span></div><div class="tool-group"><button><i data-lucide="shuffle" class="ico"></i>랜덤 생성</button><button><i data-lucide="search" class="ico"></i>출력 미리보기</button><button><i data-lucide="printer" class="ico"></i>프린트</button></div></div></div>
+    <main class="layout">
+      <section class="pane"><div class="pane-head"><i data-lucide="list" class="ico"></i>공정 목록</div><div class="process-list js-process"></div></section>
+      <section class="pane preview-pane"><div class="pane-head"><i data-lucide="file-text" class="ico"></i>시험지 미리보기</div><div class="paper-stage"><div class="paper js-paper"></div></div><div class="statusbar"><span>A4 · 세로 · 1페이지</span><span>100%</span></div></section>
+      <aside class="pane control-pane"><div class="pane-head"><i data-lucide="sliders-horizontal" class="ico"></i>시험 조건</div><div class="condition-grid js-condition"></div><div class="total-box"><span>TOTAL</span><b>100</b></div><div class="identity js-identity"></div><div class="actions"><div class="pager"><button>이전</button><span>1 / 1</span><button>다음</button></div><button class="action-btn primary"><i data-lucide="shuffle" class="ico"></i>랜덤 미리보기</button><button class="action-btn"><i data-lucide="printer" class="ico"></i>문제 + 답안 프린트</button></div></aside>
+    </main>
+    <span class="concept-id">DESIGN 04 · BLUE RIBBON</span>
+  </section>
+
+  <section class="concept c5" id="concept-5">
+    <nav class="sidebar"><div class="mark">OJT</div><div class="side-nav"><button class="active"><i data-lucide="layout-dashboard" class="ico"></i></button><button><i data-lucide="database" class="ico"></i></button><button><i data-lucide="settings" class="ico"></i></button><button><i data-lucide="printer" class="ico"></i></button></div></nav>
+    <header class="top"><div class="topline"><div class="brand">EXAM <span>CONTROL</span> STATION</div><div class="machine-state">SYSTEM READY</div></div><div class="file-line"><i data-lucide="hard-drive" class="ico"></i><span class="file-path">D:\QC\8. Codex\6. OJT 인증 시험\작업자 인증 시험 문제_20260805.xlsm</span><button class="metal-btn"><i data-lucide="folder-open" class="ico"></i>파일 선택</button></div></header>
+    <main class="body">
+      <div class="process-strip"><h2>공정 선택</h2><div class="process-card"><b>Brown OXIDE 일반용</b><span>VDA 0 · 객관 35 · 주관 10</span></div><div class="process-card"><b>CZ 전처리 전장용</b><span>VDA 5 · 객관 32 · 주관 11</span></div><div class="process-card"><b>Dualdetach 일반용</b><span>VDA 0 · 객관 34 · 주관 11</span></div><div class="process-card active"><b>PRESS 전장용</b><span>VDA 5 · 객관 29 · 주관 10</span></div><div class="process-card"><b>TRIM 전장용</b><span>VDA 5 · 객관 31 · 주관 10</span></div></div>
+      <div class="work"><section class="console"><h2>시험 조건</h2><div class="condition-grid js-condition"></div><div class="total-box"><span>TOTAL</span><b>100</b></div><div class="identity js-identity"></div><div class="pager"><button>이전</button><span>1 / 1</span><button>다음</button></div><div class="actions" style="margin-top:14px"><button class="action-btn primary"><i data-lucide="shuffle" class="ico"></i>랜덤 미리보기</button><button class="action-btn"><i data-lucide="search" class="ico"></i>출력 미리보기</button><button class="action-btn"><i data-lucide="printer" class="ico"></i>문제 + 답안 프린트</button></div></section><section class="preview-zone"><div class="preview-head"><strong><i data-lucide="scan-line" class="ico"></i>PRINT VIEW</strong><span>A4 / 100%</span></div><div class="paper-stage"><div class="paper js-paper"></div></div></section></div>
+    </main>
+    <span class="concept-id">DESIGN 05 · MACHINE CONSOLE</span>
+  </section>
+
+  <section class="concept c6" id="concept-6">
+    <header class="topbar"><div class="brand">OJT EXAM MAKER<small>작업자 인증 시험 생성</small></div><div class="file-line"><i data-lucide="file-spreadsheet" class="ico"></i><span class="file-path">작업자 인증 시험 문제_20260805.xlsm</span><button class="coral-btn"><i data-lucide="folder-open" class="ico"></i>파일 선택</button></div><div class="mode-tabs"><span>일반</span><span class="active">전장</span></div></header>
+    <main class="layout">
+      <aside class="left"><section class="process-zone"><div class="heading"><h2 class="section-title">공정 선택</h2><span>27개 공정</span></div><div class="process-list js-process"></div></section><section class="mini-conditions"><h2>시험 조건</h2><div class="condition-grid js-condition"></div></section></aside>
+      <section class="main"><div class="context"><div><h2>PRESS 전장용</h2><p>문제은행에서 무작위로 시험지를 구성합니다.</p></div><div class="identity js-identity"></div></div><div class="preview-zone"><div class="paper-stage"><div class="paper js-paper"></div></div><div class="preview-tools"><button class="primary"><i data-lucide="shuffle" class="ico"></i>랜덤 생성</button><button><i data-lucide="search" class="ico"></i>출력 미리보기</button><button><i data-lucide="zoom-in" class="ico"></i>확대</button><button><i data-lucide="zoom-out" class="ico"></i>축소</button></div></div><div class="bottom-dock"><div class="total-box"><span>총점</span><b>100</b><span>점</span></div><div class="pager"><button>이전 페이지</button><span>1 / 1</span><button>다음 페이지</button></div><button class="final-print"><i data-lucide="printer" class="ico"></i>문제 + 답안 프린트</button></div></section>
+    </main>
+    <span class="concept-id">DESIGN 06 · MODERN COLOR</span>
+  </section>
+
+  <script src="lucide.min.js"></script>
+  <script>
+    const rows = [
+      ['Brown OXIDE 일반용','0','35','10'], ['Brown OXIDE 전장용','5','30','10'],
+      ['CZ 전처리 일반용','0','35','12'], ['CZ 전처리 전장용','5','32','11'],
+      ['Dualdetach Carrierdetach 일반용','0','34','11'], ['Dualdetach Carrierdetach 전장용','5','29','11'],
+      ['ITS 각인 일반용','0','35','10'], ['ITS 각인 전장용','5','30','10'],
+      ['Lay-up 일반용','0','37','10'], ['PRESS 전장용','5','29','10'],
+      ['TRIM 일반용','0','37','10'], ['TRIM 전장용','5','31','10'],
+      ['X-Ray 일반용','0','35','10'], ['X-Ray 전장용','6','29','10']
+    ];
+
+    function processMarkup() {
+      return `<div class="process-head"><span>공정명</span><span>VDA</span><span>객관식</span><span>주관식</span></div>` + rows.map((r, i) =>
+        `<div class="process-row ${r[0] === 'PRESS 전장용' ? 'active' : ''}">${r.map(v => `<span>${v}</span>`).join('')}</div>`
+      ).join('');
+    }
+
+    function conditionMarkup() {
+      return `
+        <button class="settings"><i data-lucide="settings" class="ico"></i> 설정</button><span class="header-spacer"></span><span class="ch">문제수</span><span class="ch">점수</span>
+        <span class="kind">VDA</span><span class="value-box">5<i data-lucide="lock" class="ico"></i></span><span class="value-box">4.0<i data-lucide="lock" class="ico"></i></span>
+        <span class="kind">객관식</span><span class="value-box">20<i data-lucide="lock" class="ico"></i></span><span class="value-box">3.0<i data-lucide="lock" class="ico"></i></span>
+        <span class="kind">주관식</span><span class="value-box">5<i data-lucide="lock" class="ico"></i></span><span class="value-box">4.0<i data-lucide="lock" class="ico"></i></span>`;
+    }
+
+    function identityMarkup() {
+      return `<label>성명</label><span class="entry">오국진</span><label>평가 일시</label><span class="entry">2026.08.05</span>`;
+    }
+
+    function paperMarkup() {
+      return `
+        <div class="paper-top">
+          <div class="paper-mini-table"><span>부서명</span><span>후가공</span><span>평가자</span><span>오국진</span><span>평가 일시</span><span>2026.08.05</span></div>
+          <div class="paper-title">교육 평가서</div>
+          <div class="paper-approval"><span>기안</span><span>심의</span><span>결정</span><span></span><span></span><span></span><span>/</span><span>/</span><span>/</span></div>
+        </div>
+        <div class="paper-info"><div class="paper-info-row"><span>직무명</span><span>PRESS</span><span>성명</span><span>오국진</span></div><div class="paper-info-row"><span>평가 방법</span><span style="grid-column:2/5">시험 평가, 결과 보고서, 직무 평가, 기타 방법 (　)</span></div><div class="paper-info-row"><span>개정 차수</span><span>1</span><span>유형</span><span>전장용</span></div></div>
+        <div class="paper-questions">
+          <div class="paper-q"><span class="no">1.</span><span>[VDA 6.3] 공정 중 작업표준서와 실제 작업 방법이 다르다는 것을 발견하였다. 가장 적절한 조치는?</span><span class="score">(2.5점)</span><div class="paper-options">① 현재 방식이 더 효율적이면 그대로 작업　② 일단 생산 후 나중에 수정<br>③ 즉시 보고하고 표준과 일치하도록 조치　④ 동료와 상의 후 결정</div></div>
+          <div class="paper-q"><span class="no">2.</span><span>설비 점검 주기가 지났으나 생산 일정이 촉박하다. 어떻게 해야 하는가?</span><span class="score">(2.5점)</span><div class="paper-options">① 이번만 생략　② 다음 주에 몰아서 점검　③ 점검 후 생산 진행　④ 이상 없다고 판단되면 계속 생산</div></div>
+          <div class="paper-q"><span class="no">3.</span><span>PRESS 설비에서 제품을 작업하기 전 가장 먼저 확인해야 하는 것은?</span><span class="score">(4점)</span><div class="paper-options">① 작업 조건　② 설비 상태　③ 제품 LOT　④ 위 항목 모두</div></div>
+          <div class="paper-q"><span class="no">4.</span><span>작업 중 이상 발생 시 올바른 조치 순서는?</span><span class="score">(4점)</span><div class="paper-options">① 작업 중지　② 관리자 보고　③ 이상품 분리　④ 원인 확인 후 재가동</div></div>
+          <div class="paper-q"><span class="no">5.</span><span>다음 중 불량 예방 활동으로 가장 적절한 것은?</span><span class="score">(4점)</span><div class="paper-options">① 기준 준수　② 기록 관리　③ 점검 실시　④ 모두 해당</div></div>
+          <div class="paper-q"><span class="no">6.</span><span>설비 청소 및 일상점검을 실시하는 주기는?</span><span class="score">(4점)</span><div class="paper-options">① 매일　② 매주　③ 매월　④ 이상 발생 시</div></div>
+          <div class="paper-q"><span class="no">7.</span><span>제품 LOT 추적이 필요한 가장 중요한 이유는?</span><span class="score">(4점)</span><div class="paper-options">① 생산성 향상　② 불량 발생 시 범위 확인　③ 작업시간 단축　④ 포장 개선</div></div>
+          <div class="paper-q"><span class="no">8.</span><span>이상 발생 처리 절차를 간단히 작성하시오. (　　　　　　　　　)</span><span class="score">(4점)</span></div>
+        </div>
+        <div class="paper-footer"><span>JIQP-0202-02</span><span>( 주 ) 지 인</span><span>A4(210*297)㎜</span></div>`;
+    }
+
+    document.querySelectorAll('.js-process').forEach(el => el.innerHTML = processMarkup());
+    document.querySelectorAll('.js-condition').forEach(el => el.innerHTML = conditionMarkup());
+    document.querySelectorAll('.js-identity').forEach(el => el.innerHTML = identityMarkup());
+    document.querySelectorAll('.js-paper').forEach(el => el.innerHTML = paperMarkup());
+    lucide.createIcons();
+  </script>
+</body>
+</html>

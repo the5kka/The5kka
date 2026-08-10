@@ -1,0 +1,22 @@
+{
+  "result": {
+    "initial": 36,
+    "all": 60,
+    "desktop": {
+      "broken": 0,
+      "horizontalOverflow": false
+    },
+    "modalNavigation": true,
+    "modalImage": {
+      "width": 1600,
+      "height": 900,
+      "complete": true
+    },
+    "mobile": {
+      "cards": 36,
+      "broken": 0,
+      "horizontalOverflow": false
+    }
+  },
+  "failures": []
+}

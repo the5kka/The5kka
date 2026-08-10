@@ -1,0 +1,21 @@
+const {chromium}=require('playwright');
+const fs=require('fs');
+const path=require('path');
+(async()=>{
+  const target=process.argv[2]?path.resolve(process.argv[2]):path.join(__dirname,'00_OJT_글로벌_UI_총60종.html');
+  const source='file:///'+target.replace(/\\/g,'/');
+  const browser=await chromium.launch({headless:true,executablePath:'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'});
+  const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
+  await page.goto(source,{waitUntil:'load'});await page.waitForSelector('.card');
+  const initial=await page.locator('.card').count();
+  await page.locator('.filter',{hasText:'전체 60'}).click();
+  await page.waitForFunction(()=>[...document.querySelectorAll('.thumb img')].every(x=>x.complete&&x.naturalWidth>0));
+  const all=await page.locator('.card').count();
+  const desktop=await page.evaluate(()=>({broken:[...document.querySelectorAll('.thumb img')].filter(x=>!x.complete||x.naturalWidth!==1600||x.naturalHeight!==900).length,horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth+2}));
+  await page.locator('.card').first().click();await page.waitForSelector('.modal.open');
+  const before=await page.locator('#modalTitle').innerText();await page.locator('#next').click();const after=await page.locator('#modalTitle').innerText();const modalImage=await page.locator('#modalImage').evaluate(x=>({width:x.naturalWidth,height:x.naturalHeight,complete:x.complete}));await page.locator('#close').click();
+  await page.screenshot({path:path.join(__dirname,'갤러리_총60_첫화면.png')});
+  const mobile=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1});await mobile.goto(source,{waitUntil:'load'});await mobile.waitForSelector('.card');const mobileCheck=await mobile.evaluate(()=>({cards:document.querySelectorAll('.card').length,broken:[...document.querySelectorAll('.thumb img')].filter(x=>!x.complete||x.naturalWidth!==1600||x.naturalHeight!==900).length,horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth+2}));await mobile.screenshot({path:path.join(__dirname,'갤러리_총60_모바일.png')});
+  await browser.close();
+  const result={initial,all,desktop,modalNavigation:before!==after,modalImage,mobile:mobileCheck};const failures=[];if(initial!==36)failures.push(`initial:${initial}`);if(all!==60)failures.push(`all:${all}`);if(desktop.broken||desktop.horizontalOverflow)failures.push('desktop');if(!result.modalNavigation||!modalImage.complete||modalImage.width!==1600||modalImage.height!==900)failures.push('modal');if(mobileCheck.cards!==36||mobileCheck.broken||mobileCheck.horizontalOverflow)failures.push('mobile');fs.writeFileSync(path.join(__dirname,'qa_gallery.json'),JSON.stringify({result,failures},null,2));console.log(JSON.stringify({passed:failures.length===0,result,failures},null,2));if(failures.length)process.exitCode=2;
+})().catch(e=>{console.error(e);process.exit(1)});

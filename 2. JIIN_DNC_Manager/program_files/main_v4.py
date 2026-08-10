@@ -28,6 +28,7 @@ import traceback
 import unicodedata
 import zipfile
 from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 from tkinter import filedialog, messagebox, scrolledtext, simpledialog, ttk
 
@@ -2716,6 +2717,12 @@ def normalize_round_key(value) -> str:
     return digits or text
 
 
+def normalize_condition_sheet_manage_no(value) -> str:
+    """조건 시트 조회용 관리번호에서 구분 기호만 제거합니다."""
+    text = format_excel_cell_value(value).upper().replace(" ", "")
+    return text.replace("-", "")
+
+
 def normalize_condition_sheet_process(value) -> str:
     text = format_excel_cell_value(value).upper().replace(" ", "")
     if text in {"KCC", "KCCHDI", "KCC_HDI"}:
@@ -2735,7 +2742,7 @@ def lookup_tlb_condition_record_from_sheet(config: dict, tool_no: str, round_no:
         workbook = load_workbook(sheet_path, read_only=True, data_only=True)
     except Exception as exc:
         raise RuntimeError(format_excel_error_for_operator(exc, "TLB 조건 시트")) from exc
-    target_tool = tool_no.strip().upper()
+    target_tool = normalize_condition_sheet_manage_no(tool_no)
     target_round = normalize_round_key(round_no)
     target_process = normalize_condition_sheet_process(process_filter)
     matches: list[dict] = []
@@ -2747,7 +2754,7 @@ def lookup_tlb_condition_record_from_sheet(config: dict, tool_no: str, round_no:
             row_process = normalize_condition_sheet_process(row[0] if len(row) > 0 else "")
             if target_process and row_process != target_process:
                 continue
-            row_tool = format_excel_cell_value(row[1] if len(row) > 1 else "").upper()
+            row_tool = normalize_condition_sheet_manage_no(row[1] if len(row) > 1 else "")
             row_round = normalize_round_key(row[2] if len(row) > 2 else "")
             if row_tool == target_tool and row_round == target_round:
                 trim_program = normalize_tlb_condition_name(format_excel_cell_value(row[13] if len(row) > 13 else ""))
@@ -3553,6 +3560,23 @@ def mark_process_logs_exported(process_name: str, log_ids: list[int]) -> None:
 def mark_kcc_pkg_logs_exported(log_ids: list[int]) -> None:
     mark_process_logs_exported("KCC PKG", log_ids)
 
+def format_jig_for_excel(value) -> str:
+    """작업일보 표기용으로 지그의 마지막 숫자만 소수점 셋째 자리까지 반올림합니다."""
+    text = str(value or "").strip()
+    if not text:
+        return ""
+
+    prefix, separator, number_text = text.rpartition(" ")
+    target = number_text if separator else text
+    try:
+        rounded = Decimal(target).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
+    except (InvalidOperation, ValueError):
+        return text
+
+    formatted = format(rounded, "f").rstrip("0").rstrip(".")
+    return f"{prefix}{separator}{formatted}" if separator else formatted
+
+
 def write_tlb_log_row_to_excel(ws, row: int, log: sqlite3.Row) -> None:
     """TLB 이력 한 건을 TLB 작업일보 양식에 맞춰 기록합니다.
 
@@ -3625,7 +3649,7 @@ def write_simtek_hdi_log_row_to_excel(ws, row: int, log: sqlite3.Row) -> None:
         log["condition_name"],
         log["burr_result"] or "",
         log["stack"] or "",
-        log["jig"],
+        format_jig_for_excel(log["jig"]),
         verification_text,
         excel_time_only(log["created_at"] or log["record_time"] or ""),
     ]
@@ -5197,7 +5221,6 @@ class JiinDncManager:
         self.add_side_button(button_panel, "조건 마스터 관리", self.open_simtek_hdi_condition_master_popup, "SideDanger.TButton").grid(row=0, column=2, sticky="nsew", padx=4, pady=4)
         self.add_side_button(button_panel, "작업일보 반영", self.export_simtek_hdi_to_excel_from_ui).grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
         self.add_side_button(button_panel, "작업일보 열기", self.open_log_excel_from_ui).grid(row=1, column=1, sticky="nsew", padx=4, pady=4)
-
     def create_tlb_tab(self) -> None:
         font_name = "맑은 고딕"
         tlb_theme = PROCESS_COLORS["TLB"]
@@ -10441,7 +10464,10 @@ class SimtekHdiNewModelPopup:
         self.both_entries: dict[str, dict[str, object]] = {}
         self.buttons: list[ttk.Button] = []
         self.run_button: ttk.Button | None = None
+        self.remaining_button: ttk.Button | None = None
         self.cycle_state: dict | None = None
+        self.remaining_dnc_active = False
+        self.verification_finished = False
         self.mode_buttons: dict[str, tk.Button] = {}
         self.is_loading_fields = False
         self.selected_lot = tk.StringVar(value="lot1")
@@ -10502,6 +10528,13 @@ class SimtekHdiNewModelPopup:
             if self.focus_active_check_popup():
                 return
             state = self.cycle_state or {}
+            if self.remaining_dnc_active:
+                show_operator_alert(
+                    self.window,
+                    "잔량 DNC 진행중",
+                    f"잔량 {int(state.get('remaining_qty', 0) or 0)}매 / 남은 {int(state.get('remaining', 0) or 0)}사이클이 있습니다.\n이 창의 잔량 DNC 계속 버튼으로 완료하세요.",
+                )
+                return
             if state.get("awaiting_first_check") and state.get("log_ids"):
                 show_operator_alert(self.window, "신규 검증 진행중", "DNC 실행 버튼을 누르면 초품 확인창이 다시 뜹니다.")
             else:
@@ -10510,7 +10543,10 @@ class SimtekHdiNewModelPopup:
         self.window.destroy()
 
     def has_pending_cycle(self) -> bool:
-        return bool(self.cycle_state and self.cycle_state.get("verification_pending"))
+        return bool(
+            self.cycle_state
+            and (self.cycle_state.get("verification_pending") or self.remaining_dnc_active)
+        )
 
     def get_new_model_target_lots(self) -> list[str]:
         targets: list[str] = []
@@ -10581,6 +10617,9 @@ class SimtekHdiNewModelPopup:
         buttons.pack(fill=tk.X, padx=14, pady=(4, 14))
         self.run_button = self.add_button(buttons, "신규 모델 DNC 실행", self.run_new_model_dnc, "Primary.TButton")
         self.run_button.pack(side=tk.LEFT, padx=4)
+        self.remaining_button = self.add_button(buttons, "잔량 DNC 계속", self.run_remaining_dnc, "Primary.TButton")
+        self.remaining_button.pack(side=tk.LEFT, padx=4)
+        self.remaining_button.pack_forget()
         self.add_button(buttons, "입력 초기화", self.clear_inputs).pack(side=tk.LEFT, padx=4)
         self.add_button(buttons, "닫기", self.close).pack(side=tk.RIGHT, padx=4)
 
@@ -10763,7 +10802,103 @@ class SimtekHdiNewModelPopup:
     def set_run_button_allowed(self, allowed: bool) -> None:
         if self.run_button is None or self.is_running or self.app.is_running:
             return
+        if self.remaining_dnc_active or self.verification_finished:
+            self.run_button.configure(state="disabled")
+            return
         self.run_button.configure(state="normal" if allowed else "disabled")
+
+    def show_remaining_dnc_button(self) -> None:
+        if self.remaining_button is None:
+            return
+        if not self.remaining_button.winfo_manager():
+            self.remaining_button.pack(side=tk.LEFT, padx=4, before=self.buttons[2] if len(self.buttons) > 2 else None)
+
+    def hide_remaining_dnc_button(self) -> None:
+        if self.remaining_button is not None:
+            self.remaining_button.pack_forget()
+
+    def refresh_action_buttons(self) -> None:
+        if self.run_button is not None:
+            if self.remaining_dnc_active:
+                self.run_button.configure(text="신규 검증 완료", state="disabled")
+            elif self.verification_finished:
+                self.run_button.configure(text="신규 검증 완료", state="disabled")
+            else:
+                self.run_button.configure(text="신규 모델 DNC 실행")
+        if self.remaining_button is not None:
+            if self.remaining_dnc_active:
+                self.show_remaining_dnc_button()
+                self.remaining_button.configure(state="disabled" if self.is_running or self.app.is_running else "normal")
+            else:
+                self.hide_remaining_dnc_button()
+
+    def activate_remaining_dnc(self, remaining_qty: int, remaining_cycles: int) -> None:
+        """신규 검증을 마친 뒤 같은 창에서 잔량 DNC를 이어서 실행하도록 전환합니다."""
+        state = self.cycle_state or {}
+        state["remaining"] = int(remaining_cycles)
+        state["remaining_qty"] = int(remaining_qty)
+        state["remaining_capacity"] = int(state.get("capacity", 0) or 0)
+        state["verification_pending"] = False
+        self.cycle_state = state
+        self.remaining_dnc_active = True
+        self.verification_finished = True
+        self.dnc_label.configure(
+            text=f"DNC 진행 상태: 신규 검증 완료 / 잔량 {remaining_qty}매 / 남은 {remaining_cycles}사이클",
+            fg=OK_COLOR,
+        )
+        self.refresh_action_buttons()
+
+    def finish_new_model_result(self) -> None:
+        self.verification_finished = True
+        self.refresh_action_buttons()
+
+    def run_remaining_dnc(self) -> None:
+        state = self.app.simtek_hdi_cycle_state or {}
+        if not self.remaining_dnc_active or int(state.get("remaining", 0) or 0) <= 0:
+            show_operator_alert(self.window, "잔량 DNC", "진행할 잔량 사이클이 없습니다.")
+            return
+        self.app.run_simtek_hdi_dnc()
+        if not self.app.is_running:
+            main_status = self.app.simtek_hdi_status_labels.get("dnc")
+            if main_status is not None:
+                self.dnc_label.configure(text=f"DNC 진행 상태: {main_status.cget('text')}", fg=NG_COLOR)
+            return
+        self.set_running(True)
+        self.dnc_label.configure(text="DNC 진행 상태: 잔량 DNC 진행중", fg=MUTED_TEXT)
+        self.window.after(250, self.monitor_remaining_dnc)
+
+    def monitor_remaining_dnc(self) -> None:
+        if not self.window.winfo_exists():
+            return
+        main_status = self.app.simtek_hdi_status_labels.get("dnc")
+        if main_status is not None:
+            self.dnc_label.configure(text=f"DNC 진행 상태: {main_status.cget('text')}", fg=MUTED_TEXT)
+        if self.app.is_running:
+            self.window.after(250, self.monitor_remaining_dnc)
+            return
+        app_state = self.app.simtek_hdi_cycle_state or {}
+        remaining_cycles = int(app_state.get("remaining", 0) or 0)
+        if remaining_cycles > 0:
+            state = self.cycle_state or {}
+            previous_cycles = int(state.get("remaining", remaining_cycles) or 0)
+            previous_qty = int(state.get("remaining_qty", 0) or 0)
+            capacity = int(state.get("remaining_capacity", 0) or 0)
+            completed_cycles = max(0, previous_cycles - remaining_cycles)
+            remaining_qty = max(0, previous_qty - (completed_cycles * capacity)) if capacity else previous_qty
+            state["remaining"] = remaining_cycles
+            state["remaining_qty"] = remaining_qty
+            self.cycle_state = state
+            self.dnc_label.configure(
+                text=f"DNC 진행 상태: 이번 사이클 완료 / 잔량 {remaining_qty}매 / 남은 {remaining_cycles}사이클",
+                fg=OK_COLOR,
+            )
+            self.set_running(False)
+            return
+
+        self.remaining_dnc_active = False
+        self.clear_after_done()
+        self.dnc_label.configure(text="DNC 진행 상태: DNC 완료 / LOT 입력 초기화", fg=OK_COLOR)
+        self.set_running(False)
 
     def update_checks(self) -> None:
         if self.is_loading_fields:
@@ -10793,6 +10928,7 @@ class SimtekHdiNewModelPopup:
             try:
                 if self.window.winfo_exists():
                     self.update_checks()
+                    self.refresh_action_buttons()
             except tk.TclError:
                 pass
 
@@ -10815,6 +10951,9 @@ class SimtekHdiNewModelPopup:
         return check_popup.saved
 
     def run_new_model_dnc(self) -> None:
+        if self.verification_finished:
+            show_operator_alert(self.window, "신규 검증 완료", "현재 LOT의 신규 검증이 완료되었습니다. 잔량이 있으면 잔량 DNC 계속 버튼을 사용하세요.")
+            return
         run_simtek_hdi_new_model_dnc(self)
 
     def clear_inputs(self) -> None:
@@ -11545,7 +11684,9 @@ def finish_simtek_hdi_new_model_dnc(popup: SimtekHdiNewModelPopup, log_ids: list
                     remaining_cycles,
                     list(state.get("first_check_values") or popup.app.frequent_check_values),
                 )
+                popup.activate_remaining_dnc(int(state.get("remaining_qty", 0) or 0), remaining_cycles)
             else:
+                # 신규 검증에서 입력 매수를 전부 사용한 경우에만 메인 LOT 입력을 비웁니다.
                 popup.app.clear_simtek_hdi_inputs(after_done=True)
                 popup.app.set_simtek_hdi_status("dnc", "신규 검증 DNC 완료 / 잔량 없음", True)
             popup.master_label.configure(text="조건 마스터 등록: OK", fg=OK_COLOR)
@@ -11554,11 +11695,18 @@ def finish_simtek_hdi_new_model_dnc(popup: SimtekHdiNewModelPopup, log_ids: list
             popup.app.set_simtek_hdi_status("dnc", "신규 검증 NG / 조건 마스터 미등록", False)
         state["verification_pending"] = False
         popup.cycle_state = state
+        popup.finish_new_model_result()
         pending_count = get_unexported_process_log_count("심텍 HDI")
-        popup.dnc_label.configure(
-            text="DNC 진행 상태: 신규 검증 완료" if first_article_ok else "DNC 진행 상태: 신규 검증 NG",
-            fg=OK_COLOR if first_article_ok else NG_COLOR,
-        )
+        if first_article_ok and remaining_lots and remaining_cycles > 0:
+            popup.dnc_label.configure(
+                text=f"DNC 진행 상태: 신규 검증 완료 / 잔량 {int(state.get('remaining_qty', 0) or 0)}매 / 남은 {remaining_cycles}사이클",
+                fg=OK_COLOR,
+            )
+        else:
+            popup.dnc_label.configure(
+                text="DNC 진행 상태: 신규 검증 완료" if first_article_ok else "DNC 진행 상태: 신규 검증 NG",
+                fg=OK_COLOR if first_article_ok else NG_COLOR,
+            )
         popup.excel_label.configure(text=f"DB 저장: 완료 / 작업일보 미반영 {pending_count}건", fg=OK_COLOR)
         popup.app.set_simtek_hdi_status("excel", f"DB 저장 완료 / Excel 미반영 {pending_count}건", True)
         log_app(
@@ -11599,11 +11747,8 @@ def finish_simtek_hdi_new_model_export(popup: SimtekHdiNewModelPopup, error: Exc
         popup.app.set_simtek_hdi_status("excel", f"자동 반영 실패 / Excel 미반영 {pending_count}건", False)
         alert_message = "다른 PC 반영 중\n나중에 작업일보 반영" if "다른 PC" in str(error) else "DB 저장 완료\n나중에 작업일보 반영"
         show_operator_alert(popup.window, "작업일보 반영 실패", alert_message, "error")
-    popup.clear_after_done()
     popup.set_running(False)
     popup.app.set_running(False)
-    if error is None:
-        popup.window.after(700, popup.window.destroy)
 
 
 def handle_simtek_hdi_popup_error(popup: SimtekHdiNewModelPopup, exc: Exception) -> None:

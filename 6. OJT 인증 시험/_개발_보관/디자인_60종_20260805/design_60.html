@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OJT Exam Maker Design</title>
+  <style>
+    * { box-sizing: border-box; letter-spacing: 0; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Malgun Gothic", "Segoe UI", sans-serif; }
+    button, input { font: inherit; }
+    .screen {
+      --bg: #111820; --panel: #17232d; --panel2: #20303c; --ink: #f4f7f9; --muted: #9aabb6;
+      --line: #43535e; --accent: #30d790; --accent2: #f0a728; --stage: #0b141b; --buttonInk: #06140e;
+      --radius: 4px; --depth: 4px; --pad: 12px; --gap: 10px;
+      position: relative;
+      width: 1440px;
+      height: 810px;
+      padding: var(--pad);
+      display: grid;
+      gap: var(--gap);
+      color: var(--ink);
+      background: var(--bg);
+      overflow: hidden;
+    }
+    .panel { min-width: 0; min-height: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); overflow: hidden; }
+    .header { grid-area: head; display: flex; align-items: center; gap: 16px; padding: 10px 16px; }
+    .brand { flex: 0 0 auto; font: 900 22px/1 "Segoe UI", "Malgun Gothic", sans-serif; color: var(--ink); }
+    .brand b { color: var(--accent); }
+    .brand small { display: block; margin-top: 5px; color: var(--muted); font-size: 9px; }
+    .file-line { min-width: 0; flex: 1; display: flex; align-items: center; gap: 8px; }
+    .file-path { min-width: 0; flex: 1; height: 34px; padding: 7px 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); border: 1px solid var(--line); border-radius: calc(var(--radius) - 1px); background: var(--stage); box-shadow: inset 0 2px 4px rgba(0,0,0,.18); font-size: 12px; }
+    .mode { padding: 7px 10px; white-space: nowrap; border: 1px solid var(--accent); border-radius: var(--radius); color: var(--accent); font-size: 10px; font-weight: 900; }
+    .header-id { display: none; grid-template-columns: auto auto; gap: 4px 8px; align-items: center; white-space: nowrap; font-size: 9px; }
+    .header-id span { color: var(--muted); }
+    .header-id b { color: var(--ink); }
+    .ico { width: 16px; height: 16px; stroke-width: 2; flex: 0 0 auto; }
+    .btn {
+      min-height: 34px;
+      padding: 0 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      color: var(--buttonInk);
+      border: 1px solid color-mix(in srgb, var(--accent) 70%, #000);
+      border-radius: var(--radius);
+      background: var(--accent);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent) 35%, #fff), 0 var(--depth) 0 color-mix(in srgb, var(--accent) 58%, #000);
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .btn.secondary { color: var(--ink); border-color: var(--line); background: var(--panel2); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--panel2) 55%, #fff), 0 var(--depth) 0 color-mix(in srgb, var(--panel2) 62%, #000); }
+    .btn.alt { color: #17120a; border-color: color-mix(in srgb, var(--accent2) 70%, #000); background: var(--accent2); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent2) 40%, #fff), 0 var(--depth) 0 color-mix(in srgb, var(--accent2) 58%, #000); }
+    .panel-head { height: 38px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--ink); border-bottom: 1px solid var(--line); background: var(--panel2); }
+    .panel-head h2 { margin: 0; display: flex; align-items: center; gap: 7px; font-size: 15px; }
+    .panel-head span { color: var(--muted); font-size: 10px; }
+
+    .process { grid-area: proc; display: grid; grid-template-rows: 38px 1fr; }
+    .process-list { min-height: 0; padding: 8px; overflow: hidden; }
+    .proc-head, .proc-row { display: grid; grid-template-columns: minmax(0, 1fr) 42px 52px 48px; align-items: center; }
+    .proc-head { height: 27px; color: var(--muted); background: color-mix(in srgb, var(--panel2) 76%, var(--accent)); font-size: 9px; font-weight: 900; }
+    .proc-row { height: 28px; border-top: 1px solid var(--line); font-size: 10px; }
+    .proc-row:nth-child(odd) { background: color-mix(in srgb, var(--panel) 86%, var(--panel2)); }
+    .proc-row.active { color: var(--buttonInk); background: var(--accent); box-shadow: inset 4px 0 var(--accent2); font-weight: 900; }
+    .proc-head span, .proc-row span { min-width: 0; padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .proc-horizontal .process-list { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 7px; align-content: stretch; }
+    .proc-horizontal .proc-head { display: none; }
+    .proc-horizontal .proc-row { height: auto; min-height: 52px; padding: 8px; display: grid; grid-template-columns: 1fr 28px 32px 30px; gap: 3px; align-content: center; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel2); box-shadow: 0 2px 0 color-mix(in srgb, var(--panel2) 60%, #000); }
+    .proc-horizontal .proc-row:nth-of-type(n+8) { display: none; }
+    .proc-horizontal .proc-row span { padding: 0 2px; font-size: 8px; }
+    .proc-horizontal .proc-row span:first-child { grid-column: 1 / 5; font-size: 10px; font-weight: 900; }
+    .proc-horizontal .proc-row.active { background: var(--accent); }
+
+    .conditions { grid-area: cond; display: grid; grid-template-rows: 38px 1fr auto; }
+    .condition-body { min-height: 0; padding: 11px; display: grid; align-content: start; gap: 10px; }
+    .metrics { display: grid; gap: 7px; }
+    .metric { display: grid; grid-template-columns: minmax(68px, 1fr) 62px 62px; gap: 7px; align-items: center; }
+    .metric b { font-size: 12px; }
+    .metric span { height: 29px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1px solid var(--line); border-radius: calc(var(--radius) - 1px); background: var(--stage); box-shadow: inset 0 2px 3px rgba(0,0,0,.18); color: var(--ink); font: 900 12px/1 "Segoe UI", sans-serif; }
+    .metric .ico { width: 11px; height: 11px; color: var(--muted); }
+    .condition-labels { display: grid; grid-template-columns: minmax(68px, 1fr) 62px 62px; gap: 7px; color: var(--muted); font-size: 9px; font-weight: 900; text-align: center; }
+    .condition-labels span:first-child { text-align: left; }
+    .total { min-height: 55px; padding: 8px 12px; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--accent); border: 1px solid var(--line); border-radius: var(--radius); background: var(--stage); }
+    .total span { font-size: 11px; font-weight: 800; }
+    .total b { font: 900 28px/1 "Segoe UI", sans-serif; }
+    .identity { padding: 0 11px 11px; display: grid; grid-template-columns: 62px 1fr; gap: 7px 9px; align-items: center; }
+    .identity label { white-space: nowrap; font-size: 11px; font-weight: 900; }
+    .identity span { height: 28px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: calc(var(--radius) - 1px); background: var(--stage); color: var(--ink); font-size: 11px; font-weight: 900; }
+    .cond-horizontal .condition-body { grid-template-columns: auto 1fr 170px; align-items: center; gap: 12px; }
+    .cond-horizontal .condition-labels { display: none; }
+    .cond-horizontal .metrics { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
+    .cond-horizontal .metric { grid-template-columns: 1fr 48px 48px; }
+    .cond-horizontal .total { min-width: 160px; }
+    .cond-horizontal .identity { display: none; }
+
+    .preview { grid-area: prev; position: relative; display: grid; grid-template-rows: 38px 1fr; }
+    .paper-stage { min-height: 0; position: relative; display: grid; place-items: center; container-type: size; background: var(--stage); overflow: hidden; }
+    .paper { position: relative; width: min(65.05cqh, 438px, 92cqw); min-width: 0; height: auto; min-height: 0; aspect-ratio: 210 / 297; overflow: hidden; padding: 14px 15px 12px; color: #111; border: 1px solid #333; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.22); font-family: "Malgun Gothic", sans-serif; }
+    .paper-top { display: grid; grid-template-columns: 72px 1fr 90px; gap: 5px; align-items: stretch; }
+    .paper-fields, .paper-approval { display: grid; border-top: 1px solid #111; border-left: 1px solid #111; font-size: 5px; }
+    .paper-fields { grid-template-columns: 31px 1fr; }
+    .paper-approval { grid-template-columns: repeat(3,1fr); }
+    .paper-fields span, .paper-approval span { display: grid; place-items: center; min-height: 12px; border-right: 1px solid #111; border-bottom: 1px solid #111; }
+    .paper-title { display: grid; place-items: center; white-space: nowrap; font-size: 12px; font-weight: 900; }
+    .paper-info { margin-top: 6px; border-top: 1px solid #111; border-left: 1px solid #111; font-size: 5px; }
+    .paper-info div { display: grid; grid-template-columns: 58px 1fr 38px 1fr; }
+    .paper-info span { min-height: 10px; display: grid; place-items: center; border-right: 1px solid #111; border-bottom: 1px solid #111; }
+    .questions { margin-top: 7px; display: grid; gap: 5px; }
+    .q { display: grid; grid-template-columns: 11px 1fr 23px; gap: 2px; font-size: 5.2px; line-height: 1.3; }
+    .q .n { text-align: right; font-weight: 800; }
+    .q .s { text-align: right; }
+    .opts { grid-column: 2 / 4; color: #222; }
+    .paper-footer { position: absolute; left: 15px; right: 15px; bottom: 6px; display: grid; grid-template-columns: repeat(3,1fr); font-size: 4.5px; }
+    .paper-footer span:nth-child(2) { text-align: center; }
+    .paper-footer span:nth-child(3) { text-align: right; }
+
+    .actions { grid-area: actions; padding: 10px; display: grid; gap: 8px; align-content: center; }
+    .pager { display: grid; grid-template-columns: 1fr 60px 1fr; gap: 7px; align-items: center; }
+    .pager span { text-align: center; font-size: 11px; font-weight: 900; }
+    .action-buttons { display: grid; gap: 8px; }
+    .actions-horizontal { grid-template-columns: 250px 1fr; align-items: center; }
+    .actions-horizontal .action-buttons { grid-template-columns: repeat(3,1fr); }
+    .actions-horizontal .pager { min-width: 230px; }
+
+    .design-id { display: none; }
+
+    /* Button treatments */
+    .b1 { --radius: 0px; --depth: 5px; }
+    .b2 { --radius: 2px; --depth: 3px; }
+    .b3 { --radius: 6px; --depth: 4px; }
+    .b4 { --radius: 8px; --depth: 2px; }
+    .b5 .btn { border-width: 2px; box-shadow: inset 0 2px 0 color-mix(in srgb, var(--accent) 30%, #fff), inset 0 -2px 0 color-mix(in srgb, var(--accent) 60%, #000), 0 4px 0 #000; }
+    .b6 .btn { background: var(--panel2); color: var(--accent); border: 2px solid var(--accent); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent), 0 3px 0 color-mix(in srgb, var(--accent) 45%, #000); }
+    .b7 .btn { border-radius: 8px 2px 8px 2px; box-shadow: inset 2px 2px 0 color-mix(in srgb, var(--accent) 35%, #fff), -3px 4px 0 color-mix(in srgb, var(--accent) 55%, #000); }
+    .b8 .btn { border-width: 0 0 4px 0; border-radius: 4px; box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent) 35%, #fff); }
+    .b9 .btn { border-radius: 0 8px 0 8px; box-shadow: inset 0 2px 0 color-mix(in srgb, var(--accent) 35%, #fff), 4px 4px 0 color-mix(in srgb, var(--accent) 55%, #000); }
+    .b10 .btn { border: 1px solid color-mix(in srgb, var(--accent) 40%, #fff); box-shadow: inset 0 0 7px color-mix(in srgb, var(--accent) 55%, #fff), 0 5px 0 color-mix(in srgb, var(--accent) 45%, #000); }
+
+    /* 20 structural families */
+    .l01 { grid-template-columns: 320px 330px 1fr; grid-template-rows: 70px 1fr 175px; grid-template-areas: "head head head" "proc cond prev" "proc actions prev"; }
+    .l02 { grid-template-columns: 285px 1fr 300px; grid-template-rows: 70px 1fr 92px; grid-template-areas: "head head head" "proc prev cond" "proc actions cond"; }
+    .l03 { grid-template-columns: 230px 1fr 210px; grid-template-rows: 70px 130px 1fr; grid-template-areas: "head head head" "cond cond cond" "proc prev actions"; }
+    .l04 { grid-template-columns: 330px 1fr; grid-template-rows: 70px 110px 1fr 185px; grid-template-areas: "head head" "proc proc" "cond prev" "actions prev"; }
+    .l05 { grid-template-columns: 225px 340px 1fr; grid-template-rows: 1fr 250px; grid-template-areas: "head proc prev" "head cond actions"; }
+    .l06 { grid-template-columns: 1fr 320px; grid-template-rows: 70px 165px 1fr 190px; grid-template-areas: "head head" "prev proc" "prev cond" "prev actions"; }
+    .l07 { grid-template-columns: 330px 1fr; grid-template-rows: 70px 1fr 150px 185px; grid-template-areas: "head head" "cond prev" "proc prev" "actions prev"; }
+    .l08 { grid-template-columns: 1fr 1fr; grid-template-rows: 70px 220px 1fr 82px; grid-template-areas: "head head" "proc cond" "prev prev" "actions actions"; }
+    .l09 { grid-template-columns: 220px 1fr 285px; grid-template-rows: 70px 1fr 185px; grid-template-areas: "head head head" "proc prev cond" "proc prev actions"; }
+    .l10 { grid-template-columns: 1fr 330px; grid-template-rows: 70px 250px 1fr 82px; grid-template-areas: "head head" "proc cond" "prev prev" "actions actions"; }
+    .l11 { grid-template-columns: 300px 1fr 300px; grid-template-rows: 70px 1fr 185px; grid-template-areas: "head head head" "proc prev cond" "actions prev cond"; }
+    .l12 { grid-template-columns: 1fr; grid-template-rows: 68px 105px 1fr 110px 78px; grid-template-areas: "head" "proc" "prev" "cond" "actions"; }
+    .l13 { grid-template-columns: 1fr 335px; grid-template-rows: 70px 110px 1fr 185px; grid-template-areas: "head head" "proc proc" "prev cond" "prev actions"; }
+    .l14 { grid-template-columns: 1fr 320px 285px; grid-template-rows: 70px 1fr 250px; grid-template-areas: "head head head" "prev prev prev" "proc cond actions"; }
+    .l15 { grid-template-columns: 240px 310px 1fr; grid-template-rows: 1fr 250px; grid-template-areas: "head proc prev" "cond actions prev"; }
+    .l16 { grid-template-columns: 1fr 275px; grid-template-rows: 70px 1fr 220px 185px; grid-template-areas: "head head" "prev proc" "prev cond" "prev actions"; }
+    .l17 { grid-template-columns: 52% 1fr; grid-template-rows: 70px 215px 1fr 82px; grid-template-areas: "head head" "proc cond" "proc prev" "actions actions"; }
+    .l18 { grid-template-columns: 250px 1fr 315px; grid-template-rows: 260px 1fr 95px; grid-template-areas: "head proc cond" "prev prev cond" "actions actions actions"; }
+    .l19 { grid-template-columns: 225px 1fr 305px; grid-template-rows: 70px 285px 1fr; grid-template-areas: "head head head" "actions proc cond" "actions prev prev"; }
+    .l20 { grid-template-columns: 1fr; grid-template-rows: 68px 105px 120px 1fr 78px; grid-template-areas: "head" "proc" "cond" "prev" "actions"; }
+
+    .l03 .conditions, .l08 .conditions, .l12 .conditions, .l17 .conditions, .l20 .conditions { grid-template-rows: 38px 1fr; }
+    .l03 .identity, .l08 .identity, .l12 .identity, .l17 .identity, .l20 .identity { display: none; }
+    .l03 .condition-body, .l08 .condition-body, .l12 .condition-body, .l17 .condition-body, .l20 .condition-body { grid-template-columns: minmax(0,1fr) 170px; align-items: center; }
+    .l03 .metrics, .l08 .metrics, .l12 .metrics, .l17 .metrics, .l20 .metrics { grid-template-columns: repeat(3,minmax(0,1fr)); }
+    .l03 .metric, .l08 .metric, .l12 .metric, .l17 .metric, .l20 .metric { grid-template-columns: minmax(45px,1fr) 42px 42px; }
+    .l03 .condition-labels, .l08 .condition-labels, .l12 .condition-labels, .l17 .condition-labels, .l20 .condition-labels { display: none; }
+    .l03 .total, .l08 .total, .l12 .total, .l17 .total, .l20 .total { min-height: 45px; }
+    .l03 .header-id, .l08 .header-id, .l12 .header-id, .l17 .header-id, .l20 .header-id { display: grid; }
+    .l03 .actions, .l19 .actions { align-content: start; padding-top: 42px; }
+    .l03 .action-buttons, .l19 .action-buttons { grid-template-columns: 1fr; }
+    .l04 .process, .l08 .process, .l10 .process, .l12 .process, .l13 .process, .l14 .process, .l18 .process, .l19 .process, .l20 .process { grid-template-rows: 34px 1fr; }
+    .l04 .proc-horizontal .process-list, .l08 .proc-horizontal .process-list, .l10 .proc-horizontal .process-list, .l12 .proc-horizontal .process-list, .l13 .proc-horizontal .process-list, .l14 .proc-horizontal .process-list, .l18 .proc-horizontal .process-list, .l19 .proc-horizontal .process-list, .l20 .proc-horizontal .process-list { padding: 6px; }
+    .l04 .panel-head, .l08 .panel-head, .l10 .panel-head, .l12 .panel-head, .l13 .panel-head, .l14 .panel-head, .l18 .panel-head, .l19 .panel-head, .l20 .panel-head { height: 34px; }
+    .l05 .header, .l15 .header, .l18 .header { flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 22px 14px; }
+    .l05 .header .brand, .l15 .header .brand, .l18 .header .brand { font-size: 24px; }
+    .l05 .header .file-line, .l15 .header .file-line, .l18 .header .file-line { flex-direction: column; align-items: stretch; }
+    .l05 .header .file-path, .l15 .header .file-path, .l18 .header .file-path { flex: 0 0 88px; white-space: normal; word-break: break-all; }
+    .l05 .header .mode, .l15 .header .mode, .l18 .header .mode { text-align: center; }
+    .l05 .header-id, .l15 .header-id, .l18 .header-id { display: grid; grid-template-columns: 1fr; }
+    .l05 .identity, .l06 .identity, .l10 .identity, .l14 .identity, .l15 .identity, .l16 .identity, .l19 .identity { display: none; }
+    .l05 .conditions, .l06 .conditions, .l10 .conditions, .l14 .conditions, .l15 .conditions, .l16 .conditions, .l19 .conditions { grid-template-rows: 38px 1fr; }
+    .l06 .header-id, .l10 .header-id, .l14 .header-id, .l16 .header-id, .l19 .header-id { display: grid; }
+    .l16 .condition-body { padding: 8px; gap: 7px; }
+    .l16 .metrics { gap: 5px; }
+    .l16 .metric span { height: 27px; }
+    .l16 .total { min-height: 48px; }
+    .l08 .actions, .l10 .actions, .l12 .actions, .l17 .actions, .l18 .actions, .l20 .actions { grid-template-columns: 250px 1fr; align-items: center; }
+    .l08 .action-buttons, .l10 .action-buttons, .l12 .action-buttons, .l17 .action-buttons, .l18 .action-buttons, .l20 .action-buttons { grid-template-columns: repeat(3,1fr); }
+    .l14 .process .proc-row, .l14 .conditions .metric, .l14 .actions .btn { font-size: 9px; }
+    .l18 .header { padding: 12px; gap: 10px; }
+    .l18 .header .brand { font-size: 20px; }
+    .l18 .header .file-path { flex-basis: 54px; }
+    .l18 .header .file-line > .ico { display: none; }
+    .l18 .header-id { grid-template-columns: auto 1fr; }
+    .l18 .process { grid-template-rows: 34px 1fr; }
+    .l18 .conditions { grid-template-rows: 38px 1fr auto; }
+
+    .light .panel { box-shadow: 0 3px 10px rgba(20,35,50,.10); }
+    .light .paper-stage { background: color-mix(in srgb, var(--bg) 65%, #bac5ca); }
+    .dark .panel { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--panel) 72%, #fff); }
+    .sharp { --radius: 0px; --gap: 4px; --pad: 6px; }
+    .roomy { --gap: 14px; --pad: 16px; }
+  </style>
+</head>
+<body>
+  <main class="screen" id="screen">
+    <header class="panel header">
+      <div class="brand">OJT <b>EXAM</b> MAKER<small>작업자 인증 시험 생성</small></div>
+      <div class="file-line"><i data-lucide="file-spreadsheet" class="ico"></i><span class="file-path">D:\QC\8. Codex\6. OJT 인증 시험\작업자 인증 시험 문제_20260805.xlsm</span><button class="btn secondary"><i data-lucide="folder-open" class="ico"></i>파일 선택</button></div>
+      <div class="header-id"><span>성명</span><b>오국진</b><span>평가 일시</span><b>2026.08.05</b></div><span class="mode">전장 시험</span>
+    </header>
+
+    <section class="panel process" id="processPanel">
+      <div class="panel-head"><h2><i data-lucide="list-checks" class="ico"></i>공정 선택</h2><span>27개 공정</span></div>
+      <div class="process-list" id="processList"></div>
+    </section>
+
+    <section class="panel conditions">
+      <div class="panel-head"><h2><i data-lucide="sliders-horizontal" class="ico"></i>시험 조건</h2><button class="btn secondary" style="min-height:27px;padding:0 10px"><i data-lucide="settings" class="ico"></i>설정</button></div>
+      <div class="condition-body">
+        <div>
+          <div class="condition-labels"><span>구분</span><span>문제수</span><span>점수</span></div>
+          <div class="metrics">
+            <div class="metric"><b>VDA</b><span>5<i data-lucide="lock" class="ico"></i></span><span>4.0<i data-lucide="lock" class="ico"></i></span></div>
+            <div class="metric"><b>객관식</b><span>20<i data-lucide="lock" class="ico"></i></span><span>3.0<i data-lucide="lock" class="ico"></i></span></div>
+            <div class="metric"><b>주관식</b><span>5<i data-lucide="lock" class="ico"></i></span><span>4.0<i data-lucide="lock" class="ico"></i></span></div>
+          </div>
+        </div>
+        <div class="total"><span>TOTAL</span><b>100</b><span>점</span></div>
+      </div>
+      <div class="identity"><label>성명</label><span>오국진</span><label>평가 일시</label><span>2026.08.05</span></div>
+    </section>
+
+    <section class="panel preview">
+      <div class="panel-head"><h2><i data-lucide="file-search" class="ico"></i>시험지 미리보기</h2><span>A4 · 세로 · 100%</span></div>
+      <div class="paper-stage"><div class="paper" id="paper"></div></div>
+    </section>
+
+    <section class="panel actions">
+      <div class="pager"><button class="btn secondary">이전</button><span>1 / 1</span><button class="btn secondary">다음</button></div>
+      <div class="action-buttons"><button class="btn"><i data-lucide="shuffle" class="ico"></i>랜덤 미리보기</button><button class="btn secondary"><i data-lucide="search" class="ico"></i>출력 미리보기</button><button class="btn alt"><i data-lucide="printer" class="ico"></i>문제 + 답안 프린트</button></div>
+    </section>
+    <span class="design-id" id="designId"></span>
+  </main>
+
+  <script src="lucide.min.js"></script>
+  <script>
+    const familyNames = [
+      '삼단 제어실','중앙 문서실','단계식 안전판','공정 상단 레일','세로 명령대',
+      '문서 우선 작업대','좌측 조건대','상하 분할 보드','듀얼 검사 레일','가로 공정 콘솔',
+      '균형형 품질실','전면 미리보기','상단 공정 스테이션','하단 작업 독','세로 워크벤치',
+      '우측 검사 패널','스프레드시트형','흐름 제어실','현장 터치 단말','모듈 밴드형'
+    ];
+    const variantNames = ['프로','클린','고대비'];
+    const rows = [
+      ['Brown OXIDE 일반용','0','35','10'],['Brown OXIDE 전장용','5','30','10'],
+      ['CZ 전처리 일반용','0','35','12'],['CZ 전처리 전장용','5','32','11'],
+      ['Dualdetach 일반용','0','34','11'],['Dualdetach 전장용','5','29','11'],
+      ['ITS 각인 일반용','0','35','10'],['ITS 각인 전장용','5','30','10'],
+      ['Lay-up 일반용','0','37','10'],['PRESS 전장용','5','29','10'],
+      ['TRIM 일반용','0','37','10'],['TRIM 전장용','5','31','10'],
+      ['X-Ray 일반용','0','35','10'],['X-Ray 전장용','6','29','10']
+    ];
+
+    function hsl(h, s, l) { return `hsl(${Math.round(h)} ${s}% ${l}%)`; }
+    function palette(index) {
+      const hue = (index * 47 + Math.floor(index / 7) * 19) % 360;
+      const second = (hue + 118 + (index % 5) * 11) % 360;
+      const dark = index % 4 === 0 || index % 4 === 3;
+      const stark = index % 9 === 0;
+      if (stark) {
+        return { bg:'#111111', panel:'#f7f6f0', panel2:'#ffd400', ink:'#111111', muted:'#4c4c4c', line:'#111111', accent:'#ffd400', accent2:'#ef3f2f', stage:'#b9b9b9', buttonInk:'#111111', mode:'light sharp' };
+      }
+      if (dark) {
+        return {
+          bg:hsl(hue,18,9), panel:hsl(hue,18,15), panel2:hsl(hue,20,21), ink:'#f5f8f7', muted:hsl(hue,18,70),
+          line:hsl(hue,18,34), accent:hsl(second,72,57), accent2:hsl((second+72)%360,78,58), stage:hsl(hue,20,7), buttonInk:'#07120f', mode:'dark'
+        };
+      }
+      return {
+        bg:hsl(hue,18,94), panel:'#ffffff', panel2:hsl(hue,28,88), ink:hsl(hue,34,18), muted:hsl(hue,16,43),
+        line:hsl(hue,20,72), accent:hsl(second,68,40), accent2:hsl((second+80)%360,78,54), stage:hsl(hue,17,84), buttonInk:'#ffffff', mode:'light'
+      };
+    }
+
+    function processMarkup() {
+      return `<div class="proc-head"><span>공정명</span><span>VDA</span><span>객관</span><span>주관</span></div>` + rows.map(r =>
+        `<div class="proc-row ${r[0] === 'PRESS 전장용' ? 'active' : ''}">${r.map(v => `<span>${v}</span>`).join('')}</div>`
+      ).join('');
+    }
+
+    function paperMarkup() {
+      return `
+        <div class="paper-top"><div class="paper-fields"><span>부서명</span><span>후가공</span><span>평가자</span><span>오국진</span><span>평가 일시</span><span>2026.08.05</span></div><div class="paper-title">교육 평가서</div><div class="paper-approval"><span>기안</span><span>심의</span><span>결정</span><span></span><span></span><span></span><span>/</span><span>/</span><span>/</span></div></div>
+        <div class="paper-info"><div><span>직무명</span><span>PRESS</span><span>성명</span><span>오국진</span></div><div><span>평가 방법</span><span style="grid-column:2/5">시험 평가, 결과 보고서, 직무 평가, 기타 방법 (　)</span></div><div><span>개정 차수</span><span>1</span><span>유형</span><span>전장용</span></div></div>
+        <div class="questions">
+          <div class="q"><span class="n">1.</span><span>[VDA 6.3] 공정 중 작업표준서와 실제 작업 방법이 다르다는 것을 발견하였다. 가장 적절한 조치는?</span><span class="s">(2.5점)</span><div class="opts">① 현재 방식 유지　② 생산 후 수정　③ 즉시 보고 후 표준 일치　④ 동료와 결정</div></div>
+          <div class="q"><span class="n">2.</span><span>설비 점검 주기가 지났으나 생산 일정이 촉박하다. 어떻게 해야 하는가?</span><span class="s">(2.5점)</span><div class="opts">① 생략　② 다음 주 점검　③ 점검 후 생산　④ 이상 없으면 계속 생산</div></div>
+          <div class="q"><span class="n">3.</span><span>PRESS 설비에서 작업 전 가장 먼저 확인해야 하는 것은?</span><span class="s">(4점)</span><div class="opts">① 작업 조건　② 설비 상태　③ 제품 LOT　④ 위 항목 모두</div></div>
+          <div class="q"><span class="n">4.</span><span>작업 중 이상 발생 시 올바른 조치 순서는?</span><span class="s">(4점)</span><div class="opts">① 작업 중지　② 관리자 보고　③ 이상품 분리　④ 원인 확인 후 재가동</div></div>
+          <div class="q"><span class="n">5.</span><span>다음 중 불량 예방 활동으로 가장 적절한 것은?</span><span class="s">(4점)</span><div class="opts">① 기준 준수　② 기록 관리　③ 점검 실시　④ 모두 해당</div></div>
+          <div class="q"><span class="n">6.</span><span>설비 청소 및 일상점검을 실시하는 주기는?</span><span class="s">(4점)</span><div class="opts">① 매일　② 매주　③ 매월　④ 이상 발생 시</div></div>
+          <div class="q"><span class="n">7.</span><span>제품 LOT 추적이 필요한 가장 중요한 이유는?</span><span class="s">(4점)</span><div class="opts">① 생산성 향상　② 불량 범위 확인　③ 시간 단축　④ 포장 개선</div></div>
+          <div class="q"><span class="n">8.</span><span>이상 발생 처리 절차를 간단히 작성하시오. (　　　　　　　)</span><span class="s">(5점)</span></div>
+        </div><div class="paper-footer"><span>JIQP-0202-02</span><span>( 주 ) 지 인</span><span>A4(210*297)㎜</span></div>`;
+    }
+
+    const params = new URLSearchParams(location.search);
+    const index = Math.max(1, Math.min(60, Number(params.get('i')) || 1));
+    const family = Math.floor((index - 1) / 3) + 1;
+    const variant = (index - 1) % 3;
+    const p = palette(index);
+    const screen = document.getElementById('screen');
+    const horizontalProcess = [4,8,10,12,13,14,18,19,20].includes(family);
+    const horizontalActions = [2,8,10,12,17,18,20].includes(family);
+    screen.className = `screen l${String(family).padStart(2,'0')} b${((index - 1) % 10) + 1} ${p.mode} ${index % 6 === 0 ? 'roomy' : ''}`;
+    if (horizontalProcess) document.getElementById('processPanel').classList.add('proc-horizontal');
+    if (horizontalActions) document.querySelector('.actions').classList.add('actions-horizontal');
+    Object.entries({ '--bg':p.bg,'--panel':p.panel,'--panel2':p.panel2,'--ink':p.ink,'--muted':p.muted,'--line':p.line,'--accent':p.accent,'--accent2':p.accent2,'--stage':p.stage,'--buttonInk':p.buttonInk }).forEach(([k,v]) => screen.style.setProperty(k,v));
+    document.getElementById('processList').innerHTML = processMarkup();
+    document.getElementById('paper').innerHTML = paperMarkup();
+    document.getElementById('designId').textContent = `DESIGN ${String(index).padStart(2,'0')} · ${familyNames[family-1]} ${variantNames[variant]}`;
+    lucide.createIcons();
+  </script>
+</body>
+</html>

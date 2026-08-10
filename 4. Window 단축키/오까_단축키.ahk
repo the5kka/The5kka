@@ -16,7 +16,7 @@ QC_ROOT := "D:\QC"
 SCRIPT_DIR := QC_ROOT "\8. Codex\4. Window 단축키"
 SCRIPT_PATH := SCRIPT_DIR "\오까_단축키.ahk"
 SETTINGS_PATH := SCRIPT_DIR "\오까_단축키.ini"
-KAKAOTALK_PATH := "C:\Program Files (x86)\Kakao\KakaoTalk\KakaoTalk.exe"
+KAKAOTALK_PATH := "C:\Program Files\Kakao\KakaoTalk\KakaoTalk.exe"
 
 ; ------------------------------------------------------------
 ; 스크립트 시작 시 스크립트 저장 위치를 준비하고 시작프로그램 바로가기를 자동 등록합니다.

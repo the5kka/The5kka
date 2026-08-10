@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OJT Exam Maker 디자인 60종</title>
+  <style>
+    * { box-sizing: border-box; letter-spacing: 0; }
+    :root {
+      --ink:#17202a; --muted:#61707d; --line:#c8d0d6; --paper:#f7f8f8; --white:#fff;
+      --charcoal:#1d252c; --green:#0f766e; --yellow:#eab308; --red:#d9485f; --blue:#2563eb;
+    }
+    html { background:#dfe3e5; }
+    body { margin:0; min-width:1100px; color:var(--ink); background:var(--paper); font-family:"Malgun Gothic","Segoe UI",sans-serif; }
+    button { font:inherit; }
+    .topbar { position:sticky; top:0; z-index:20; min-height:72px; padding:12px 22px; display:flex; align-items:center; gap:20px; color:#fff; background:var(--charcoal); border-bottom:4px solid var(--yellow); }
+    .title { min-width:300px; }
+    .title h1 { margin:0; font-size:21px; }
+    .title p { margin:3px 0 0; color:#bbc6ce; font-size:11px; }
+    .tabs { margin-left:auto; display:flex; gap:8px; }
+    .tab { height:38px; padding:0 15px; display:inline-flex; align-items:center; gap:7px; color:#eaf0f3; border:1px solid #52616d; border-radius:4px; background:#2b3740; font-weight:800; cursor:pointer; }
+    .tab.active { color:#12181c; border-color:#fff; background:var(--yellow); box-shadow:0 3px 0 #8c6a00; }
+    .ico { width:16px; height:16px; }
+    .summary { padding:18px 24px 14px; display:grid; grid-template-columns:repeat(4, minmax(140px,1fr)); gap:10px; border-bottom:1px solid var(--line); background:#fff; }
+    .stat { min-height:58px; padding:10px 14px; display:flex; align-items:center; gap:12px; border-left:5px solid var(--green); background:#edf2f3; }
+    .stat:nth-child(2) { border-color:var(--blue); }
+    .stat:nth-child(3) { border-color:var(--red); }
+    .stat:nth-child(4) { border-color:var(--yellow); }
+    .stat b { font-size:24px; }
+    .stat span { color:var(--muted); font-size:11px; font-weight:800; }
+    main { padding:18px 24px 36px; }
+    .view { display:none; }
+    .view.active { display:block; }
+    .section-head { margin-bottom:14px; display:flex; align-items:end; justify-content:space-between; gap:20px; }
+    .section-head h2 { margin:0; font-size:19px; }
+    .section-head span { color:var(--muted); font-size:11px; }
+    .screen-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+    .screen-card { min-width:0; overflow:hidden; border:1px solid #aeb9c0; border-radius:6px; background:#fff; box-shadow:0 3px 0 #bec6ca; cursor:pointer; }
+    .screen-card:hover { border-color:var(--green); box-shadow:0 4px 0 var(--green); transform:translateY(-1px); }
+    .screen-card img { width:100%; aspect-ratio:16/9; display:block; object-fit:cover; background:#111; }
+    .caption { min-height:46px; padding:8px 10px; display:flex; align-items:center; justify-content:space-between; gap:10px; border-top:1px solid var(--line); }
+    .caption b { font-size:12px; }
+    .caption span { color:var(--muted); font-size:10px; }
+    .palette-grid, .button-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; }
+    .palette-card, .button-card { min-height:142px; padding:11px; border:1px solid #abb6bd; border-radius:6px; background:#fff; box-shadow:0 3px 0 #c8ced2; }
+    .item-head { margin-bottom:9px; display:flex; justify-content:space-between; gap:8px; }
+    .item-head b { font-size:12px; }
+    .item-head span { color:var(--muted); font-size:9px; }
+    .swatches { height:78px; display:grid; grid-template-columns:repeat(6,1fr); border:1px solid #20272c; }
+    .swatch { position:relative; }
+    .swatch small { position:absolute; left:3px; bottom:3px; padding:1px 2px; color:#fff; background:rgba(0,0,0,.55); font-size:7px; }
+    .button-stage { height:82px; display:grid; place-items:center; overflow:hidden; border:1px solid var(--line); background:var(--button-stage); }
+    .sample-button { position:relative; min-width:145px; min-height:38px; padding:0 18px; display:flex; align-items:center; justify-content:center; gap:7px; color:var(--button-ink); border:var(--border-w) solid var(--button-border); border-radius:var(--radius); background:var(--button-fill); box-shadow:inset 0 2px 0 var(--shine), inset 0 -2px 0 var(--shade), var(--x) var(--depth) 0 var(--shadow); font-size:11px; font-weight:900; }
+    .button-card:nth-child(6n+2) .sample-button { border-radius:10px 2px 10px 2px; }
+    .button-card:nth-child(6n+3) .sample-button { clip-path:polygon(6% 0,100% 0,94% 100%,0 100%); }
+    .button-card:nth-child(6n+4) .sample-button { box-shadow:inset 0 0 0 3px var(--shine), var(--x) var(--depth) 0 var(--shadow); }
+    .button-card:nth-child(6n+5) .sample-button { border-width:0 0 calc(var(--border-w) + 2px); }
+    .button-card:nth-child(6n) .sample-button { background:linear-gradient(180deg,var(--shine),var(--button-fill) 38%,var(--shade)); }
+    dialog { width:min(1380px,96vw); padding:0; overflow:hidden; border:1px solid #10171c; border-radius:6px; background:#11181d; box-shadow:0 24px 70px rgba(0,0,0,.55); }
+    dialog::backdrop { background:rgba(11,16,20,.86); }
+    .viewer-head { height:48px; padding:0 12px 0 16px; display:flex; align-items:center; color:#fff; background:#202b32; border-bottom:1px solid #46545e; }
+    .viewer-head b { font-size:13px; }
+    .viewer-head span { margin-left:10px; color:#aebbc3; font-size:10px; }
+    .viewer-head button { margin-left:auto; width:34px; height:34px; display:grid; place-items:center; color:#fff; border:1px solid #667680; background:#34434c; cursor:pointer; }
+    .viewer-body { position:relative; padding:12px; display:grid; grid-template-columns:42px 1fr 42px; align-items:center; gap:8px; }
+    .viewer-body img { width:100%; max-height:calc(96vh - 88px); object-fit:contain; border:1px solid #55626a; background:#000; }
+    .nav { width:42px; height:70px; color:#fff; border:1px solid #687780; background:#28353d; cursor:pointer; font-size:22px; }
+    .board-only { display:none; }
+    body.board { min-width:0; background:#e4e7e9; }
+    body.board .topbar, body.board .summary, body.board main { display:none; }
+    body.board .board-only { width:1800px; min-height:1400px; padding:24px; display:block; background:#e4e7e9; }
+    .board-title { height:52px; padding:0 16px; display:flex; align-items:center; justify-content:space-between; color:#fff; background:#202a31; border-left:8px solid var(--yellow); }
+    .board-title h1 { margin:0; font-size:20px; }
+    .board-title span { color:#c8d2d8; font-size:11px; }
+    .contact-grid { margin-top:16px; display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .contact-card { overflow:hidden; border:1px solid #98a5ad; background:#fff; box-shadow:0 3px 0 #bbc3c8; }
+    .contact-card img { width:100%; display:block; aspect-ratio:16/9; object-fit:cover; }
+    .contact-label { height:28px; padding:0 9px; display:flex; align-items:center; justify-content:space-between; gap:8px; overflow:hidden; border-top:1px solid #b9c1c6; font-size:10px; }
+    .contact-label b { flex:0 0 auto; }
+    .contact-label span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right; }
+    .board-grid { margin-top:16px; display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
+    body.board .palette-card, body.board .button-card { min-height:185px; }
+    body.board .swatches, body.board .button-stage { height:114px; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="title"><h1>OJT Exam Maker 디자인 60종</h1><p>고정 V2 기능과 인쇄 결과는 유지한 화면 디자인 비교본</p></div>
+    <nav class="tabs">
+      <button class="tab active" data-view="screens"><i data-lucide="layout-grid" class="ico"></i>전체 화면 60종</button>
+      <button class="tab" data-view="palettes"><i data-lucide="palette" class="ico"></i>색상 60종</button>
+      <button class="tab" data-view="buttons"><i data-lucide="panel-top" class="ico"></i>입체 버튼 60종</button>
+    </nav>
+  </header>
+  <section class="summary">
+    <div class="stat"><b>60</b><span>완성 화면<br>선택 번호</span></div>
+    <div class="stat"><b>20</b><span>서로 다른<br>배치 구조</span></div>
+    <div class="stat"><b>60</b><span>현장용<br>색상 팔레트</span></div>
+    <div class="stat"><b>60</b><span>깊이와 형태가 다른<br>버튼 조합</span></div>
+  </section>
+  <main>
+    <section class="view active" id="screensView"><div class="section-head"><h2>전체 화면</h2><span>클릭하면 1440 × 810 원본 크기로 확인</span></div><div class="screen-grid" id="screenGrid"></div></section>
+    <section class="view" id="palettesView"><div class="section-head"><h2>색상 팔레트</h2><span>배경·패널·강조·보조·미리보기·글자 색 조합</span></div><div class="palette-grid" id="paletteGrid"></div></section>
+    <section class="view" id="buttonsView"><div class="section-head"><h2>입체 버튼</h2><span>깊이·모서리·테두리·광택·그림자 조합 60종</span></div><div class="button-grid" id="buttonGrid"></div></section>
+  </main>
+  <section class="board-only"><div class="board-title"><h1 id="boardTitle"></h1><span id="boardRange"></span></div><div id="boardContent"></div></section>
+  <dialog id="viewer"><div class="viewer-head"><b id="viewerTitle"></b><span id="viewerMeta"></span><button id="closeViewer" title="닫기"><i data-lucide="x" class="ico"></i></button></div><div class="viewer-body"><button class="nav" id="prevDesign" title="이전">‹</button><img id="viewerImage" alt="선택한 디자인"><button class="nav" id="nextDesign" title="다음">›</button></div></dialog>
+  <script src="lucide.min.js"></script>
+  <script>
+    const families = [
+      '삼단 제어실','중앙 문서실','단계식 안전판','공정 상단 레일','세로 명령대',
+      '문서 우선 작업대','좌측 조건대','상하 분할 보드','이중 검사 레일','가로 공정 콘솔',
+      '균형 품질실','전면 미리보기','상단 공정 스테이션','하단 작업 독','세로 워크벤치',
+      '우측 검사 패널','스프레드시트형','이중 제어실','현장 터치 단말','모듈 밴드형'
+    ];
+    const variants = ['프로','라이트','고대비'];
+    const colorNames = ['청록','코발트','자홍','주홍','올리브','민트','남색','산호','금색','보라','청자','적색'];
+    const toneNames = ['정밀','차분','선명','고대비','현장'];
+    const buttonNames = ['철판 키','이중 베젤','유광 키캡','콘솔 스위치','경사 버튼','네온 링','산업 키','아크릴 캡','터치 돌출','픽셀 블록','평면 엣지','측면 리브'];
+    const depthNames = ['낮은 깊이','표준 깊이','깊은 키','강한 클릭','이중 그림자'];
+    function hsl(h,s,l){ return `hsl(${Math.round(h)} ${s}% ${l}%)`; }
+    function palette(index){
+      const hue=(index*47+Math.floor(index/7)*19)%360;
+      const second=(hue+118+(index%5)*11)%360;
+      const dark=index%4===0||index%4===3;
+      const stark=index%9===0;
+      if(stark) return {bg:'#111111',panel:'#f7f6f0',panel2:'#ffd400',ink:'#111111',muted:'#555555',line:'#111111',accent:'#ffd400',accent2:'#ef3f2f',stage:'#b9b9b9',buttonInk:'#111111'};
+      if(dark) return {bg:hsl(hue,18,9),panel:hsl(hue,18,15),panel2:hsl(hue,20,21),ink:'#f5f8f7',muted:hsl(hue,18,70),line:hsl(hue,18,34),accent:hsl(second,72,57),accent2:hsl((second+72)%360,78,58),stage:hsl(hue,20,7),buttonInk:'#07120f'};
+      return {bg:hsl(hue,18,94),panel:'#ffffff',panel2:hsl(hue,28,88),ink:hsl(hue,34,18),muted:hsl(hue,16,43),line:hsl(hue,20,72),accent:hsl(second,68,40),accent2:hsl((second+80)%360,78,54),stage:hsl(hue,17,84),buttonInk:'#ffffff'};
+    }
+    function label(index){ const f=Math.floor((index-1)/3); return {family:families[f],variant:variants[(index-1)%3]}; }
+    function screenCard(index, contact=false){
+      const d=label(index), n=String(index).padStart(2,'0');
+      if(contact) return `<article class="contact-card"><img src="screens/design_${n}.png"><div class="contact-label"><b>DESIGN ${n}</b><span>${d.family} · ${d.variant}</span></div></article>`;
+      return `<article class="screen-card" data-index="${index}"><img loading="lazy" src="screens/design_${n}.png" alt="디자인 ${n}"><div class="caption"><b>DESIGN ${n}</b><span>${d.family} · ${d.variant}</span></div></article>`;
+    }
+    function paletteCard(index){
+      const p=palette(index), n=String(index).padStart(2,'0'), colors=[p.bg,p.panel,p.panel2,p.accent,p.accent2,p.stage];
+      const name=`${toneNames[(index-1)%5]} ${colorNames[(index-1)%12]}`;
+      return `<article class="palette-card"><div class="item-head"><b>COLOR ${n}</b><span>${name}</span></div><div class="swatches">${colors.map((c,j)=>`<div class="swatch" style="background:${c}"><small>${j+1}</small></div>`).join('')}</div></article>`;
+    }
+    function buttonCard(index){
+      const p=palette(index), n=String(index).padStart(2,'0'), radius=[0,2,4,7,12][(index-1)%5], depth=2+((index*3)%7), border=1+((index+1)%3), x=((index%3)-1)*2;
+      const vars=`--button-stage:${p.stage};--button-fill:${p.accent};--button-border:${p.line};--button-ink:${p.buttonInk};--shine:color-mix(in srgb,${p.accent} 36%,#fff);--shade:color-mix(in srgb,${p.accent} 68%,#000);--shadow:color-mix(in srgb,${p.accent} 48%,#000);--radius:${radius}px;--depth:${depth}px;--border-w:${border}px;--x:${x}px`;
+      const name=`${buttonNames[(index-1)%12]} · ${depthNames[Math.floor((index-1)/12)]}`;
+      return `<article class="button-card" style="${vars}"><div class="item-head"><b>BUTTON ${n}</b><span>${name}</span></div><div class="button-stage"><button class="sample-button"><i data-lucide="printer" class="ico"></i>문제 + 답안 프린트</button></div></article>`;
+    }
+    const screenGrid=document.getElementById('screenGrid');
+    const paletteGrid=document.getElementById('paletteGrid');
+    const buttonGrid=document.getElementById('buttonGrid');
+    screenGrid.innerHTML=Array.from({length:60},(_,i)=>screenCard(i+1)).join('');
+    paletteGrid.innerHTML=Array.from({length:60},(_,i)=>paletteCard(i+1)).join('');
+    buttonGrid.innerHTML=Array.from({length:60},(_,i)=>buttonCard(i+1)).join('');
+    document.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t===tab));
+      document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===`${tab.dataset.view}View`));
+      window.scrollTo({top:0,behavior:'instant'});
+    }));
+    const viewer=document.getElementById('viewer'); let current=1;
+    function showDesign(index){ current=((index-1+60)%60)+1; const d=label(current),n=String(current).padStart(2,'0'); document.getElementById('viewerImage').src=`screens/design_${n}.png`; document.getElementById('viewerTitle').textContent=`DESIGN ${n}`; document.getElementById('viewerMeta').textContent=`${d.family} · ${d.variant}`; if(!viewer.open)viewer.showModal(); }
+    screenGrid.addEventListener('click',e=>{const card=e.target.closest('.screen-card');if(card)showDesign(Number(card.dataset.index));});
+    document.getElementById('prevDesign').onclick=()=>showDesign(current-1);
+    document.getElementById('nextDesign').onclick=()=>showDesign(current+1);
+    document.getElementById('closeViewer').onclick=()=>viewer.close();
+    viewer.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')showDesign(current-1);if(e.key==='ArrowRight')showDesign(current+1);});
+    const params=new URLSearchParams(location.search), boardView=params.get('view');
+    if(boardView){
+      document.body.classList.add('board'); const page=Math.max(1,Number(params.get('page'))||1); let markup='',title='',range='';
+      if(boardView==='contact'){
+        const start=(page-1)*12+1,end=Math.min(start+11,60); title='OJT Exam Maker 전체 화면 디자인 60종'; range=`${start} - ${end} / 60`; markup=`<div class="contact-grid">${Array.from({length:end-start+1},(_,i)=>screenCard(start+i,true)).join('')}</div>`;
+      } else if(boardView==='palette'){
+        const start=(page-1)*30+1,end=Math.min(start+29,60); title='현장용 색상 팔레트 60종'; range=`${start} - ${end} / 60`; markup=`<div class="board-grid">${Array.from({length:end-start+1},(_,i)=>paletteCard(start+i)).join('')}</div>`;
+      } else {
+        const start=(page-1)*30+1,end=Math.min(start+29,60); title='입체 버튼 디자인 60종'; range=`${start} - ${end} / 60`; markup=`<div class="board-grid">${Array.from({length:end-start+1},(_,i)=>buttonCard(start+i)).join('')}</div>`;
+      }
+      document.getElementById('boardTitle').textContent=title; document.getElementById('boardRange').textContent=range; document.getElementById('boardContent').innerHTML=markup;
+    }
+    lucide.createIcons();
+  </script>
+</body>
+</html>
