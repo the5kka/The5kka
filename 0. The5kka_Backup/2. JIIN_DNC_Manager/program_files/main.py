@@ -16,6 +16,7 @@ import traceback
 import unicodedata
 import zipfile
 from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 from tkinter import filedialog, messagebox, scrolledtext, simpledialog, ttk
 
@@ -2438,6 +2439,23 @@ def mark_kcc_pkg_logs_exported(log_ids: list[int]) -> None:
 
 
 
+def format_jig_for_excel(value) -> str:
+    """작업일보 표기용으로 지그의 마지막 숫자만 소수점 셋째 자리까지 반올림합니다."""
+    text = str(value or "").strip()
+    if not text:
+        return ""
+
+    prefix, separator, number_text = text.rpartition(" ")
+    target = number_text if separator else text
+    try:
+        rounded = Decimal(target).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
+    except (InvalidOperation, ValueError):
+        return text
+
+    formatted = format(rounded, "f").rstrip("0").rstrip(".")
+    return f"{prefix}{separator}{formatted}" if separator else formatted
+
+
 def write_tlb_log_row_to_excel(ws, row: int, log: sqlite3.Row) -> None:
     """TLB 이력 한 건을 TLB 작업일보 양식에 맞춰 기록합니다.
 
@@ -2459,7 +2477,7 @@ def write_tlb_log_row_to_excel(ws, row: int, log: sqlite3.Row) -> None:
         log["condition_name"],
         log["burr_result"] or "",
         log["stack"] or "",
-        log["jig"],
+        format_jig_for_excel(log["jig"]),
         log["model_change_text"] or "",
         log["record_time"] or "",
     ]

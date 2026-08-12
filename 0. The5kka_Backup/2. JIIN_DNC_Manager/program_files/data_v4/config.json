@@ -1,0 +1,33 @@
+{
+  "config_version": 1,
+  "excel_file": "",
+  "source_dnc_folder": "",
+  "source_dnc_folders": {
+    "TLB": "",
+    "심텍 HDI": "",
+    "KCC PKG": "",
+    "KCC HDI": "",
+    "심텍 SPS": ""
+  },
+  "transfer_dnc_folder": "",
+  "dnc_delete_seconds": 10,
+  "first_article_wait_seconds": 5,
+  "auto_export_after_dnc": true,
+  "auto_shift_group_enabled": true,
+  "a_group_day_start_date": "2026-05-17",
+  "master_password": "1",
+  "condition_master_password": "1",
+  "license_password": "1",
+  "license_master_pc_name": "KUKJIN",
+  "license_allowed_ip_prefixes": [
+    "121.155.196"
+  ],
+  "clear_common_after_normal": false,
+  "machine": "트리밍 1호기",
+  "theme": "MES 블루",
+  "last_master_auto_backup_date": "2026-08-07",
+  "tlb_condition_sheet": "",
+  "kcc_hdi_condition_sheet": "",
+  "simtek_sps_excel_file": "",
+  "simtek_sps_rule_file": ""
+}

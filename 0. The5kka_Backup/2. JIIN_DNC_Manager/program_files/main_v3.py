@@ -16,6 +16,7 @@ import traceback
 import unicodedata
 import zipfile
 from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 from tkinter import filedialog, messagebox, scrolledtext, simpledialog, ttk
 
@@ -2035,6 +2036,12 @@ def normalize_round_key(value) -> str:
     return digits or text
 
 
+def normalize_condition_sheet_manage_no(value) -> str:
+    """조건 시트 조회용 관리번호에서 구분 기호만 제거합니다."""
+    text = format_excel_cell_value(value).upper().replace(" ", "")
+    return text.replace("-", "")
+
+
 def normalize_condition_sheet_process(value) -> str:
     text = format_excel_cell_value(value).upper().replace(" ", "")
     if text in {"KCC", "KCCHDI", "KCC_HDI"}:
@@ -2054,7 +2061,7 @@ def lookup_tlb_condition_record_from_sheet(config: dict, tool_no: str, round_no:
         workbook = load_workbook(sheet_path, read_only=True, data_only=True)
     except Exception as exc:
         raise RuntimeError(format_excel_error_for_operator(exc, "TLB 조건 시트")) from exc
-    target_tool = tool_no.strip().upper()
+    target_tool = normalize_condition_sheet_manage_no(tool_no)
     target_round = normalize_round_key(round_no)
     target_process = normalize_condition_sheet_process(process_filter)
     matches: list[dict] = []
@@ -2066,7 +2073,7 @@ def lookup_tlb_condition_record_from_sheet(config: dict, tool_no: str, round_no:
             row_process = normalize_condition_sheet_process(row[0] if len(row) > 0 else "")
             if target_process and row_process != target_process:
                 continue
-            row_tool = format_excel_cell_value(row[1] if len(row) > 1 else "").upper()
+            row_tool = normalize_condition_sheet_manage_no(row[1] if len(row) > 1 else "")
             row_round = normalize_round_key(row[2] if len(row) > 2 else "")
             if row_tool == target_tool and row_round == target_round:
                 trim_program = normalize_tlb_condition_name(format_excel_cell_value(row[13] if len(row) > 13 else ""))
@@ -2674,6 +2681,23 @@ def mark_process_logs_exported(process_name: str, log_ids: list[int]) -> None:
 def mark_kcc_pkg_logs_exported(log_ids: list[int]) -> None:
     mark_process_logs_exported("KCC PKG", log_ids)
 
+def format_jig_for_excel(value) -> str:
+    """작업일보 표기용으로 지그의 마지막 숫자만 소수점 셋째 자리까지 반올림합니다."""
+    text = str(value or "").strip()
+    if not text:
+        return ""
+
+    prefix, separator, number_text = text.rpartition(" ")
+    target = number_text if separator else text
+    try:
+        rounded = Decimal(target).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP)
+    except (InvalidOperation, ValueError):
+        return text
+
+    formatted = format(rounded, "f").rstrip("0").rstrip(".")
+    return f"{prefix}{separator}{formatted}" if separator else formatted
+
+
 def write_tlb_log_row_to_excel(ws, row: int, log: sqlite3.Row) -> None:
     """TLB 이력 한 건을 TLB 작업일보 양식에 맞춰 기록합니다.
 
@@ -2695,7 +2719,7 @@ def write_tlb_log_row_to_excel(ws, row: int, log: sqlite3.Row) -> None:
         log["condition_name"],
         log["burr_result"] or "",
         log["stack"] or "",
-        log["jig"],
+        format_jig_for_excel(log["jig"]),
         log["model_change_text"] or "",
         log["record_time"] or "",
     ]

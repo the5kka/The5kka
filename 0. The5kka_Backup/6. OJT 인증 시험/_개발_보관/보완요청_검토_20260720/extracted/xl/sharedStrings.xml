@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="20" uniqueCount="17"><si><t xml:space="preserve">NO. </t><phoneticPr fontId="1" type="noConversion"/></si><si><t>문제 공정명</t><phoneticPr fontId="1" type="noConversion"/></si><si><t>오류 내용</t><phoneticPr fontId="1" type="noConversion"/></si><si><t xml:space="preserve">요청 내용 </t><phoneticPr fontId="1" type="noConversion"/></si><si><t>참고 사진</t><phoneticPr fontId="1" type="noConversion"/></si><si><t>OJT 시험 은행 오류건 보완 요청LIST</t><phoneticPr fontId="1" type="noConversion"/></si><si><t>문제 삽입된 [내용]에 줄 들여쓰기 어색함</t><phoneticPr fontId="1" type="noConversion"/></si><si><t>문제 선택지 번호가 그림 아래쪽에 있음</t><phoneticPr fontId="1" type="noConversion"/></si><si><t>문제 선택지 번호가 그림 왼쪽 상단에 표기되게 요청</t><phoneticPr fontId="1" type="noConversion"/></si><si><t>문제, 예시, 선택지에 여백이 없어서 답답해보임</t><phoneticPr fontId="1" type="noConversion"/></si><si><t>문제, 예시, 선택지 사이에 한줄 여백 추가 요청
+
+예) 문제
+----------한줄-----------
+예시 
+----------한줄-----------
+선택지
+---------------------------
+----------두줄-----------
+다음문제</t><phoneticPr fontId="1" type="noConversion"/></si><si><t>보완여부 (O,X)</t><phoneticPr fontId="1" type="noConversion"/></si><si><t>보완 불가시, 사유</t><phoneticPr fontId="1" type="noConversion"/></si><si><t>문제 삽입된 [내용]에 줄 내어쓰기 설정으로 요청 (둘째줄부터 내어쓰기 5칸 적용)</t><phoneticPr fontId="1" type="noConversion"/></si><si><t>문제 길이가 길어지면 배점이 문제 아래로 떨어짐</t><phoneticPr fontId="1" type="noConversion"/></si><si><t>문제길이 여부와 관계없이 문제 오른쪽 상단에 위치하도록 설정 요청</t><phoneticPr fontId="1" type="noConversion"/></si><si><t>공통 적용</t><phoneticPr fontId="1" type="noConversion"/></si></sst>

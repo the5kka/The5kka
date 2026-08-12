@@ -71,8 +71,10 @@ SIMTEK_HDI_LEGACY_EXPORT_ID_COLUMN = 32
 SIMTEK_HDI_EXPORT_ID_COLUMN = 33
 # V4와 V4-1이 같은 DNC 전송 폴더를 동시에 조작하지 못하도록 V4와 잠금을 공유합니다.
 SINGLE_INSTANCE_MUTEX_NAME = "JIIN_DNC_Manager_V4_Single_Instance"
+# V1~V3도 같은 전송 폴더/작업일보를 사용할 수 있으므로 구버전 잠금도 함께 확보합니다.
+LEGACY_SINGLE_INSTANCE_MUTEX_NAME = "JIIN_DNC_Manager_Single_Instance"
 ERROR_ALREADY_EXISTS = 183
-SINGLE_INSTANCE_HANDLE = None
+SINGLE_INSTANCE_HANDLES: list[int] = []
 PROCESS_NAMES = ["TLB", "심텍 SPS", "심텍 HDI", "KCC PKG", "KCC HDI"]
 # 신규 검증을 지원하는 공정은 과거 로그 ID 기반의 조건 마스터 제외 기능을 함께 둡니다.
 # 현재 KCC PKG/심텍 HDI에 적용하며, 향후 심텍 SPS 추가 시에도 동일 구조를 사용합니다.
@@ -92,7 +94,7 @@ def bring_existing_app_to_front() -> None:
         return
     try:
         user32 = ctypes.windll.user32
-        for title in (WINDOW_TITLE, "JIIN DNC Manager V4"):
+        for title in (WINDOW_TITLE, "JIIN DNC Manager V4", APP_TITLE):
             hwnd = user32.FindWindowW(None, title)
             if hwnd:
                 user32.ShowWindow(hwnd, 9)  # SW_RESTORE
@@ -104,18 +106,22 @@ def bring_existing_app_to_front() -> None:
 
 def acquire_single_instance_lock() -> bool:
     """????? ?? ?? ??? ? ?? ??? ?? ?? ?? ??? ????."""
-    global SINGLE_INSTANCE_HANDLE
+    global SINGLE_INSTANCE_HANDLES
     if not sys.platform.startswith("win"):
         return True
     kernel32 = ctypes.windll.kernel32
-    handle = kernel32.CreateMutexW(None, False, SINGLE_INSTANCE_MUTEX_NAME)
-    if not handle:
-        return True
-    if kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
-        kernel32.CloseHandle(handle)
-        bring_existing_app_to_front()
-        return False
-    SINGLE_INSTANCE_HANDLE = handle
+    acquired: list[int] = []
+    for mutex_name in (LEGACY_SINGLE_INSTANCE_MUTEX_NAME, SINGLE_INSTANCE_MUTEX_NAME):
+        handle = kernel32.CreateMutexW(None, False, mutex_name)
+        if not handle or kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
+            if handle:
+                kernel32.CloseHandle(handle)
+            for acquired_handle in acquired:
+                kernel32.CloseHandle(acquired_handle)
+            bring_existing_app_to_front()
+            return False
+        acquired.append(handle)
+    SINGLE_INSTANCE_HANDLES = acquired
     return True
 
 

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OJT Exam Maker 글로벌 심플 디자인 24종</title>
+  <style>
+    *{box-sizing:border-box;letter-spacing:0}
+    :root{--ink:#172126;--muted:#66747a;--line:#cbd3d6;--soft:#eef2f3;--paper:#fff;--accent:#087f6b;--blue:#175fb4;--yellow:#f0be32;--coral:#d8584f}
+    html{scroll-behavior:smooth}
+    body{margin:0;color:var(--ink);background:#e6ebed;font-family:"Malgun Gothic","Segoe UI",sans-serif}
+    button{font:inherit}
+    .mast{position:sticky;top:0;z-index:20;border-bottom:1px solid #aeb9bd;background:rgba(255,255,255,.96)}
+    .mast-inner{max-width:1480px;margin:auto;padding:15px 22px;display:flex;align-items:center;gap:16px}
+    .mark{width:42px;height:42px;display:grid;place-items:center;color:#fff;background:var(--ink);font-weight:900}
+    .brand{min-width:0}.brand b{display:block;font-size:17px}.brand span{display:block;margin-top:3px;color:var(--muted);font-size:10px}
+    .count{margin-left:auto;padding:8px 11px;border:1px solid var(--ink);font-size:11px;font-weight:900}
+    .intro{max-width:1480px;margin:0 auto;padding:34px 22px 20px;display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:28px;align-items:end}
+    .eyebrow{color:var(--accent);font-size:11px;font-weight:900}
+    h1{margin:8px 0 0;font-size:36px;line-height:1.25}
+    .intro p{max-width:760px;margin:12px 0 0;color:var(--muted);font-size:13px;line-height:1.7}
+    .principles{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);background:var(--paper)}
+    .principle{min-height:90px;padding:15px;border-right:1px solid var(--line)}.principle:last-child{border-right:0}
+    .principle b{display:block;color:var(--blue);font-size:22px}.principle span{display:block;margin-top:8px;font-size:10px;line-height:1.45}
+    .filters{max-width:1480px;margin:0 auto;padding:12px 22px 20px;display:flex;flex-wrap:wrap;gap:8px}
+    .filter{height:36px;padding:0 13px;color:var(--ink);border:1px solid #aeb9bd;background:#fff;font-size:11px;font-weight:900;cursor:pointer}
+    .filter.active{color:#fff;border-color:var(--ink);background:var(--ink)}
+    .gallery{max-width:1480px;margin:0 auto;padding:0 22px 44px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+    .card{min-width:0;overflow:hidden;border:1px solid #b7c1c4;border-radius:6px;background:#fff;box-shadow:0 7px 18px rgba(26,39,44,.08);cursor:pointer}
+    .card:hover{border-color:var(--accent);box-shadow:0 10px 24px rgba(26,39,44,.14);transform:translateY(-2px)}
+    .thumb{position:relative;aspect-ratio:16/9;overflow:hidden;border-bottom:1px solid var(--line);background:#dfe5e7}
+    .thumb img{width:100%;height:100%;display:block;object-fit:cover}
+    .badge{position:absolute;top:10px;left:10px;min-width:36px;height:30px;padding:0 8px;display:grid;place-items:center;color:#fff;background:var(--ink);font-size:11px;font-weight:900}
+    .pick{position:absolute;top:10px;right:10px;padding:7px 9px;color:#fff;background:var(--coral);font-size:9px;font-weight:900}
+    .card-body{padding:14px 15px 16px;display:grid;grid-template-columns:1fr auto;gap:10px}
+    .card h2{margin:0;font-size:15px}.card p{margin:6px 0 0;color:var(--muted);font-size:10px;line-height:1.5}
+    .tag{align-self:start;padding:5px 7px;color:var(--blue);border:1px solid #9ebae0;background:#f4f8fd;font-size:9px;font-weight:900}
+    .recommend{max-width:1480px;margin:0 auto 28px;padding:0 22px}
+    .recommend-band{padding:20px;border:1px solid #9eb0b6;background:#172126;color:#fff;display:grid;grid-template-columns:240px 1fr;gap:20px}
+    .recommend-band h2{margin:0;font-size:21px}.recommend-band p{margin:8px 0 0;color:#c0ccd0;font-size:10px;line-height:1.6}
+    .recommend-list{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .recommend-item{padding:11px;border-left:4px solid var(--yellow);background:#26343a;font-size:10px}.recommend-item b{display:block;margin-bottom:4px;color:#fff}
+    .modal{position:fixed;inset:0;z-index:50;display:none;grid-template-rows:58px minmax(0,1fr) 58px;color:#fff;background:rgba(12,18,21,.96)}
+    .modal.open{display:grid}
+    .modal-bar{padding:0 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #435057}.modal-bar.bottom{border-top:1px solid #435057;border-bottom:0}
+    .modal-title{font-size:14px;font-weight:900}.modal-meta{color:#b9c5c9;font-size:10px}.spacer{flex:1}
+    .icon-btn{width:42px;height:38px;display:grid;place-items:center;color:#fff;border:1px solid #64747a;background:#26343a;font-size:23px;cursor:pointer}
+    .modal-stage{min-width:0;min-height:0;padding:20px;display:grid;place-items:center;overflow:hidden}
+    .modal-stage img{max-width:100%;max-height:100%;display:block;border:1px solid #6d797e;background:#fff;box-shadow:0 16px 40px rgba(0,0,0,.4)}
+    .empty{grid-column:1/-1;padding:60px;text-align:center;color:var(--muted);background:#fff}
+    @media(max-width:1050px){.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}.intro{grid-template-columns:1fr}.recommend-band{grid-template-columns:1fr}.recommend-list{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:680px){.mast-inner,.intro,.filters,.gallery,.recommend{padding-left:12px;padding-right:12px}.intro{padding-top:24px}.intro h1{font-size:27px}.principles{grid-template-columns:1fr}.principle{min-height:0;border-right:0;border-bottom:1px solid var(--line)}.principle:last-child{border-bottom:0}.gallery{grid-template-columns:1fr;gap:12px}.recommend-list{grid-template-columns:1fr}.count{display:none}.modal-stage{padding:8px}}
+  </style>
+</head>
+<body>
+  <header class="mast"><div class="mast-inner"><div class="mark">OJT</div><div class="brand"><b>글로벌 심플 디자인 24종</b><span>OJT Exam Maker · 독립형 전체 화면 검토본</span></div><div class="count">24 SCREENS · 1600×900</div></div></header>
+  <section class="intro"><div><span class="eyebrow">FRESH START / 2026.08.06</span><h1>설명 없이도 바로 고를 수 있는 화면</h1><p>기존 V2 화면을 꾸민 변형이 아닙니다. 처음 켠 작업자가 ‘누구 시험인지 → 어느 공정인지 → 시작’을 한눈에 이해하도록 24개의 독립 구조로 다시 설계했습니다.</p></div><div class="principles"><div class="principle"><b>1–3</b><span>한 화면의 핵심 행동 수</span></div><div class="principle"><b>4</b><span>일반·전장·신입·외국인 구분</span></div><div class="principle"><b>A4</b><span>기존 출력 양식은 그대로</span></div></div></section>
+  <section class="recommend"><div class="recommend-band"><div><h2>먼저 볼 8종</h2><p>단순함, 글로벌 인상, 현장 조작성, 문서 확인 방식을 서로 다르게 고른 추천안입니다.</p></div><div class="recommend-list" id="recommendList"></div></div></section>
+  <nav class="filters" id="filters"></nav>
+  <main class="gallery" id="gallery"></main>
+  <div class="modal" id="modal" aria-hidden="true"><div class="modal-bar"><div><div class="modal-title" id="modalTitle"></div><div class="modal-meta" id="modalMeta"></div></div><span class="spacer"></span><button class="icon-btn" id="close" title="닫기">×</button></div><div class="modal-stage"><img id="modalImage" alt="선택한 디자인 확대 화면"></div><div class="modal-bar bottom"><button class="icon-btn" id="prev" title="이전">‹</button><span class="modal-meta" id="modalCounter"></span><span class="spacer"></span><button class="icon-btn" id="next" title="다음">›</button></div></div>
+  <script>
+    const designs=[
+      [1,'네 개의 시작 문','초간단','대상 네 개를 큰 문처럼 바로 선택'],[2,'한 버튼 시작','초간단','선택 결과와 시작 버튼만 강조'],[3,'세 단계 작업대','안내','대상·공정·작업자를 순서대로 확인'],[4,'대화형 안내','안내','질문에 답하듯 한 단계씩 진행'],
+      [5,'글로벌 체크인','글로벌','공항 체크인처럼 친숙한 흐름'],[6,'품질 안전 콘솔','현장','상태 확인을 먼저 보여주는 품질 화면'],[7,'조용한 집중 화면','초간단','한 문장과 한 버튼에 집중'],[8,'글로벌 타이포 그리드','글로벌','국제 전시·편집 디자인 감성'],
+      [9,'역할 기둥 작업대','운영','역할·문서·준비 상태를 나란히 확인'],[10,'준비 완료 화면','초간단','선택 뒤 최종 시작만 남기는 구조'],[11,'종이 중심 스튜디오','문서','실제 시험지를 화면 중심에 배치'],[12,'페이지 덱','문서','전체 출력 페이지를 카드처럼 확인'],
+      [13,'빠른 검색 콘솔','검색','공정명을 검색해 즉시 시작'],[14,'시험 생성 노선도','안내','전체 진행 순서를 노선처럼 표시'],[15,'글로벌 안내 보드','글로벌','멀리서도 읽히는 안내판 구조'],[16,'큰 버튼 키오스크','현장','장갑을 낀 작업자도 누르기 쉬운 선택'],
+      [17,'간결한 품질 관제','운영','품질 상태와 시험 실행을 한 화면에'],[18,'스마트 팩토리 맵','현장','공정 라인을 설비 지도처럼 선택'],[19,'신입 학습 경로','교육','교육부터 인증까지 진행 상태 표시'],[20,'언어 우선 시작','글로벌','언어를 먼저 골라 외국인 시험 확장'],
+      [21,'작업자·관리자 분리','보안','작업 화면과 잠긴 설정을 명확히 분리'],[22,'오늘의 시험 보드','운영','오늘 일정에서 현재 시험을 바로 실행'],[23,'선택·문서 분할','문서','왼쪽 선택과 오른쪽 A4 확인을 분리'],[24,'설명 없는 3단계','초간단','선택·공정·성명 세 줄로 끝']
+    ];
+    const picks=[1,2,5,7,11,16,20,24];
+    const filterOrder=['전체','추천','초간단','글로벌','현장','문서','안내','운영','교육','검색','보안'];
+    let active='전체',visible=designs.slice(),current=0;
+    const gallery=document.getElementById('gallery'),filters=document.getElementById('filters'),modal=document.getElementById('modal');
+    const pad=n=>String(n).padStart(2,'0');
+    function renderFilters(){filters.innerHTML=filterOrder.map(x=>`<button class="filter ${x===active?'active':''}" data-filter="${x}">${x}</button>`).join('');filters.querySelectorAll('button').forEach(b=>b.onclick=()=>{active=b.dataset.filter;renderFilters();renderCards()})}
+    function renderCards(){visible=designs.filter(d=>active==='전체'||(active==='추천'&&picks.includes(d[0]))||d[2]===active);gallery.innerHTML=visible.length?visible.map((d,i)=>`<article class="card" data-index="${i}"><div class="thumb"><img src="screens/design_${pad(d[0])}.png" alt="${d[1]} 화면"><span class="badge">${pad(d[0])}</span>${picks.includes(d[0])?'<span class="pick">추천</span>':''}</div><div class="card-body"><div><h2>${d[1]}</h2><p>${d[3]}</p></div><span class="tag">${d[2]}</span></div></article>`).join(''):'<div class="empty">해당 유형의 화면이 없습니다.</div>';gallery.querySelectorAll('.card').forEach(c=>c.onclick=()=>openModal(Number(c.dataset.index)))}
+    function openModal(i){current=i;const d=visible[current];document.getElementById('modalImage').src=`screens/design_${pad(d[0])}.png`;document.getElementById('modalTitle').textContent=`${pad(d[0])}. ${d[1]}`;document.getElementById('modalMeta').textContent=`${d[2]} · ${d[3]}`;document.getElementById('modalCounter').textContent=`${current+1} / ${visible.length}`;modal.classList.add('open');modal.setAttribute('aria-hidden','false')}
+    function move(step){current=(current+step+visible.length)%visible.length;openModal(current)}
+    document.getElementById('close').onclick=()=>{modal.classList.remove('open');modal.setAttribute('aria-hidden','true')};document.getElementById('prev').onclick=()=>move(-1);document.getElementById('next').onclick=()=>move(1);document.addEventListener('keydown',e=>{if(!modal.classList.contains('open'))return;if(e.key==='Escape')document.getElementById('close').click();if(e.key==='ArrowLeft')move(-1);if(e.key==='ArrowRight')move(1)});
+    document.getElementById('recommendList').innerHTML=picks.map(n=>{const d=designs[n-1];return `<div class="recommend-item"><b>${pad(n)} · ${d[1]}</b>${d[3]}</div>`}).join('');
+    renderFilters();renderCards();
+  </script>
+</body>
+</html>

@@ -76,11 +76,21 @@ def create_sample_db(path: Path, value: str) -> None:
 
 
 class V41RegressionTests(unittest.TestCase):
+    def setUp(self):
+        self._runtime_temp = tempfile.TemporaryDirectory()
+        self._original_log_dir = app.LOG_DIR
+        app.LOG_DIR = Path(self._runtime_temp.name) / "logs"
+
+    def tearDown(self):
+        app.LOG_DIR = self._original_log_dir
+        self._runtime_temp.cleanup()
+
     def test_version_is_fully_separated(self):
         self.assertEqual(app.DATA_DIR.name, "data_v4_1")
         self.assertEqual(app.WINDOW_TITLE, "JIIN DNC Manager V4-1")
         self.assertIn("V4-1", app.APP_VERSION_TEXT)
         self.assertEqual(app.SINGLE_INSTANCE_MUTEX_NAME, "JIIN_DNC_Manager_V4_Single_Instance")
+        self.assertEqual(app.LEGACY_SINGLE_INSTANCE_MUTEX_NAME, "JIIN_DNC_Manager_Single_Instance")
 
     def test_exact_search_and_atomic_dnc_copy(self):
         with tempfile.TemporaryDirectory() as temp, isolated_data(Path(temp)):
