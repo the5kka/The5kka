@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#123c69">
+  <title>KCC HDI</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">KCC HDI · 현장용</p>
+        <h1>KCC HDI</h1>
+        <p class="subtitle">각인값 생성부터 초도품 사진 대조와 OK/NG 이력까지 관리합니다.</p>
+      </div>
+      <div class="topbar-actions">
+        <button id="appSettingsButton" class="status-pill settings-button" type="button">설정</button>
+        <button id="progressButton" class="status-pill progress-button" type="button">진행 현황 <span id="historyCountBadge">0</span></button>
+      </div>
+    </header>
+
+    <section class="workflow" aria-label="입력 순서">
+      <article class="input-card" id="card-management">
+        <div class="step-number">1</div>
+        <div class="field-wrap">
+          <label for="managementNo">제조지시서 관리번호</label>
+          <p class="hint">정확히 10자리 · 8번째는 영문 A~Z · 예: GHD1807D16</p>
+          <div class="input-row">
+            <input id="managementNo" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="10" placeholder="10자리 관리번호를 스캔하세요">
+            <button id="managementCameraScanButton" class="camera-scan is-hidden" type="button" aria-label="패드 카메라로 관리번호 바코드 스캔">카메라<br>스캔</button>
+            <button class="clear-field" type="button" data-target="managementNo" aria-label="관리번호 지우기">지우기</button>
+          </div>
+          <p class="field-message" id="managementMessage"></p>
+        </div>
+      </article>
+
+      <article class="input-card" id="card-lot">
+        <div class="step-number">2</div>
+        <div class="field-wrap">
+          <label for="lotNo">제조지시서 LOT NO</label>
+          <p class="hint">정확히 14자리 · 중간 4자리 허용: 0000, 0108, 0916</p>
+          <div class="input-row">
+            <input id="lotNo" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="14" placeholder="14자리 LOT NO를 스캔하세요">
+            <button id="lotCameraScanButton" class="camera-scan is-hidden" type="button" aria-label="패드 카메라로 LOT NO 바코드 스캔">카메라<br>스캔</button>
+            <button class="clear-field" type="button" data-target="lotNo" aria-label="LOT NO 지우기">지우기</button>
+          </div>
+          <p class="field-message" id="lotMessage"></p>
+        </div>
+      </article>
+
+      <article class="input-card" id="card-manual">
+        <div class="step-number">3</div>
+        <div class="field-wrap">
+          <label for="manualValue">수기 입력</label>
+          <p class="hint">마지막 각인 문자 · 예: A, B, C, 1, 2, 3</p>
+          <div class="input-row">
+            <input id="manualValue" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="1" placeholder="영문/숫자 1자리">
+            <button class="clear-field" type="button" data-target="manualValue" aria-label="수기 값 지우기">지우기</button>
+          </div>
+          <p class="field-message" id="manualMessage"></p>
+        </div>
+      </article>
+    </section>
+
+    <section class="result-panel" aria-labelledby="resultTitle">
+      <div class="result-heading">
+        <div>
+          <p class="eyebrow">설비 입력용</p>
+          <h2 id="resultTitle">최종 Laser 각인값</h2>
+        </div>
+        <button id="copyButton" class="secondary-button" type="button" disabled>값 복사</button>
+      </div>
+
+      <div id="resultValue" class="result-value empty" aria-live="polite">입력값을 모두 채워주세요</div>
+      <div id="formulaPreview" class="formula-preview">관리번호 앞 7자리 + LOT 9~12번째 4자리 + 관리번호 8번째 + 수기 영문/숫자 1자리</div>
+      <div id="autoResetStatus" class="auto-delete-status is-hidden" role="status" aria-live="polite"></div>
+      <div id="codeArea" class="code-grid is-hidden" aria-hidden="true">
+        <div class="code-card combined-code-card">
+          <div class="code-section barcode-section">
+            <h3>바코드 (CODE 128)</h3>
+            <div class="canvas-wrap barcode-wrap"><canvas id="barcodeCanvas"></canvas></div>
+          </div>
+          <div class="code-section qr-section">
+            <h3>QR 코드</h3>
+            <div class="canvas-wrap qr-wrap"><canvas id="qrCanvas"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="verificationArea" class="verification-area is-hidden" aria-hidden="true">
+        <div>
+          <h3>초도품 Laser 각인 대조</h3>
+          <p>초도품의 각인 문자가 잘 보이도록 가까이에서 정면으로 촬영하세요.</p>
+          <p id="verificationStatus" class="verification-status">각인값 생성 후 사진 촬영 대기</p>
+        </div>
+        <button id="verifyPanelButton" class="verify-button" type="button">초도품 촬영<br>및 대조</button>
+      </div>
+
+      <div id="errorBanner" class="error-banner is-hidden" role="alert"></div>
+    </section>
+
+    <details class="rule-box">
+      <summary>조합 기준 확인</summary>
+      <div class="rule-content">
+        <p><strong>예시:</strong> GHD1807D16 + B7208901091601 + 7</p>
+        <p><span>GHD1807</span> + <span>0916</span> + <span>D</span> + <span>7</span> = <strong>GHD18070916D7</strong></p>
+        <p class="warning-note">입력값이 기준에 맞지 않으면 바코드와 QR 코드를 생성하지 않습니다.</p>
+      </div>
+    </details>
+  </main>
+
+  <dialog id="appSettingsDialog" class="app-dialog auth-dialog">
+    <form id="appSettingsForm" novalidate>
+      <p class="eyebrow">KCC HDI 설정</p>
+      <h2>자동 초기화 시간</h2>
+      <p class="auth-help">각인값 생성 후 현재 작업을 자동으로 초기화할 시간을 선택하세요. 작업이력은 삭제되지 않습니다.</p>
+      <label class="auth-field" for="autoResetMinutesSelect">초기화 시간</label>
+      <select id="autoResetMinutesSelect" class="settings-select">
+        <option value="0">사용 안 함</option>
+        <option value="1">1분</option>
+        <option value="5">5분</option>
+        <option value="10">10분 (기본값)</option>
+        <option value="30">30분</option>
+      </select>
+      <div class="dialog-actions auth-actions">
+        <button id="cancelAppSettingsButton" class="secondary-button" type="button">취소</button>
+        <button class="primary-button" type="submit">설정 저장</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="historyDialog" class="app-dialog history-dialog">
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">검사 이력</p>
+        <h2>날짜별 작업이력</h2>
+      </div>
+      <div class="dialog-header-actions">
+        <button id="changeHistoryPasswordButton" class="dialog-setting" type="button">비밀번호 설정</button>
+        <button id="closeHistoryButton" class="dialog-close" type="button" aria-label="작업이력 닫기">닫기</button>
+      </div>
+    </div>
+    <div class="history-summary">
+      <div><span>전체</span><strong id="historyTotalCount">0</strong></div>
+      <div class="ok-summary"><span>OK</span><strong id="historyOkCount">0</strong></div>
+      <div class="ng-summary"><span>NG</span><strong id="historyNgCount">0</strong></div>
+    </div>
+    <div class="history-filters">
+      <label>
+        <span>LOT NO 검색</span>
+        <input id="historyLotSearch" type="search" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="LOT NO 전체 또는 일부 입력">
+      </label>
+      <label>
+        <span>작업 날짜</span>
+        <input id="historyDateFilter" type="date">
+      </label>
+      <button id="clearHistoryFiltersButton" class="secondary-button history-filter-clear" type="button">검색 초기화</button>
+    </div>
+    <p id="historyFilterSummary" class="history-filter-summary">전체 이력을 표시합니다.</p>
+    <p id="historyEmpty" class="history-empty">아직 완료된 검사 이력이 없습니다.</p>
+    <div id="historyGroups" class="history-groups is-hidden"></div>
+  </dialog>
+
+  <dialog id="historyPasswordDialog" class="app-dialog auth-dialog">
+    <form id="historyPasswordForm" novalidate>
+      <p class="eyebrow">보안 확인</p>
+      <h2>작업이력 비밀번호</h2>
+      <p class="auth-help">작업이력을 보려면 비밀번호를 입력하세요.</p>
+      <label class="auth-field" for="historyPasswordInput">비밀번호</label>
+      <input id="historyPasswordInput" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="숫자 비밀번호">
+      <p id="historyPasswordMessage" class="auth-message" role="alert"></p>
+      <div class="dialog-actions auth-actions">
+        <button id="openPasswordSettingsButton" class="secondary-button" type="button">비밀번호 변경</button>
+        <button id="cancelHistoryPasswordButton" class="secondary-button" type="button">취소</button>
+        <button class="primary-button" type="submit">확인</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="passwordSettingsDialog" class="app-dialog auth-dialog">
+    <form id="passwordSettingsForm" novalidate>
+      <p class="eyebrow">관리자 설정</p>
+      <h2>작업이력 비밀번호 변경</h2>
+      <p class="auth-help">마스터 비밀번호 확인 후 작업이력 비밀번호를 변경할 수 있습니다.</p>
+      <label class="auth-field" for="masterPasswordInput">마스터 비밀번호</label>
+      <input id="masterPasswordInput" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="마스터 비밀번호">
+      <label class="auth-field" for="newHistoryPasswordInput">새 작업이력 비밀번호</label>
+      <input id="newHistoryPasswordInput" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="숫자 4~12자리">
+      <label class="auth-field" for="confirmHistoryPasswordInput">새 비밀번호 확인</label>
+      <input id="confirmHistoryPasswordInput" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="새 비밀번호 다시 입력">
+      <p id="passwordSettingsMessage" class="auth-message" role="alert"></p>
+      <div class="dialog-actions auth-actions">
+        <button id="cancelPasswordSettingsButton" class="secondary-button" type="button">취소</button>
+        <button class="primary-button" type="submit">변경 저장</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="judgmentDialog" class="app-dialog judgment-dialog">
+    <div id="judgmentMark" class="judgment-mark">OK</div>
+    <h2 id="judgmentTitle">각인 대조 OK</h2>
+    <p id="judgmentMessage" class="judgment-message"></p>
+    <div class="comparison-grid">
+      <div><span>생성 각인값</span><strong id="judgmentExpected"></strong></div>
+      <div><span>사진 인식값</span><strong id="judgmentRecognized"></strong></div>
+    </div>
+    <div class="dialog-actions">
+      <button id="retryPhotoButton" class="secondary-button is-hidden" type="button">다시 찍기</button>
+      <button id="confirmJudgmentButton" class="primary-button" type="button">확인</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="vendor/bwip-js-min.js"></script>
+  <script src="app.js?v=8"></script>
+</body>
+</html>

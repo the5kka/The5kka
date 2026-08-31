@@ -1,0 +1,19 @@
+{
+  "name": "KCC HDI Laser V2 [시험판]",
+  "short_name": "HDI Laser V2",
+  "description": "Laser 각인값 생성, 초도품 사진 대조, OK/NG 이력을 관리합니다.",
+  "lang": "ko-KR",
+  "start_url": "./?v=6",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f6f9",
+  "theme_color": "#123c69",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

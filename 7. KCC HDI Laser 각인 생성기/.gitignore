@@ -1,0 +1,8 @@
+.build-tools/
+.gradle-user-home/
+.signing/
+android-app/.gradle/
+android-app/app/build/
+android-app/build/
+*.apk
+

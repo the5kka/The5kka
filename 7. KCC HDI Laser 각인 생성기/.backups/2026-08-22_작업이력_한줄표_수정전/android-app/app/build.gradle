@@ -1,0 +1,62 @@
+plugins {
+    id 'com.android.application'
+}
+
+def signingProperties = new Properties()
+def signingPropertiesFile = rootProject.file('../.signing/signing.properties')
+if (!signingPropertiesFile.exists()) {
+    throw new GradleException('릴리스 서명 설정 파일을 찾을 수 없습니다: ' + signingPropertiesFile)
+}
+signingPropertiesFile.withInputStream { signingProperties.load(it) }
+
+android {
+    namespace 'com.kcc.hdi.lotgenerator'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.kcc.hdi.lasergenerator'
+        minSdk 23
+        targetSdk 35
+        versionCode 10
+        versionName '2.2.0'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+
+    signingConfigs {
+        release {
+            storeFile rootProject.file(signingProperties['storeFile'])
+            storePassword signingProperties['storePassword']
+            keyAlias signingProperties['keyAlias']
+            keyPassword signingProperties['keyPassword']
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.release
+        }
+        release {
+            minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        coreLibraryDesugaringEnabled true
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation platform('org.jetbrains.kotlin:kotlin-bom:1.8.22')
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+    implementation 'androidx.core:core:1.15.0'
+    implementation 'androidx.exifinterface:exifinterface:1.4.2'
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+}

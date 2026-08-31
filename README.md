@@ -9,4 +9,6 @@ Quick Access Searcher의 설정 탭에서 Git 저장 버튼을 누르면 아래 
 - `4. Window 단축키`
 - `5. Codex_업무노트`
 - `6. OJT 인증 시험`
+- `7. KCC HDI Laser 각인 생성기`
+- `8. TLB 초도품 LOT 검증기`
 - `_installers`

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="108" fill="#123c69"/>
+  <rect x="84" y="110" width="344" height="292" rx="34" fill="#fff"/>
+  <g fill="#123c69">
+    <rect x="122" y="154" width="12" height="150"/>
+    <rect x="148" y="154" width="22" height="150"/>
+    <rect x="185" y="154" width="10" height="150"/>
+    <rect x="209" y="154" width="30" height="150"/>
+    <rect x="252" y="154" width="13" height="150"/>
+    <rect x="282" y="154" width="23" height="150"/>
+    <rect x="320" y="154" width="11" height="150"/>
+    <rect x="347" y="154" width="34" height="150"/>
+  </g>
+  <text x="256" y="355" text-anchor="middle" font-family="Arial,sans-serif" font-size="44" font-weight="700" fill="#123c69">LOT NO</text>
+</svg>
